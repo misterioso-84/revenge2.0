@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, doc, setDoc, collection, getDocs, Firestore } from "firebase/firestore";
-import fs from "fs";
-import path from "path";
+import { getFirestore, doc, setDoc, collection, getDocs, Firestore } from "firebase/firestore/lite";
+import config from "../../firebase-applet-config.json";
 
 interface FirebaseConfig {
   apiKey: string;
@@ -19,12 +18,10 @@ export function getFirebaseDb(): Firestore | null {
   if (dbInstance) return dbInstance;
 
   try {
-    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-    if (!fs.existsSync(configPath)) {
-      console.warn("firebase-applet-config.json not found, skipping cloud sync");
+    if (!config || !config.apiKey) {
+      console.warn("Firebase config not loaded or incomplete, skipping cloud sync");
       return null;
     }
-    const config: FirebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     const firebaseConfig = {
       apiKey: config.apiKey,
       authDomain: config.authDomain,
