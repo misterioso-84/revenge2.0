@@ -1,0 +1,437 @@
+{
+  "profiles": [
+    {
+      "username": "giuse84pro",
+      "id": "mock-user-id-1234",
+      "updated_at": "2026-07-13T14:01:29.800Z",
+      "display_name": "Giuse84pro",
+      "created_at": "2026-07-12T13:12:44.187Z"
+    },
+    {
+      "id": "user-mzd7g48d9j",
+      "username": "staff",
+      "updated_at": "2026-07-14T12:57:43.343Z",
+      "display_name": "staff",
+      "created_at": "2026-07-14T12:57:43.343Z"
+    }
+  ],
+  "user_roles": [
+    {
+      "role": "admin",
+      "id": "role-1",
+      "user_id": "mock-user-id-1234"
+    }
+  ],
+  "custom_roles": [
+    {
+      "permissions": ["conversioni.visualizza", "conversioni.crea", "conversioni.azzera"],
+      "id": "crole-1",
+      "description": "Gestione conversioni e incassi",
+      "name": "Cassiere",
+      "created_at": "2026-07-12T13:12:44.187Z"
+    },
+    {
+      "description": "Gestione tavoli e corse cavalli",
+      "id": "crole-2",
+      "permissions": ["corse.visualizza", "corse.gestisci"],
+      "created_at": "2026-07-12T13:12:44.187Z",
+      "name": "Croupier"
+    }
+  ],
+  "user_custom_roles": [],
+  "citizens": [
+    {
+      "full_name": "devines",
+      "created_at": "2026-07-12T13:12:44.187Z",
+      "membership_since": null,
+      "membership": "elite",
+      "id": "citizen-1",
+      "nickname": "Il Capo",
+      "notes": "Cliente abituale di alta fascia.",
+      "updated_at": "2026-07-13T12:36:12.540Z"
+    },
+    {
+      "membership": "standard",
+      "id": "citizen-2",
+      "nickname": "Pino",
+      "notes": "Giocatore serale.",
+      "updated_at": "2026-07-13T12:35:50.934Z",
+      "created_at": "2026-07-12T13:12:44.187Z",
+      "full_name": "Giuse84pro",
+      "membership_since": null
+    },
+    {
+      "full_name": "COCKS",
+      "created_at": "2026-07-13T13:44:55.093Z",
+      "id": "j323w5ywwgt",
+      "membership": "standard",
+      "updated_at": "2026-07-13T13:44:55.093Z"
+    }
+  ],
+  "safe_boxes": [
+    {
+      "citizen_id": "citizen-1",
+      "box_number": 1,
+      "expires_at": "2026-12-31",
+      "activated_at": "2026-01-01",
+      "id": "safe-1",
+      "notes": "Cassetta vip",
+      "active": true
+    },
+    {
+      "citizen_id": null,
+      "box_number": 2,
+      "id": "safe-2",
+      "notes": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false
+    },
+    {
+      "citizen_id": null,
+      "box_number": 3,
+      "active": false,
+      "activated_at": null,
+      "expires_at": null,
+      "id": "safe-3",
+      "notes": null
+    },
+    {
+      "activated_at": null,
+      "expires_at": null,
+      "id": "safe-4",
+      "notes": null,
+      "active": false,
+      "citizen_id": null,
+      "box_number": 4
+    },
+    {
+      "citizen_id": null,
+      "box_number": 5,
+      "active": false,
+      "expires_at": null,
+      "activated_at": null,
+      "id": "safe-5",
+      "notes": null
+    },
+    {
+      "citizen_id": null,
+      "box_number": 6,
+      "active": false,
+      "expires_at": null,
+      "activated_at": null,
+      "notes": null,
+      "id": "safe-6"
+    },
+    {
+      "citizen_id": null,
+      "box_number": 7,
+      "active": false,
+      "activated_at": null,
+      "expires_at": null,
+      "notes": null,
+      "id": "safe-7"
+    },
+    {
+      "expires_at": null,
+      "activated_at": null,
+      "notes": null,
+      "id": "safe-8",
+      "active": false,
+      "citizen_id": null,
+      "box_number": 8
+    },
+    {
+      "citizen_id": null,
+      "box_number": 9,
+      "active": false,
+      "activated_at": null,
+      "expires_at": null,
+      "id": "safe-9",
+      "notes": null
+    },
+    {
+      "citizen_id": null,
+      "box_number": 10,
+      "active": false,
+      "id": "safe-10",
+      "notes": null,
+      "activated_at": null,
+      "expires_at": null
+    }
+  ],
+  "badge_weeks": [
+    {
+      "created_at": "2026-07-12T13:12:44.188Z",
+      "label": "Settimana 1",
+      "id": "week-1",
+      "ended_at": null,
+      "started_at": "2026-07-01",
+      "active": true
+    }
+  ],
+  "badge_sessions": [
+    {
+      "week_id": "week-1",
+      "id": "i9bmrfm0y1n",
+      "user_id": "mock-user-id-1234",
+      "created_at": "2026-07-14T13:25:07.750Z",
+      "updated_at": "2026-07-14T13:25:07.750Z"
+    }
+  ],
+  "nights": [
+    {
+      "updated_at": "2026-07-13T13:44:23.175Z",
+      "title": "Serata di Gala",
+      "night_date": "2026-07-09",
+      "notes": "Ottima affluenza.",
+      "id": "night-1",
+      "created_at": "2026-07-12T13:12:44.188Z",
+      "total": 600,
+      "is_closed": true
+    },
+    {
+      "is_closed": false,
+      "total": 300,
+      "created_at": "2026-07-13T13:44:06.697Z",
+      "id": "gr9k3ae0vd5",
+      "updated_at": "2026-07-13T13:44:06.697Z",
+      "night_date": "2026-07-13",
+      "title": null
+    }
+  ],
+  "conversion_settings": [
+    {
+      "max_eur_per_day": 2000,
+      "updated_at": "2026-07-12T13:12:44.188Z",
+      "max_dobloni_per_day": 10000,
+      "id": true
+    }
+  ],
+  "conversions": [
+    {
+      "created_by": "mock-user-id-1234",
+      "night_id": "night-1",
+      "dobloni_amount": 15000,
+      "input_amount": 1500,
+      "citizen_id": "citizen-2",
+      "direction": "cash_to_dobloni",
+      "eur_amount": 1500,
+      "id": "conv-fxcy3b9lhat",
+      "created_at": "2026-07-13T13:38:07.393Z"
+    },
+    {
+      "direction": "cash_to_dobloni",
+      "citizen_id": "citizen-2",
+      "input_amount": 500,
+      "dobloni_amount": 5000,
+      "night_id": "night-1",
+      "created_by": "mock-user-id-1234",
+      "created_at": "2026-07-13T13:38:50.476Z",
+      "eur_amount": 500,
+      "id": "conv-vnha4qv9ud8"
+    },
+    {
+      "night_id": "night-1",
+      "created_by": "mock-user-id-1234",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "citizen-2",
+      "dobloni_amount": 7600,
+      "input_amount": 7600,
+      "eur_amount": 570,
+      "id": "conv-ae8ukqrwg8",
+      "created_at": "2026-07-13T13:39:22.383Z"
+    },
+    {
+      "created_by": "mock-user-id-1234",
+      "night_id": "night-1",
+      "direction": "dobloni_to_cash",
+      "input_amount": 200,
+      "dobloni_amount": 200,
+      "citizen_id": "citizen-2",
+      "eur_amount": 15,
+      "id": "conv-tywkokib24",
+      "created_at": "2026-07-13T13:39:39.747Z"
+    },
+    {
+      "direction": "dobloni_to_cash",
+      "citizen_id": "citizen-2",
+      "dobloni_amount": 2000,
+      "input_amount": 2000,
+      "night_id": "night-1",
+      "created_by": "mock-user-id-1234",
+      "created_at": "2026-07-13T13:40:11.923Z",
+      "eur_amount": 150,
+      "id": "conv-dl7r8ttlqcn"
+    }
+  ],
+  "conversion_resets": [],
+  "stables": [
+    {
+      "owner_citizen_id": "citizen-1",
+      "id": "stable-1",
+      "name": "Scuderia San Siro"
+    }
+  ],
+  "horses": [
+    {
+      "id": "horse-1",
+      "name": "Vento di Ponente",
+      "stable_id": "stable-1",
+      "sponsor": "Rolex"
+    },
+    {
+      "stable_id": null,
+      "name": "Saetta",
+      "sponsor": null,
+      "id": "horse-2"
+    }
+  ],
+  "services": [
+    {
+      "id": "srv-1",
+      "is_qty_editable": true,
+      "updated_at": "2026-07-13T12:55:31.689Z",
+      "billing": "per_night",
+      "price": 150,
+      "include_in_nights": true,
+      "name": "Cena Gourmet",
+      "category_id": "cat-1"
+    },
+    {
+      "id": "srv-2",
+      "price": 300,
+      "billing": "per_night",
+      "category_id": "cat-2",
+      "name": "Guardia del corpo"
+    }
+  ],
+  "service_categories": [
+    {
+      "sort_order": 1,
+      "name": "Ristorazione",
+      "id": "cat-1"
+    },
+    {
+      "id": "cat-2",
+      "name": "Sicurezza",
+      "sort_order": 2
+    }
+  ],
+  "purchased_services": [],
+  "sanctions": [
+    {
+      "id": "wzi8ld5eufa",
+      "reason": "Richiamo di test",
+      "created_by_id": "mock-user-id-1234",
+      "updated_at": "2026-07-14T13:02:58.705Z",
+      "created_at": "2026-07-14T13:00:08.683Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "richiamo_verbale",
+      "expires_at": null,
+      "created_by_name": "Giuse84pro",
+      "is_active": false
+    },
+    {
+      "user_id": "user-mzd7g48d9j",
+      "created_at": "2026-07-14T13:02:12.077Z",
+      "created_by_id": "mock-user-id-1234",
+      "id": "sgnp11e689",
+      "reason": "Richiamo di test (2)",
+      "updated_at": "2026-07-14T13:02:58.707Z",
+      "created_by_name": "Giuse84pro",
+      "is_active": false,
+      "expires_at": null,
+      "type": "richiamo_verbale"
+    },
+    {
+      "type": "richiamo_verbale",
+      "expires_at": null,
+      "is_active": false,
+      "created_by_name": "Giuse84pro",
+      "updated_at": "2026-07-14T13:02:58.711Z",
+      "id": "z65r8fz108",
+      "reason": "Richiamo di test (3)",
+      "created_by_id": "mock-user-id-1234",
+      "created_at": "2026-07-14T13:02:58.702Z",
+      "user_id": "user-mzd7g48d9j"
+    },
+    {
+      "expires_at": null,
+      "type": "warn",
+      "is_active": false,
+      "created_by_name": "Sistema",
+      "updated_at": "2026-07-14T13:03:58.314Z",
+      "created_by_id": "system",
+      "id": "vkkxz7gtve",
+      "reason": "Conversione automatica: accumulo di 3 richiami verbali nel mese.",
+      "user_id": "user-mzd7g48d9j",
+      "created_at": "2026-07-14T13:02:58.712Z"
+    },
+    {
+      "is_active": false,
+      "created_by_name": "Giuse84pro",
+      "type": "sospensione",
+      "expires_at": "2026-07-15T13:03:43.310Z",
+      "created_at": "2026-07-14T13:03:58.314Z",
+      "user_id": "user-mzd7g48d9j",
+      "updated_at": "2026-07-14T13:04:48.937Z",
+      "id": "rioxy03i58s",
+      "reason": "Sospensione di test",
+      "created_by_id": "mock-user-id-1234"
+    },
+    {
+      "created_at": "2026-07-14T13:05:27.498Z",
+      "user_id": "user-mzd7g48d9j",
+      "updated_at": "2026-07-14T13:05:55.290Z",
+      "reason": "Espulsione di test",
+      "id": "ujs0p9mk3si",
+      "created_by_id": "mock-user-id-1234",
+      "is_active": false,
+      "created_by_name": "Giuse84pro",
+      "type": "espulsione",
+      "expires_at": null
+    }
+  ],
+  "night_items": [
+    {
+      "created_at": "2026-07-13T13:24:38.480Z",
+      "qty": 2,
+      "service_id": "srv-1",
+      "id": "laqj56jq07l",
+      "updated_at": "2026-07-13T13:24:38.480Z",
+      "service_name": "Cena Gourmet",
+      "subtotal": 300,
+      "citizen_id": "citizen-2",
+      "unit_price": 150,
+      "created_by": "mock-user-id-1234",
+      "night_id": "night-1"
+    },
+    {
+      "night_id": "night-1",
+      "created_by": "mock-user-id-1234",
+      "citizen_id": "citizen-2",
+      "subtotal": 300,
+      "unit_price": 300,
+      "service_id": "srv-2",
+      "id": "iopy8u0cyu8",
+      "service_name": "Guardia del corpo",
+      "updated_at": "2026-07-13T13:24:38.480Z",
+      "created_at": "2026-07-13T13:24:38.480Z",
+      "qty": 1
+    },
+    {
+      "created_by": "mock-user-id-1234",
+      "night_id": "gr9k3ae0vd5",
+      "unit_price": 300,
+      "subtotal": 300,
+      "citizen_id": "j323w5ywwgt",
+      "updated_at": "2026-07-13T13:45:02.751Z",
+      "service_name": "Guardia del corpo",
+      "id": "l14i0uq1gp",
+      "service_id": "srv-2",
+      "qty": 1,
+      "created_at": "2026-07-13T13:45:02.751Z"
+    }
+  ]
+}

@@ -1,0 +1,827 @@
+import fs from "fs";
+import path from "path";
+import { loadDbFromFirebase, saveDbToFirebase } from "../../lib/firebase.server";
+
+const DB_FILE = path.join(process.cwd(), "mock-db.json");
+
+function getInitialDb() {
+  const defaultUser = {
+    id: "mock-user-id-1234",
+    email: "beppemonti84@gmail.com",
+    user_metadata: { username: "admin", display_name: "Amministratore" },
+    created_at: new Date().toISOString(),
+  };
+
+  const db: Record<string, any[]> = {
+    profiles: [
+      {
+        id: "mock-user-id-1234",
+        username: "admin",
+        display_name: "Amministratore",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    user_roles: [
+      {
+        id: "role-1",
+        user_id: "mock-user-id-1234",
+        role: "admin",
+      },
+    ],
+    custom_roles: [
+      {
+        id: "crole-1",
+        name: "Cassiere",
+        description: "Gestione conversioni e incassi",
+        permissions: ["conversioni.visualizza", "conversioni.crea", "conversioni.azzera"],
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "crole-2",
+        name: "Croupier",
+        description: "Gestione tavoli e corse cavalli",
+        permissions: ["corse.visualizza", "corse.gestisci"],
+        created_at: new Date().toISOString(),
+      },
+    ],
+    user_custom_roles: [],
+    citizens: [
+      {
+        id: "citizen-1",
+        full_name: "Mario Rossi",
+        nickname: "Il Capo",
+        membership: "elite",
+        membership_since: "2026-01-01",
+        notes: "Cliente abituale di alta fascia.",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: "citizen-2",
+        full_name: "Giuseppe Bianchi",
+        nickname: "Pino",
+        membership: "standard",
+        membership_since: "2026-02-15",
+        notes: "Giocatore serale.",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    safe_boxes: Array.from({ length: 10 }, (_, i) => ({
+      id: `safe-${i + 1}`,
+      box_number: i + 1,
+      citizen_id: i === 0 ? "citizen-1" : null,
+      activated_at: i === 0 ? "2026-01-01" : null,
+      expires_at: i === 0 ? "2026-12-31" : null,
+      active: i === 0,
+      notes: i === 0 ? "Cassetta vip" : null,
+    })),
+    badge_weeks: [
+      {
+        id: "week-1",
+        label: "Settimana 1",
+        active: true,
+        started_at: "2026-07-01",
+        ended_at: null,
+        created_at: new Date().toISOString(),
+      },
+    ],
+    badge_sessions: [],
+    nights: [
+      {
+        id: "night-1",
+        night_date: "2026-07-09",
+        title: "Serata di Gala",
+        total: 3500,
+        notes: "Ottima affluenza.",
+        is_closed: false,
+        created_at: new Date().toISOString(),
+      },
+    ],
+    conversion_settings: [
+      {
+        id: true as any,
+        max_dobloni_per_day: 10000,
+        max_eur_per_day: 2000,
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    conversions: [],
+    conversion_resets: [],
+    stables: [
+      {
+        id: "stable-1",
+        name: "Scuderia San Siro",
+        owner_citizen_id: "citizen-1",
+      },
+    ],
+    horses: [
+      {
+        id: "horse-1",
+        name: "Vento di Ponente",
+        stable_id: "stable-1",
+        sponsor: "Rolex",
+      },
+      {
+        id: "horse-2",
+        name: "Saetta",
+        stable_id: null,
+        sponsor: null,
+      },
+    ],
+    services: [
+      {
+        id: "srv-1",
+        name: "Cena Gourmet",
+        billing: "per_night",
+        price: 150,
+        category_id: "cat-1",
+        include_in_nights: true,
+        is_qty_editable: false,
+        active: true,
+      },
+      {
+        id: "srv-2",
+        name: "Guardia del corpo",
+        billing: "per_night",
+        price: 300,
+        category_id: "cat-2",
+        include_in_nights: true,
+        is_qty_editable: true,
+        active: true,
+      },
+    ],
+    service_categories: [
+      {
+        id: "cat-1",
+        name: "Ristorazione",
+        sort_order: 1,
+      },
+      {
+        id: "cat-2",
+        name: "Sicurezza",
+        sort_order: 2,
+      },
+    ],
+    purchased_services: [],
+    sanctions: [],
+  };
+
+  return db;
+}
+
+let cachedDb: Record<string, any[]> | null = null;
+let isInitializing = false;
+let initPromise: Promise<Record<string, any[]>> | null = null;
+
+async function loadDb(): Promise<Record<string, any[]>> {
+  if (cachedDb) return cachedDb;
+
+  if (isInitializing && initPromise) {
+    return initPromise;
+  }
+
+  isInitializing = true;
+  initPromise = (async () => {
+    try {
+      console.log("[Firebase Sync] Attempting to load database from Firestore...");
+      const fbData = await loadDbFromFirebase();
+      if (fbData) {
+        console.log(
+          "[Firebase Sync] Successfully loaded database from Firestore. Merging with initial DB and updating local cache...",
+        );
+        const initialDb = getInitialDb();
+        cachedDb = { ...initialDb, ...fbData };
+        try {
+          fs.writeFileSync(DB_FILE, JSON.stringify(cachedDb, null, 2), "utf-8");
+        } catch (e) {
+          console.error("Error saving local DB cache:", e);
+        }
+        return cachedDb;
+      }
+    } catch (err) {
+      console.error("[Firebase Sync] Failed to load from Firebase:", err);
+    }
+
+    console.log("[Firebase Sync] Falling back to local mock-db.json...");
+    let localDb: Record<string, any[]> | null = null;
+    try {
+      if (fs.existsSync(DB_FILE)) {
+        const raw = fs.readFileSync(DB_FILE, "utf-8");
+        localDb = JSON.parse(raw);
+      }
+    } catch (e) {
+      console.error("Error loading mock db from file:", e);
+    }
+
+    if (!localDb) {
+      console.log("[Firebase Sync] No local mock DB found. Creating initial DB...");
+      localDb = getInitialDb();
+    }
+
+    cachedDb = localDb;
+
+    console.log("[Firebase Sync] Seeding Firestore with database state...");
+    saveDbToFirebase(localDb).catch((err) => {
+      console.error("[Firebase Sync] Failed to seed Firestore in background:", err);
+    });
+
+    return cachedDb;
+  })();
+
+  const result = await initPromise;
+  isInitializing = false;
+  initPromise = null;
+  return result;
+}
+
+function saveDb(db: Record<string, any[]>) {
+  cachedDb = db;
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error saving mock db:", e);
+  }
+
+  console.log("[Firebase Sync] Saving database state to Firestore in background...");
+  saveDbToFirebase(db).catch((err) => {
+    console.error("[Firebase Sync] Failed to save database state to Firestore:", err);
+  });
+}
+
+function recalculateNightsTotals(db: Record<string, any[]>) {
+  const nights = db.nights || [];
+  const nightItems = db.night_items || [];
+  const totals: Record<string, number> = {};
+
+  nightItems.forEach((item) => {
+    if (item.night_id) {
+      totals[item.night_id] = (totals[item.night_id] || 0) + Number(item.subtotal || 0);
+    }
+  });
+
+  db.nights = nights.map((night) => ({
+    ...night,
+    total: totals[night.id] || 0,
+  }));
+}
+
+export async function queryMockDb(query: any): Promise<{ data: any; error: any }> {
+  const db = await loadDb();
+  const {
+    table,
+    operation,
+    selectColumns,
+    filters = [],
+    orderBy,
+    limitCount,
+    insertData,
+    updateData,
+    isMaybeSingle,
+    isSingle,
+    name,
+    args,
+  } = query;
+
+  // Handle RPCs
+  if (operation === "rpc") {
+    if (name === "user_permissions") {
+      const userId = args._user_id;
+      // Get custom roles for user
+      const userCustomRoles = db.user_custom_roles || [];
+      const customRoles = db.custom_roles || [];
+      const assignedRoleIds = userCustomRoles
+        .filter((ucr: any) => ucr.user_id === userId)
+        .map((ucr: any) => ucr.custom_role_id);
+
+      const permissionsSet = new Set<string>();
+      customRoles
+        .filter((cr: any) => assignedRoleIds.includes(cr.id))
+        .forEach((cr: any) => {
+          (cr.permissions || []).forEach((p: string) => permissionsSet.add(p));
+        });
+
+      return { data: Array.from(permissionsSet), error: null };
+    }
+    if (name === "is_admin") {
+      const userId = args._user_id;
+      const userRoles = db.user_roles || [];
+      const isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
+      return { data: isAdmin, error: null };
+    }
+    if (name === "has_permission") {
+      const userId = args._user_id;
+      const perm = args._perm;
+      const userRoles = db.user_roles || [];
+      const isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
+      if (isAdmin) return { data: true, error: null };
+
+      const userCustomRoles = db.user_custom_roles || [];
+      const customRoles = db.custom_roles || [];
+      const assignedRoleIds = userCustomRoles
+        .filter((ucr: any) => ucr.user_id === userId)
+        .map((ucr: any) => ucr.custom_role_id);
+
+      const hasPerm = customRoles
+        .filter((cr: any) => assignedRoleIds.includes(cr.id))
+        .some((cr: any) => (cr.permissions || []).includes(perm));
+
+      return { data: hasPerm, error: null };
+    }
+    if (name === "conversion_usage") {
+      const citizenId = args._citizen;
+      const nightId = args._night;
+      const direction = args._direction;
+
+      const resets = db.conversion_resets || [];
+      const resetsForDir = resets.filter(
+        (r: any) =>
+          r.citizen_id === citizenId && r.night_id === nightId && r.direction === direction,
+      );
+      let lastResetTime = 0;
+      if (resetsForDir.length > 0) {
+        lastResetTime = Math.max(
+          ...resetsForDir.map((r: any) => new Date(r.reset_at || r.created_at).getTime()),
+        );
+      }
+
+      const conversions = db.conversions || [];
+      const relevantConversions = conversions.filter(
+        (c: any) =>
+          c.citizen_id === citizenId &&
+          c.night_id === nightId &&
+          c.direction === direction &&
+          new Date(c.created_at).getTime() > lastResetTime,
+      );
+
+      const total = relevantConversions.reduce((sum: number, c: any) => {
+        if (direction === "cash_to_dobloni") {
+          return sum + Number(c.eur_amount || 0);
+        } else {
+          return sum + Number(c.dobloni_amount || 0);
+        }
+      }, 0);
+
+      return { data: total, error: null };
+    }
+    if (name === "perform_conversion") {
+      const citizenId = args._citizen;
+      const nightId = args._night;
+      const direction = args._direction;
+      const input = Number(args._input);
+
+      if (!citizenId || !nightId) {
+        return { data: null, error: { message: "Seleziona cittadino e serata" } };
+      }
+      if (isNaN(input) || input <= 0) {
+        return { data: null, error: { message: "Importo non valido" } };
+      }
+
+      const settingsList = db.conversion_settings || [];
+      const settings = settingsList[0] || { max_dobloni_per_day: 10000, max_eur_per_day: 2000 };
+      const maxEur = Number(settings.max_eur_per_day ?? 2000);
+      const maxDob = Number(settings.max_dobloni_per_day ?? 10000);
+
+      let eur = 0;
+      let dob = 0;
+      let limit = 0;
+      let requested = 0;
+
+      if (direction === "cash_to_dobloni") {
+        eur = input;
+        dob = input * 10;
+        requested = eur;
+        limit = maxEur;
+      } else {
+        dob = input;
+        eur = input * 0.075; // 75% rate
+        requested = dob;
+        limit = maxDob;
+
+        if (dob < 40) {
+          return { data: null, error: { message: "Minimo 40 dobloni per la conversione" } };
+        }
+        if (dob % 40 !== 0) {
+          return {
+            data: null,
+            error: { message: "L'importo deve essere un multiplo di 40 dobloni" },
+          };
+        }
+      }
+
+      const resets = db.conversion_resets || [];
+      const resetsForDir = resets.filter(
+        (r: any) =>
+          r.citizen_id === citizenId && r.night_id === nightId && r.direction === direction,
+      );
+      let lastResetTime = 0;
+      if (resetsForDir.length > 0) {
+        lastResetTime = Math.max(
+          ...resetsForDir.map((r: any) => new Date(r.reset_at || r.created_at).getTime()),
+        );
+      }
+
+      const conversions = db.conversions || [];
+      const relevantConversions = conversions.filter(
+        (c: any) =>
+          c.citizen_id === citizenId &&
+          c.night_id === nightId &&
+          c.direction === direction &&
+          new Date(c.created_at).getTime() > lastResetTime,
+      );
+
+      const usage = relevantConversions.reduce((sum: number, c: any) => {
+        if (direction === "cash_to_dobloni") {
+          return sum + Number(c.eur_amount || 0);
+        } else {
+          return sum + Number(c.dobloni_amount || 0);
+        }
+      }, 0);
+
+      if (usage + requested > limit) {
+        return {
+          data: null,
+          error: {
+            message: `Limite giornaliero superato: rimasti ${Math.max(0, limit - usage)} (richiesti ${requested})`,
+          },
+        };
+      }
+
+      const newConversion = {
+        id: "conv-" + Math.random().toString(36).substring(2, 15),
+        citizen_id: citizenId,
+        night_id: nightId,
+        direction,
+        input_amount: input,
+        eur_amount: eur,
+        dobloni_amount: dob,
+        created_by: "mock-user-id-1234",
+        created_at: new Date().toISOString(),
+      };
+
+      db.conversions = [...conversions, newConversion];
+      saveDb(db);
+
+      return { data: newConversion, error: null };
+    }
+    return { data: null, error: { message: `RPC ${name} not implemented in mock` } };
+  }
+
+  if (!table) {
+    return { data: null, error: { message: "No table specified" } };
+  }
+
+  if (!db[table]) {
+    db[table] = [];
+  }
+
+  const items = db[table];
+
+  if (operation === "select") {
+    let filtered = [...items];
+
+    if (table === "badge_sessions") {
+      filtered = filtered.map((item) => ({
+        ...item,
+        started_at: item.started_at || item.created_at || new Date().toISOString(),
+      }));
+    }
+    if (table === "badge_weeks") {
+      filtered = filtered.map((item) => ({
+        ...item,
+        started_at: item.started_at || item.created_at || new Date().toISOString(),
+      }));
+    }
+
+    // Apply filters
+    for (const filter of filters) {
+      const { column, value, op } = filter;
+      if (op === "eq") {
+        filtered = filtered.filter((item) => {
+          let itemVal = item[column];
+          if (column === "active" && table === "services" && itemVal === undefined) {
+            itemVal = true;
+          }
+          return itemVal === value;
+        });
+      } else if (op === "neq") {
+        filtered = filtered.filter((item) => {
+          let itemVal = item[column];
+          if (column === "active" && table === "services" && itemVal === undefined) {
+            itemVal = true;
+          }
+          return itemVal !== value;
+        });
+      } else if (op === "is") {
+        filtered = filtered.filter((item) => {
+          const itemVal = item[column];
+          if (value === null) {
+            return itemVal === null || itemVal === undefined;
+          }
+          return itemVal === value;
+        });
+      } else if (op === "in") {
+        filtered = filtered.filter((item) => {
+          let itemVal = item[column];
+          if (column === "active" && table === "services" && itemVal === undefined) {
+            itemVal = true;
+          }
+          return Array.isArray(value) && value.includes(itemVal);
+        });
+      }
+    }
+
+    // Apply sorting
+    if (orderBy) {
+      const { column, ascending } = orderBy;
+      filtered.sort((a, b) => {
+        const valA = a[column];
+        const valB = b[column];
+        if (valA === valB) return 0;
+        if (valA === null || valA === undefined) return 1;
+        if (valB === null || valB === undefined) return -1;
+        const cmp = valA < valB ? -1 : 1;
+        return ascending ? cmp : -cmp;
+      });
+    }
+
+    // Apply limit
+    if (limitCount !== null && limitCount !== undefined) {
+      filtered = filtered.slice(0, limitCount);
+    }
+
+    // Handle nested joins
+    // e.g. select("*, citizens(full_name)") or select("*, custom_roles(name)")
+    const cleanSelect = selectColumns ? selectColumns.replace(/\s+/g, "") : "";
+    if (
+      cleanSelect &&
+      (cleanSelect.includes("citizens(") ||
+        cleanSelect.includes("custom_roles(") ||
+        cleanSelect.includes("user_roles(") ||
+        cleanSelect.includes("nights(") ||
+        cleanSelect.includes("service_categories("))
+    ) {
+      filtered = filtered.map((item) => {
+        const newItem = { ...item };
+        if (table === "profiles") {
+          const userRoles = db.user_roles || [];
+          const customRoles = db.custom_roles || [];
+          const userCustomRoles = db.user_custom_roles || [];
+
+          newItem.user_roles = userRoles
+            .filter((ur: any) => ur.user_id === item.id)
+            .map((ur: any) => ({ role: ur.role }));
+
+          const assignedRoleIds = userCustomRoles
+            .filter((ucr: any) => ucr.user_id === item.id)
+            .map((ucr: any) => ucr.custom_role_id);
+
+          newItem.custom_roles = customRoles
+            .filter((cr: any) => assignedRoleIds.includes(cr.id))
+            .map((cr: any) => ({ id: cr.id, name: cr.name }));
+        }
+        if (
+          table === "safe_boxes" ||
+          table === "stables" ||
+          table === "conversions" ||
+          table === "conversion_resets" ||
+          table === "purchased_services" ||
+          table === "night_items"
+        ) {
+          const citizens = db.citizens || [];
+          const citizen = citizens.find((c: any) => c.id === item.citizen_id);
+          newItem.citizens = citizen ? { ...citizen } : null;
+        }
+        if (
+          table === "conversions" ||
+          table === "conversion_resets" ||
+          table === "purchased_services" ||
+          table === "night_items"
+        ) {
+          const nights = db.nights || [];
+          const night = nights.find((n: any) => n.id === item.night_id);
+          newItem.nights = night ? { night_date: night.night_date, title: night.title } : null;
+        }
+        if (table === "user_custom_roles") {
+          const customRoles = db.custom_roles || [];
+          const customRole = customRoles.find((r: any) => r.id === item.custom_role_id);
+          newItem.custom_roles = customRole ? { name: customRole.name } : null;
+        }
+        if (table === "services") {
+          const categories = db.service_categories || [];
+          const category = categories.find((c: any) => c.id === item.category_id);
+          newItem.service_categories = category
+            ? { name: category.name, sort_order: category.sort_order }
+            : null;
+        }
+        return newItem;
+      });
+    }
+
+    if (isSingle) {
+      if (filtered.length === 0) {
+        return { data: null, error: { message: "No rows found", code: "PGRST116" } };
+      }
+      return { data: filtered[0], error: null };
+    }
+
+    if (isMaybeSingle) {
+      return { data: filtered[0] || null, error: null };
+    }
+
+    return { data: filtered, error: null };
+  }
+
+  if (operation === "insert") {
+    const rowsToInsert = Array.isArray(insertData) ? insertData : [insertData];
+    const insertedRows = rowsToInsert.map((row) => ({
+      id: row.id || Math.random().toString(36).substring(2, 15),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ...(table === "services" ? { active: true } : {}),
+      ...(table === "badge_sessions"
+        ? { started_at: row.started_at || new Date().toISOString(), ended_at: null }
+        : {}),
+      ...(table === "badge_weeks"
+        ? { started_at: row.started_at || new Date().toISOString(), active: true, ended_at: null }
+        : {}),
+      ...row,
+    }));
+
+    db[table] = [...db[table], ...insertedRows];
+    if (table === "night_items") {
+      recalculateNightsTotals(db);
+    }
+    saveDb(db);
+
+    return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
+  }
+
+  if (operation === "update") {
+    const updatedRows: any[] = [];
+    db[table] = db[table].map((item) => {
+      let isMatch = true;
+      for (const filter of filters) {
+        const { column, value, op } = filter;
+        if (op === "eq" && item[column] !== value) isMatch = false;
+        if (op === "neq" && item[column] === value) isMatch = false;
+      }
+
+      if (isMatch) {
+        const updated = { ...item, ...updateData, updated_at: new Date().toISOString() };
+        updatedRows.push(updated);
+        return updated;
+      }
+      return item;
+    });
+
+    if (table === "night_items") {
+      recalculateNightsTotals(db);
+    }
+    saveDb(db);
+    return { data: updatedRows, error: null };
+  }
+
+  if (operation === "delete") {
+    const deletedRows: any[] = [];
+    db[table] = db[table].filter((item) => {
+      let isMatch = true;
+      for (const filter of filters) {
+        const { column, value, op } = filter;
+        if (op === "eq" && item[column] !== value) isMatch = false;
+        if (op === "neq" && item[column] === value) isMatch = false;
+      }
+
+      if (isMatch) {
+        deletedRows.push(item);
+        return false;
+      }
+      return true;
+    });
+
+    if (table === "night_items") {
+      recalculateNightsTotals(db);
+    }
+    saveDb(db);
+    return { data: deletedRows, error: null };
+  }
+
+  return { data: null, error: { message: `Operation ${operation} not implemented` } };
+}
+
+export async function handleMockAuth(query: any): Promise<any> {
+  const db = await loadDb();
+  const { action, payload } = query;
+
+  if (action === "getSession") {
+    const session = getActiveSession(db);
+    return { data: { session }, error: null };
+  }
+
+  if (action === "getUser") {
+    const session = getActiveSession(db);
+    return { data: { user: session?.user ?? null }, error: null };
+  }
+
+  if (action === "signUp") {
+    const { email, password, options } = payload;
+    const username = options?.data?.username || email.split("@")[0];
+    const display_name = options?.data?.display_name || username;
+
+    const existingUser = db.profiles.find((p) => p.username === username);
+    if (existingUser) {
+      return { data: { user: null }, error: { message: "Utente già esistente." } };
+    }
+
+    const newUserId = "user-" + Math.random().toString(36).substring(2, 15);
+    const newProfile = {
+      id: newUserId,
+      username,
+      display_name,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    db.profiles.push(newProfile);
+
+    // Auto-role assignment: first is admin, others are staff
+    const role = db.profiles.length === 1 ? "admin" : "staff";
+    db.user_roles.push({
+      id: "role-" + Math.random().toString(36).substring(2, 15),
+      user_id: newUserId,
+      role,
+    });
+
+    saveDb(db);
+
+    // Save as current active mock session
+    const mockUser = {
+      id: newUserId,
+      email,
+      user_metadata: { username, display_name },
+    };
+    // Return session
+    const session = {
+      access_token: `mock-token-${newUserId}`,
+      token_type: "bearer",
+      expires_in: 3600,
+      refresh_token: "mock-refresh",
+      user: mockUser,
+    };
+
+    return { data: { user: mockUser, session }, error: null };
+  }
+
+  if (action === "signInWithPassword") {
+    const { email, password } = payload;
+    const username = email.split("@")[0];
+    const profile = db.profiles.find((p) => p.username.toLowerCase() === username.toLowerCase());
+
+    if (!profile) {
+      return { data: { session: null }, error: { message: "Credenziali non valide." } };
+    }
+
+    const mockUser = {
+      id: profile.id,
+      email,
+      user_metadata: { username: profile.username, display_name: profile.display_name },
+    };
+
+    const session = {
+      access_token: `mock-token-${profile.id}`,
+      token_type: "bearer",
+      expires_in: 3600,
+      refresh_token: "mock-refresh",
+      user: mockUser,
+    };
+
+    return { data: { user: mockUser, session }, error: null };
+  }
+
+  if (action === "signOut") {
+    return { error: null };
+  }
+
+  return { data: null, error: { message: `Auth action ${action} not implemented` } };
+}
+
+function getActiveSession(db: any) {
+  // Return the default admin user session
+  const adminProfile = db.profiles[0] || {
+    id: "mock-user-id-1234",
+    username: "admin",
+    display_name: "Amministratore",
+  };
+  return {
+    access_token: "mock-access-token-xyz",
+    token_type: "bearer",
+    expires_in: 3600,
+    refresh_token: "mock-refresh-token",
+    user: {
+      id: adminProfile.id,
+      email: `${adminProfile.username}@revenge.local`,
+      user_metadata: { username: adminProfile.username, display_name: adminProfile.display_name },
+    },
+  };
+}

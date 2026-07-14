@@ -1,0 +1,10 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "casinorevenge"
+compatibility_date = "2026-07-04"
+pages_build_output_dir = ".output/public"
+
+[vars]
+VITE_SUPABASE_URL = "https://cmjbvjagilykfzqkzkti.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_EI9KI6VCxtheDLf7T9NcPg_5VyMTFXd"
+SUPABASE_URL = "https://cmjbvjagilykfzqkzkti.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_EI9KI6VCxtheDLf7T9NcPg_5VyMTFXd"
