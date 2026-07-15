@@ -106,6 +106,22 @@ class MockPostgrestBuilder {
   }
 }
 
+function setCookie(name: string, value: string, days: number) {
+  if (typeof document === "undefined") return;
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+}
+
+function eraseCookie(name: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = name + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+}
+
 class MockSupabaseClient {
   private listeners: Set<(event: string, session: any) => void> = new Set();
   private cachedSession: any = null;
@@ -144,10 +160,31 @@ class MockSupabaseClient {
       if (this.hasLoadedSession) {
         return { data: { session: this.cachedSession }, error: null };
       }
-      const res = await mockAuthProxy({ data: { action: "getSession" } });
-      this.cachedSession = res.data?.session ?? null;
+
+      if (typeof window !== "undefined") {
+        const storedStr = localStorage.getItem("casinorevenge_session");
+        if (storedStr) {
+          try {
+            const parsed = JSON.parse(storedStr);
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            if (parsed.createdAt && now - parsed.createdAt < oneDayMs) {
+              this.cachedSession = parsed.session;
+              this.hasLoadedSession = true;
+              return { data: { session: parsed.session }, error: null };
+            } else {
+              localStorage.removeItem("casinorevenge_session");
+              eraseCookie("casino_userId");
+            }
+          } catch (e) {
+            console.error("Error parsing stored session:", e);
+          }
+        }
+      }
+
+      this.cachedSession = null;
       this.hasLoadedSession = true;
-      return res;
+      return { data: { session: null }, error: null };
     },
     getUser: async () => {
       const { data } = await this.auth.getSession();
@@ -156,6 +193,16 @@ class MockSupabaseClient {
     signUp: async (data: any) => {
       const res = await mockAuthProxy({ data: { action: "signUp", payload: data } });
       if (res.data?.session) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            "casinorevenge_session",
+            JSON.stringify({
+              session: res.data.session,
+              createdAt: Date.now(),
+            }),
+          );
+          setCookie("casino_userId", res.data.session.user.id, 1);
+        }
         this.notify("SIGNED_IN", res.data.session);
       }
       return res;
@@ -163,12 +210,26 @@ class MockSupabaseClient {
     signInWithPassword: async (data: any) => {
       const res = await mockAuthProxy({ data: { action: "signInWithPassword", payload: data } });
       if (res.data?.session) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            "casinorevenge_session",
+            JSON.stringify({
+              session: res.data.session,
+              createdAt: Date.now(),
+            }),
+          );
+          setCookie("casino_userId", res.data.session.user.id, 1);
+        }
         this.notify("SIGNED_IN", res.data.session);
       }
       return res;
     },
     signOut: async () => {
       const res = await mockAuthProxy({ data: { action: "signOut" } });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("casinorevenge_session");
+        eraseCookie("casino_userId");
+      }
       this.notify("SIGNED_OUT", null);
       return res;
     },

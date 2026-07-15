@@ -7,14 +7,43 @@ import type { Database } from "./types";
 export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const req = getRequest();
+    const cookieHeader = req?.headers?.get("cookie") || "";
+    const cookies = Object.fromEntries(
+      cookieHeader.split(";").map((c) => {
+        const parts = c.trim().split("=");
+        return [parts[0], parts.slice(1).join("=")];
+      }),
+    );
+
+    const userId = cookies["casino_userId"];
+
+    if (!userId) {
+      throw new Error("Non autenticato: sessione non trovata.");
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, username, display_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new Error("Sessione non valida o utente non trovato.");
+    }
+
     return next({
       context: {
         supabase: supabaseAdmin,
-        userId: "mock-user-id-1234",
+        userId: profile.id,
         claims: {
-          sub: "mock-user-id-1234",
-          email: "beppemonti84@gmail.com",
-          user_metadata: { username: "admin", display_name: "Amministratore" },
+          sub: profile.id,
+          email: `${profile.username}@revenge.local`,
+          user_metadata: {
+            username: profile.username,
+            display_name: profile.display_name,
+          },
         },
       },
     });

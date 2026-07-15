@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { loadDbFromFirebase, saveDbToFirebase } from "../../lib/firebase.server";
+import { getRequest } from "@tanstack/react-start/server";
 
 const DB_FILE = path.join(process.cwd(), "mock-db.json");
 
@@ -807,21 +808,37 @@ export async function handleMockAuth(query: any): Promise<any> {
 }
 
 function getActiveSession(db: any) {
-  // Return the default admin user session
-  const adminProfile = db.profiles[0] || {
-    id: "mock-user-id-1234",
-    username: "admin",
-    display_name: "Amministratore",
-  };
-  return {
-    access_token: "mock-access-token-xyz",
-    token_type: "bearer",
-    expires_in: 3600,
-    refresh_token: "mock-refresh-token",
-    user: {
-      id: adminProfile.id,
-      email: `${adminProfile.username}@revenge.local`,
-      user_metadata: { username: adminProfile.username, display_name: adminProfile.display_name },
-    },
-  };
+  try {
+    const req = getRequest();
+    const cookieHeader = req?.headers?.get("cookie") || "";
+    const cookies = Object.fromEntries(
+      cookieHeader.split(";").map((c: string) => {
+        const parts = c.trim().split("=");
+        return [parts[0], parts.slice(1).join("=")];
+      }),
+    );
+    const userId = cookies["casino_userId"];
+    if (userId) {
+      const profile = db.profiles.find((p: any) => p.id === userId);
+      if (profile) {
+        return {
+          access_token: `mock-token-${profile.id}`,
+          token_type: "bearer",
+          expires_in: 86400,
+          refresh_token: "mock-refresh",
+          user: {
+            id: profile.id,
+            email: `${profile.username}@revenge.local`,
+            user_metadata: {
+              username: profile.username,
+              display_name: profile.display_name,
+            },
+          },
+        };
+      }
+    }
+  } catch (e) {
+    console.error("[Supabase Mock Server] Error reading session cookie:", e);
+  }
+  return null;
 }
