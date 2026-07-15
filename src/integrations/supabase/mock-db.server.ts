@@ -167,6 +167,7 @@ function getInitialDb() {
     ],
     purchased_services: [],
     sanctions: [],
+    leave_requests: [],
   };
 
   return db;

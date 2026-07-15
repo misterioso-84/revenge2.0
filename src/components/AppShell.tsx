@@ -50,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     isAdmin,
     customRoleNames,
     activeSuspension,
+    activeLeave,
     permissions = [],
     loading,
   } = useAuth();
@@ -223,6 +224,74 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Button>
             <p className="text-[10px] text-center text-slate-500">
               Contatta un amministratore o il Vice Capitano se ritieni che si tratti di un errore.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeLeave) {
+    const startDateFormatted = new Date(activeLeave.start_date).toLocaleDateString("it-IT", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const endDateFormatted = new Date(activeLeave.end_date).toLocaleDateString("it-IT", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-8 space-y-6 shadow-2xl shadow-amber-500/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="h-14 w-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center animate-pulse">
+              <span className="text-3xl">🌴</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white uppercase">In Congedo</h1>
+            <p className="text-sm text-slate-400">
+              Il tuo account è temporaneamente in congedo approvato.
+            </p>
+          </div>
+
+          <div className="border-t border-slate-800 pt-5 space-y-4 text-sm">
+            <div className="flex justify-between py-1 border-b border-slate-800/50">
+              <span className="text-slate-400 font-medium">Stato:</span>
+              <span className="font-semibold text-amber-400 uppercase">Congedo Attivo</span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-slate-800/50">
+              <span className="text-slate-400 font-medium">Periodo:</span>
+              <span className="font-semibold text-slate-200">
+                Dal {startDateFormatted} al {endDateFormatted}
+              </span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-slate-800/50">
+              <span className="text-slate-400 font-medium">Approvato da:</span>
+              <span className="font-semibold text-slate-200">
+                {activeLeave.approved_by_name || "Amministratore"}
+              </span>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+              <span className="text-slate-400 font-medium block">Motivazione congedo:</span>
+              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-300 italic text-xs leading-relaxed">
+                "{activeLeave.reason || "Nessuna motivazione specificata."}"
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" onClick={signOut}>
+              Scollegati
+            </Button>
+            <p className="text-[10px] text-center text-slate-500">
+              Il tuo accesso verrà ripristinato automaticamente al termine del periodo di congedo.
             </p>
           </div>
         </div>

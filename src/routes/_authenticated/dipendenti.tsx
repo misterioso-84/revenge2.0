@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -15,7 +16,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SanctionsDialog } from "@/components/SanctionsDialog";
-import { Clock, Calendar, ShieldAlert, AlertTriangle, UserCheck, Search } from "lucide-react";
+import {
+  Clock,
+  Calendar,
+  ShieldAlert,
+  AlertTriangle,
+  UserCheck,
+  Search,
+  Check,
+  X,
+  Palmtree,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/dipendenti")({
@@ -55,12 +66,74 @@ function fmtDur(sec: number) {
 
 function DipendentiPage() {
   const { user, isAdmin, permissions = [] } = useAuth();
+  const qc = useQueryClient();
   const [sanctionsTarget, setSanctionsTarget] = useState<Prof | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"presenze" | "congedi">("presenze");
 
   const canVedere = isAdmin || permissions.includes("badge.visualizza");
   const canSanzioni = isAdmin || permissions.includes("dipendenti.sanzioni");
+  const canGestisciCongedi = isAdmin || permissions.includes("congedi.gestisci");
   const canRead = canVedere;
+
+  // Fetch all leave requests for administration
+  const { data: allLeaves = [], isLoading: isLoadingLeaves } = useQuery({
+    queryKey: ["all-leaves"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: canGestisciCongedi,
+    refetchInterval: 5000,
+  });
+
+  // Handle leave decision mutation
+  const handleLeaveDecision = useMutation({
+    mutationFn: async ({ id, decision }: { id: string; decision: "approved" | "rejected" }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData.user?.id;
+
+      let deciderName = "Amministratore";
+      if (currentUserId) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("display_name, username")
+          .eq("id", currentUserId)
+          .maybeSingle();
+        if (prof) {
+          deciderName = prof.display_name || prof.username || "Amministratore";
+        }
+      }
+
+      const { error } = await supabase
+        .from("leave_requests")
+        .update({
+          status: decision,
+          approved_by: currentUserId,
+          approved_by_name: deciderName,
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(
+        variables.decision === "approved"
+          ? "Richiesta di congedo approvata con successo!"
+          : "Richiesta di congedo rifiutata.",
+      );
+      qc.invalidateQueries({ queryKey: ["all-leaves"] });
+      qc.invalidateQueries({ queryKey: ["my-leaves"] });
+      qc.invalidateQueries({ queryKey: ["auth"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message);
+    },
+  });
 
   // Keep a live ticker for active session elapsed time
   const [now, setNow] = useState(Date.now());
@@ -203,133 +276,301 @@ function DipendentiPage() {
         </div>
 
         {/* Settimana selector */}
-        <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
-          <Calendar className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Settimana:
-          </span>
-          <select
-            value={weekId ?? ""}
-            onChange={(e) => setSelectedWeekId(e.target.value || null)}
-            className="rounded bg-slate-800 border border-slate-700 text-white text-sm px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+        {activeTab === "presenze" && (
+          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+            <Calendar className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              Settimana:
+            </span>
+            <select
+              value={weekId ?? ""}
+              onChange={(e) => setSelectedWeekId(e.target.value || null)}
+              className="rounded bg-slate-800 border border-slate-700 text-white text-sm px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {weeks.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.label} {w.active ? "(Attiva)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs bar for Leave Requests & Presenze */}
+      {canGestisciCongedi && (
+        <div className="flex border-b border-slate-800 gap-6 text-sm mb-6">
+          <button
+            onClick={() => setActiveTab("presenze")}
+            className={`pb-3 font-semibold uppercase tracking-wider text-xs transition-all ${
+              activeTab === "presenze"
+                ? "border-b-2 border-primary text-primary"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
           >
-            {weeks.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.label} {w.active ? "(Attiva)" : ""}
-              </option>
-            ))}
-          </select>
+            Presenze & Sanzioni
+          </button>
+          <button
+            onClick={() => setActiveTab("congedi")}
+            className={`pb-3 font-semibold uppercase tracking-wider text-xs transition-all flex items-center gap-1.5 ${
+              activeTab === "congedi"
+                ? "border-b-2 border-primary text-primary"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Palmtree className="h-3.5 w-3.5 text-amber-500" /> Richieste di Congedo
+            {allLeaves.filter((l: any) => l.status === "pending").length > 0 && (
+              <Badge className="bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-[10px] px-1.5 py-0.2 ml-1">
+                {allLeaves.filter((l: any) => l.status === "pending").length}
+              </Badge>
+            )}
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-xl px-3.5 py-2.5 max-w-md">
-        <Search className="h-4 w-4 text-slate-400 shrink-0" />
-        <Input
-          placeholder="Cerca dipendente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-0 bg-transparent text-white p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-500"
-        />
-      </div>
-
-      <Card className="bg-slate-900 border-slate-800 text-white shadow-xl">
-        <CardHeader className="border-b border-slate-800">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" /> Tabella Presenze & Sanzioni
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-slate-950/40 border-slate-800">
-              <TableRow>
-                <TableHead className="text-slate-400">Nome / Username</TableHead>
-                <TableHead className="text-slate-400">Badge Stato</TableHead>
-                <TableHead className="text-slate-400 text-center">N. Sessioni</TableHead>
-                <TableHead className="text-slate-400 text-right">Tempo Totale (HH:MM:SS)</TableHead>
-                <TableHead className="text-slate-400 text-right w-40">Gestione</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingProfiles ? (
+      {activeTab === "congedi" && canGestisciCongedi ? (
+        <Card className="bg-slate-900 border-slate-800 text-white shadow-xl">
+          <CardHeader className="border-b border-slate-800 pb-4">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Palmtree className="h-5 w-5 text-amber-500" /> Approva o Rifiuta Richieste di Congedo
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Gestione centralizzata dei congedi temporanei degli operatori del Casinò.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 animate-fade-in">
+            <Table>
+              <TableHeader className="bg-slate-950/40 border-slate-800">
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-slate-400 italic">
-                    Caricamento dipendenti...
-                  </TableCell>
+                  <TableHead className="text-slate-400">Dipendente</TableHead>
+                  <TableHead className="text-slate-400">Periodo Congedo</TableHead>
+                  <TableHead className="text-slate-400">Motivazione</TableHead>
+                  <TableHead className="text-slate-400">Stato</TableHead>
+                  <TableHead className="text-slate-400 text-right w-52">Gestione</TableHead>
                 </TableRow>
-              ) : filteredProfiles.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-slate-400">
-                    Nessun dipendente trovato.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredProfiles.map((p) => {
-                  const isActive = activeUserMap.has(p.id);
-                  const totalSec = totals.get(p.id) ?? 0;
-                  const count = sessionCounts.get(p.id) ?? 0;
+              </TableHeader>
+              <TableBody>
+                {isLoadingLeaves ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-slate-400 italic">
+                      Caricamento richieste di congedo...
+                    </TableCell>
+                  </TableRow>
+                ) : allLeaves.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+                      <Palmtree className="h-10 w-10 text-slate-700 mx-auto mb-2" />
+                      Nessun congedo richiesto finora.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  allLeaves.map((l: any) => {
+                    const start = new Date(l.start_date);
+                    const end = new Date(l.end_date);
+                    const daysCount =
+                      Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
 
-                  return (
-                    <TableRow
-                      key={p.id}
-                      className="border-b border-slate-800/60 hover:bg-slate-800/20"
-                    >
-                      {/* Name/Username */}
-                      <TableCell className="font-semibold text-slate-100">
-                        <div>
-                          <div>{p.display_name ?? p.username}</div>
-                          {p.display_name && (
+                    return (
+                      <TableRow key={l.id} className="border-slate-800/60 hover:bg-slate-950/20">
+                        <TableCell className="font-semibold text-slate-100 py-3.5">
+                          <div>
+                            <div>{l.display_name || l.username}</div>
                             <div className="text-[10px] font-mono text-slate-500 font-normal">
-                              @{p.username}
+                              @{l.username}
                             </div>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Badge status */}
-                      <TableCell>
-                        {isActive ? (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-semibold uppercase tracking-wider animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                            In servizio
                           </div>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700/50 text-xs font-semibold uppercase tracking-wider">
-                            Fuori servizio
+                        </TableCell>
+
+                        <TableCell className="text-xs">
+                          <div className="font-medium text-slate-300">
+                            Dal {start.toLocaleDateString("it-IT")} al{" "}
+                            {end.toLocaleDateString("it-IT")}
                           </div>
-                        )}
-                      </TableCell>
+                          <div className="text-[10px] text-slate-500">
+                            Durata: {daysCount} {daysCount === 1 ? "giorno" : "giorni"}
+                          </div>
+                        </TableCell>
 
-                      {/* Session count */}
-                      <TableCell className="text-center font-medium font-mono text-slate-300">
-                        {count}
-                      </TableCell>
-
-                      {/* Duration */}
-                      <TableCell className="text-right font-bold font-mono text-primary">
-                        {fmtDur(totalSec)}
-                      </TableCell>
-
-                      {/* Sanctions Button */}
-                      <TableCell className="text-right">
-                        {canSanzioni && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
-                            onClick={() => setSanctionsTarget(p)}
+                        <TableCell className="max-w-xs text-xs text-slate-300 italic py-3.5">
+                          <span
+                            className="block truncate hover:text-clip hover:whitespace-normal"
+                            title={l.reason}
                           >
-                            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
-                          </Button>
-                        )}
+                            "{l.reason}"
+                          </span>
+                        </TableCell>
+
+                        <TableCell>
+                          {l.status === "pending" && (
+                            <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 uppercase font-bold text-[9px] px-1.5 py-0.5">
+                              In attesa
+                            </Badge>
+                          )}
+                          {l.status === "approved" && (
+                            <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-bold text-[9px] px-1.5 py-0.5">
+                              Approvato
+                            </Badge>
+                          )}
+                          {l.status === "rejected" && (
+                            <Badge className="bg-red-500/10 text-red-500 border border-red-500/20 uppercase font-bold text-[9px] px-1.5 py-0.5">
+                              Rifiutato
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="text-right py-3.5">
+                          {l.status === "pending" ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleLeaveDecision.mutate({ id: l.id, decision: "approved" })
+                                }
+                                disabled={handleLeaveDecision.isPending}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 py-1 h-8"
+                              >
+                                <Check className="h-3.5 w-3.5 mr-1" /> Approva
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleLeaveDecision.mutate({ id: l.id, decision: "rejected" })
+                                }
+                                disabled={handleLeaveDecision.isPending}
+                                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-3 py-1 h-8"
+                              >
+                                <X className="h-3.5 w-3.5 mr-1" /> Rifiuta
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 italic">
+                              Gestito da: {l.approved_by_name || "Amministratore"}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-xl px-3.5 py-2.5 max-w-md">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <Input
+              placeholder="Cerca dipendente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-0 bg-transparent text-white p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-500"
+            />
+          </div>
+
+          <Card className="bg-slate-900 border-slate-800 text-white shadow-xl">
+            <CardHeader className="border-b border-slate-800">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" /> Tabella Presenze & Sanzioni
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-950/40 border-slate-800">
+                  <TableRow>
+                    <TableHead className="text-slate-400">Nome / Username</TableHead>
+                    <TableHead className="text-slate-400">Badge Stato</TableHead>
+                    <TableHead className="text-slate-400 text-center">N. Sessioni</TableHead>
+                    <TableHead className="text-slate-400 text-right">
+                      Tempo Totale (HH:MM:SS)
+                    </TableHead>
+                    <TableHead className="text-slate-400 text-right w-40">Gestione</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingProfiles ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 italic">
+                        Caricamento dipendenti...
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  ) : filteredProfiles.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                        Nessun dipendente trovato.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredProfiles.map((p) => {
+                      const isActive = activeUserMap.has(p.id);
+                      const totalSec = totals.get(p.id) ?? 0;
+                      const count = sessionCounts.get(p.id) ?? 0;
+
+                      return (
+                        <TableRow
+                          key={p.id}
+                          className="border-b border-slate-800/60 hover:bg-slate-800/20"
+                        >
+                          {/* Name/Username */}
+                          <TableCell className="font-semibold text-slate-100">
+                            <div>
+                              <div>{p.display_name ?? p.username}</div>
+                              {p.display_name && (
+                                <div className="text-[10px] font-mono text-slate-500 font-normal">
+                                  @{p.username}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Badge status */}
+                          <TableCell>
+                            {isActive ? (
+                              <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-semibold uppercase tracking-wider animate-pulse">
+                                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                In servizio
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700/50 text-xs font-semibold uppercase tracking-wider">
+                                Fuori servizio
+                              </div>
+                            )}
+                          </TableCell>
+
+                          {/* Session count */}
+                          <TableCell className="text-center font-medium font-mono text-slate-300">
+                            {count}
+                          </TableCell>
+
+                          {/* Duration */}
+                          <TableCell className="text-right font-bold font-mono text-primary">
+                            {fmtDur(totalSec)}
+                          </TableCell>
+
+                          {/* Sanctions Button */}
+                          <TableCell className="text-right">
+                            {canSanzioni && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
+                                onClick={() => setSanctionsTarget(p)}
+                              >
+                                <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Render Sanctions management popup */}
       {sanctionsTarget && (

@@ -16,6 +16,7 @@ export function useAuth() {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [customRoleNames, setCustomRoleNames] = useState<string[]>([]);
   const [activeSuspension, setActiveSuspension] = useState<any | null>(null);
+  const [activeLeave, setActiveLeave] = useState<any | null>(null);
   const [userSanctions, setUserSanctions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,26 +40,34 @@ export function useAuth() {
       setPermissions([]);
       setCustomRoleNames([]);
       setActiveSuspension(null);
+      setActiveLeave(null);
       setUserSanctions([]);
       return;
     }
     (async () => {
-      const [{ data: p }, { data: roles }, { data: perms }, { data: cr }, { data: sancs }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, username, display_name")
-            .eq("id", user.id)
-            .maybeSingle(),
-          supabase.from("user_roles").select("role").eq("user_id", user.id),
-          supabase.rpc("user_permissions", { _user_id: user.id }),
-          supabase.from("user_custom_roles").select("custom_roles(name)").eq("user_id", user.id),
-          supabase
-            .from("sanctions")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false }),
-        ]);
+      const [
+        { data: p },
+        { data: roles },
+        { data: perms },
+        { data: cr },
+        { data: sancs },
+        { data: leaves },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, username, display_name")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+        supabase.rpc("user_permissions", { _user_id: user.id }),
+        supabase.from("user_custom_roles").select("custom_roles(name)").eq("user_id", user.id),
+        supabase
+          .from("sanctions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase.from("leave_requests").select("*").eq("user_id", user.id).eq("status", "approved"),
+      ]);
       setProfile(p as Profile | null);
       setIsAdmin(!!roles?.some((r: { role: string }) => r.role === "admin"));
       setPermissions((perms as string[] | null) ?? []);
@@ -80,6 +89,13 @@ export function useAuth() {
         return false;
       });
       setActiveSuspension(activeSusp || null);
+
+      const leavesList = (leaves as any[] | null) ?? [];
+      const activeLv = leavesList.find((l: any) => {
+        const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        return todayStr >= l.start_date && todayStr <= l.end_date;
+      });
+      setActiveLeave(activeLv || null);
     })();
   }, [user]);
 
@@ -91,6 +107,7 @@ export function useAuth() {
     permissions,
     customRoleNames,
     activeSuspension,
+    activeLeave,
     userSanctions,
     loading,
   };

@@ -23,6 +23,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
+import { LeaveRequestsList } from "@/components/LeaveRequestsList";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -322,6 +323,9 @@ function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Leave Requests section */}
+      <LeaveRequestsList />
 
       {/* Features Section */}
       <div className="space-y-6">
