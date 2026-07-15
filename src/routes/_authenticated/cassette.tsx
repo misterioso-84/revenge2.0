@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -33,6 +33,7 @@ import {
 import { Plus, Pencil, Trash2, Lock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/cassette")({
   component: SafesPage,
@@ -84,6 +85,10 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
 
 function SafesPage() {
   const qc = useQueryClient();
+  const { isAdmin, permissions = [] } = useAuth();
+  const canRead = isAdmin || permissions.includes("cassette.read");
+  const canWrite = isAdmin || permissions.includes("cassette.write");
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SafeBox | null>(null);
   const [filter, setFilter] = useState<"tutte" | Status>("tutte");
@@ -97,6 +102,7 @@ function SafesPage() {
         .order("box_number");
       return (data ?? []) as SafeBox[];
     },
+    enabled: canRead,
   });
   const { data: citizens = [] } = useQuery({
     queryKey: ["citizens-mini"],
@@ -104,6 +110,7 @@ function SafesPage() {
       const { data } = await supabase.from("citizens").select("id, full_name").order("full_name");
       return (data ?? []) as Citizen[];
     },
+    enabled: canRead,
   });
 
   const del = useMutation({
@@ -135,6 +142,27 @@ function SafesPage() {
   }, [enriched]);
   const filtered = filter === "tutte" ? enriched : enriched.filter((s) => s.status === filter);
 
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione (richiesto:{" "}
+                <strong>Vedere cassette di sicurezza</strong>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -144,14 +172,16 @@ function SafesPage() {
             € 2.000 per attivazione — gestione assegnazioni e scadenze
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" /> Nuova cassetta
-        </Button>
+        {canWrite && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nuova cassetta
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -218,27 +248,29 @@ function SafesPage() {
                       <Badge className={meta.cls}>{meta.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1 justify-end">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditing(s);
-                            setOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            confirm(`Eliminare cassetta #${s.box_number}?`) && del.mutate(s.id)
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {canWrite && (
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditing(s);
+                              setOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              confirm(`Eliminare cassetta #${s.box_number}?`) && del.mutate(s.id)
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

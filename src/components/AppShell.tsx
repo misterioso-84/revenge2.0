@@ -45,7 +45,14 @@ const NAV: NavItem[] = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { profile, isAdmin, customRoleNames, activeSuspension, permissions = [] } = useAuth();
+  const {
+    profile,
+    isAdmin,
+    customRoleNames,
+    activeSuspension,
+    permissions = [],
+    loading,
+  } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -92,6 +99,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (n.adminOnly) return isAdmin;
     return true;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <p className="text-sm text-slate-400">Verifica credenziali...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isMaintenanceActive && !isAdmin) {
     return (

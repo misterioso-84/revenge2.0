@@ -285,6 +285,33 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     args,
   } = query;
 
+  // Check if maintenance mode is active (exclude changes to maintenance_settings itself, so admins can turn it off)
+  const isMaintenanceActive =
+    db.maintenance_settings?.some((s: any) => s.id === "global" && s.is_maintenance) || false;
+  if (isMaintenanceActive && table !== "maintenance_settings") {
+    let isAdmin = false;
+    const session = getActiveSession(db);
+    if (session && session.user) {
+      const userId = session.user.id;
+      const userRoles = db.user_roles || [];
+      isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
+    }
+
+    // Block write operations for non-admins
+    const isWrite =
+      ["insert", "update", "delete", "upsert"].includes(operation) ||
+      (operation === "rpc" && !["is_admin", "user_permissions", "has_permission"].includes(name));
+    if (isWrite && !isAdmin) {
+      return {
+        data: null,
+        error: {
+          message:
+            "Il sistema è attualmente in manutenzione. Tutte le operazioni di scrittura sono bloccate.",
+        },
+      };
+    }
+  }
+
   // Handle RPCs
   if (operation === "rpc") {
     if (name === "user_permissions") {
@@ -657,6 +684,52 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     saveDb(db);
 
     return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
+  }
+
+  if (operation === "upsert") {
+    const rowsToUpsert = Array.isArray(insertData) ? insertData : [insertData];
+    const results: any[] = [];
+
+    db[table] = db[table] || [];
+
+    for (const row of rowsToUpsert) {
+      let existingIndex = -1;
+      if (row.id) {
+        existingIndex = db[table].findIndex((item: any) => item.id === row.id);
+      } else if (table === "user_roles") {
+        existingIndex = db[table].findIndex(
+          (item: any) => item.user_id === row.user_id && item.role === row.role,
+        );
+      } else if (table === "user_custom_roles") {
+        existingIndex = db[table].findIndex(
+          (item: any) => item.user_id === row.user_id && item.custom_role_id === row.custom_role_id,
+        );
+      } else if (table === "maintenance_settings") {
+        existingIndex = db[table].findIndex((item: any) => item.id === row.id);
+      }
+
+      if (existingIndex !== -1) {
+        const updated = {
+          ...db[table][existingIndex],
+          ...row,
+          updated_at: new Date().toISOString(),
+        };
+        db[table][existingIndex] = updated;
+        results.push(updated);
+      } else {
+        const inserted = {
+          id: row.id || Math.random().toString(36).substring(2, 15),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...row,
+        };
+        db[table].push(inserted);
+        results.push(inserted);
+      }
+    }
+
+    saveDb(db);
+    return { data: Array.isArray(insertData) ? results : results[0], error: null };
   }
 
   if (operation === "update") {

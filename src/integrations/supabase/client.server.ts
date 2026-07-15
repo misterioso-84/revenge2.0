@@ -36,6 +36,12 @@ class MockPostgrestServerBuilder {
     return this;
   }
 
+  upsert(data: any) {
+    this.operation = "upsert" as any;
+    this.insertData = data;
+    return this;
+  }
+
   update(data: any) {
     this.operation = "update";
     this.updateData = data;

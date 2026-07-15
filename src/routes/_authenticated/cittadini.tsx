@@ -51,7 +51,9 @@ type Citizen = {
 
 function CitizensPage() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, permissions = [] } = useAuth();
+  const canRead = isAdmin || permissions.includes("cittadini.read");
+  const canWrite = isAdmin || permissions.includes("cittadini.write");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Citizen | null>(null);
   const [open, setOpen] = useState(false);
@@ -66,6 +68,7 @@ function CitizensPage() {
       if (error) throw error;
       return data as Citizen[];
     },
+    enabled: canRead,
   });
 
   const del = useMutation({
@@ -87,6 +90,27 @@ function CitizensPage() {
     return fn.includes(s) || nn.includes(s);
   });
 
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione (richiesto:{" "}
+                <strong>Vedere cittadini</strong>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -94,14 +118,16 @@ function CitizensPage() {
           <h1 className="text-3xl font-bold">Cittadini</h1>
           <p className="text-muted-foreground">Anagrafica dei clienti del casinò</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" /> Nuovo cittadino
-        </Button>
+        {canWrite && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nuovo cittadino
+          </Button>
+        )}
       </div>
 
       <Input
@@ -151,24 +177,28 @@ function CitizensPage() {
                           <History className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(c);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => confirm(`Eliminare ${c.full_name}?`) && del.mutate(c.id)}
-                        className="text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canWrite && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditing(c);
+                              setOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => confirm(`Eliminare ${c.full_name}?`) && del.mutate(c.id)}
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

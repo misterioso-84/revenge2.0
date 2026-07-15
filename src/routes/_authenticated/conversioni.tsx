@@ -49,7 +49,7 @@ type Conversion = {
 };
 
 function ConversionsPage() {
-  const { isAdmin, permissions } = useAuth();
+  const { isAdmin, permissions = [] } = useAuth();
   const can = (p: string) => isAdmin || permissions.includes(p);
   const canExec = can("conversioni.esegui");
   const canHist = can("conversioni.storico");
@@ -63,6 +63,28 @@ function ConversionsPage() {
       else setActiveTab("limits");
     }
   }, [permissions, isAdmin, canExec, canHist, activeTab]);
+
+  if (!canExec && !canHist) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione (richiesto almeno
+                uno tra: <strong>Eseguire conversioni Soldi/Dobloni</strong>,{" "}
+                <strong>Vedere lo storico delle conversioni</strong>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

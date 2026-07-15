@@ -54,12 +54,13 @@ function fmtDur(sec: number) {
 }
 
 function DipendentiPage() {
-  const { user, isAdmin, permissions } = useAuth();
+  const { user, isAdmin, permissions = [] } = useAuth();
   const [sanctionsTarget, setSanctionsTarget] = useState<Prof | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const canVedere = isAdmin || permissions.includes("badge.visualizza");
   const canSanzioni = isAdmin || permissions.includes("dipendenti.sanzioni");
+  const canRead = canVedere;
 
   // Keep a live ticker for active session elapsed time
   const [now, setNow] = useState(Date.now());
@@ -80,6 +81,7 @@ function DipendentiPage() {
       if (error) throw error;
       return (data ?? []) as Week[];
     },
+    enabled: canRead,
   });
 
   const activeWeek = weeks.find((w) => w.active) ?? null;
@@ -89,7 +91,7 @@ function DipendentiPage() {
   // 2. Fetch sessions for the selected week
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-sessions", weekId],
-    enabled: !!weekId,
+    enabled: canRead && !!weekId,
     refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -113,6 +115,7 @@ function DipendentiPage() {
       if (error) throw error;
       return (data ?? []) as Session[];
     },
+    enabled: canRead,
   });
 
   // 4. Fetch all employees profiles
@@ -127,6 +130,7 @@ function DipendentiPage() {
       if (error) throw error;
       return (data ?? []) as Prof[];
     },
+    enabled: canRead,
   });
 
   // Calculations for session totals

@@ -1,276 +1,568 @@
 {
   "profiles": [
     {
-      "username": "giuse84pro",
       "id": "mock-user-id-1234",
       "updated_at": "2026-07-13T14:01:29.800Z",
       "display_name": "Giuse84pro",
-      "created_at": "2026-07-12T13:12:44.187Z"
+      "created_at": "2026-07-12T13:12:44.187Z",
+      "username": "giuse84pro"
     },
     {
-      "id": "user-mzd7g48d9j",
+      "id": "user-b9p6dwg58ru",
+      "username": "kyrael_",
+      "display_name": "Kyrael_",
+      "created_at": "2026-07-14T20:27:02.308Z",
+      "updated_at": "2026-07-14T20:27:16.233Z"
+    },
+    {
+      "id": "user-xoigsxonpgp",
       "username": "staff",
-      "updated_at": "2026-07-14T12:57:43.343Z",
       "display_name": "staff",
-      "created_at": "2026-07-14T12:57:43.343Z"
+      "created_at": "2026-07-14T20:28:09.725Z",
+      "updated_at": "2026-07-14T20:28:09.725Z"
+    },
+    {
+      "id": "user-qvwd3bbq8in",
+      "username": "itz_vampire",
+      "display_name": "itz_vampire",
+      "created_at": "2026-07-15T07:39:19.439Z",
+      "updated_at": "2026-07-15T07:39:19.439Z"
+    },
+    {
+      "id": "user-pitafw9st1",
+      "username": "devines",
+      "display_name": "devines",
+      "created_at": "2026-07-15T09:46:08.448Z",
+      "updated_at": "2026-07-15T09:46:08.448Z"
+    },
+    {
+      "id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "display_name": "xsvinci",
+      "created_at": "2026-07-15T13:08:17.642Z",
+      "updated_at": "2026-07-15T13:08:17.642Z"
     }
   ],
   "user_roles": [
     {
       "role": "admin",
-      "id": "role-1",
-      "user_id": "mock-user-id-1234"
+      "user_id": "mock-user-id-1234",
+      "id": "role-1"
+    },
+    {
+      "id": "role-wjjdg96d6x9",
+      "user_id": "user-b9p6dwg58ru",
+      "role": "staff"
+    },
+    {
+      "id": "j733i55np4c",
+      "created_at": "2026-07-14T20:27:02.308Z",
+      "updated_at": "2026-07-14T20:27:02.308Z",
+      "user_id": "user-b9p6dwg58ru",
+      "role": "admin"
+    },
+    {
+      "id": "role-m92xe3e4nyk",
+      "user_id": "user-xoigsxonpgp",
+      "role": "staff"
+    },
+    {
+      "id": "95pfl7i38pr",
+      "created_at": "2026-07-14T20:28:09.725Z",
+      "updated_at": "2026-07-14T20:28:09.725Z",
+      "user_id": "user-xoigsxonpgp",
+      "role": "admin"
+    },
+    {
+      "id": "role-fobmgqtkbdf",
+      "user_id": "user-qvwd3bbq8in",
+      "role": "staff"
+    },
+    {
+      "id": "dpcawvx9eop",
+      "created_at": "2026-07-15T07:39:19.439Z",
+      "updated_at": "2026-07-15T07:39:19.439Z",
+      "user_id": "user-qvwd3bbq8in",
+      "role": "admin"
+    },
+    {
+      "id": "role-o3vi0jcetrh",
+      "user_id": "user-pitafw9st1",
+      "role": "staff"
+    },
+    {
+      "id": "5jtptlxr9ll",
+      "created_at": "2026-07-15T09:46:08.448Z",
+      "updated_at": "2026-07-15T09:46:08.448Z",
+      "user_id": "user-pitafw9st1",
+      "role": "admin"
+    },
+    {
+      "id": "role-9qnbxhqjupq",
+      "user_id": "user-o5yk1ko0qa",
+      "role": "staff"
     }
   ],
   "custom_roles": [
     {
-      "permissions": ["conversioni.visualizza", "conversioni.crea", "conversioni.azzera"],
-      "id": "crole-1",
-      "description": "Gestione conversioni e incassi",
-      "name": "Cassiere",
-      "created_at": "2026-07-12T13:12:44.187Z"
+      "id": "37e7i6z95k7",
+      "created_at": "2026-07-15T09:46:39.982Z",
+      "updated_at": "2026-07-15T13:05:14.074Z",
+      "name": "Capitano",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "servizi.write",
+        "corse.read",
+        "corse.write",
+        "cassette.read",
+        "cassette.write",
+        "badge.timbra",
+        "badge.visualizza",
+        "badge.settimane",
+        "badge.gestisci",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "dipendenti.sanzioni"
+      ]
     },
     {
-      "description": "Gestione tavoli e corse cavalli",
-      "id": "crole-2",
-      "permissions": ["corse.visualizza", "corse.gestisci"],
-      "created_at": "2026-07-12T13:12:44.187Z",
-      "name": "Croupier"
+      "id": "5d7eafafjmu",
+      "created_at": "2026-07-15T09:47:01.814Z",
+      "updated_at": "2026-07-15T13:05:47.703Z",
+      "name": "Vice Capitano",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "servizi.write",
+        "corse.read",
+        "corse.write",
+        "cassette.read",
+        "cassette.write",
+        "badge.timbra",
+        "badge.visualizza",
+        "badge.settimane",
+        "badge.gestisci",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "dipendenti.sanzioni"
+      ]
+    },
+    {
+      "id": "7jqqvbfk763",
+      "created_at": "2026-07-15T09:47:53.623Z",
+      "updated_at": "2026-07-15T13:05:22.313Z",
+      "name": "Quartiermastro",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "servizi.write",
+        "serate.incassi",
+        "corse.read",
+        "corse.write",
+        "badge.visualizza",
+        "badge.timbra",
+        "badge.settimane",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "dipendenti.sanzioni"
+      ]
+    },
+    {
+      "id": "745nc4e6n1r",
+      "created_at": "2026-07-15T09:48:24.215Z",
+      "updated_at": "2026-07-15T13:05:40.296Z",
+      "name": "Caposala",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "corse.read",
+        "corse.write",
+        "badge.timbra",
+        "badge.visualizza",
+        "badge.settimane",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "dipendenti.sanzioni"
+      ]
+    },
+    {
+      "id": "2vu11boct4i",
+      "created_at": "2026-07-15T09:49:27.773Z",
+      "updated_at": "2026-07-15T09:49:27.773Z",
+      "name": "Barman",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.consulta",
+        "serate.gestisci",
+        "servizi.read",
+        "corse.read",
+        "badge.timbra",
+        "conversioni.esegui"
+      ]
+    },
+    {
+      "id": "f91ux1xggt",
+      "created_at": "2026-07-15T09:50:07.485Z",
+      "updated_at": "2026-07-15T09:50:07.485Z",
+      "name": "Soubrette",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "corse.read",
+        "corse.write",
+        "badge.timbra",
+        "conversioni.esegui"
+      ]
+    },
+    {
+      "id": "w19dv9baafi",
+      "created_at": "2026-07-15T09:50:51.025Z",
+      "updated_at": "2026-07-15T09:50:51.025Z",
+      "name": "Croupier",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "corse.read",
+        "badge.timbra",
+        "conversioni.esegui"
+      ]
+    },
+    {
+      "id": "qb8h239wnp",
+      "created_at": "2026-07-15T09:51:49.069Z",
+      "updated_at": "2026-07-15T09:51:49.069Z",
+      "name": "Mozzo",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.consulta",
+        "servizi.read",
+        "corse.read",
+        "badge.timbra",
+        "conversioni.esegui"
+      ]
     }
   ],
   "user_custom_roles": [],
   "citizens": [
     {
-      "full_name": "devines",
+      "membership": "elite",
+      "notes": "Cliente abituale di alta fascia.",
+      "updated_at": "2026-07-13T12:36:12.540Z",
+      "nickname": "Il Capo",
       "created_at": "2026-07-12T13:12:44.187Z",
       "membership_since": null,
-      "membership": "elite",
-      "id": "citizen-1",
-      "nickname": "Il Capo",
-      "notes": "Cliente abituale di alta fascia.",
-      "updated_at": "2026-07-13T12:36:12.540Z"
+      "full_name": "devines",
+      "id": "citizen-1"
     },
     {
-      "membership": "standard",
-      "id": "citizen-2",
-      "nickname": "Pino",
-      "notes": "Giocatore serale.",
       "updated_at": "2026-07-13T12:35:50.934Z",
+      "membership": "standard",
+      "notes": "Giocatore serale.",
       "created_at": "2026-07-12T13:12:44.187Z",
+      "nickname": "Pino",
+      "membership_since": null,
       "full_name": "Giuse84pro",
-      "membership_since": null
+      "id": "citizen-2"
     },
     {
-      "full_name": "COCKS",
-      "created_at": "2026-07-13T13:44:55.093Z",
       "id": "j323w5ywwgt",
+      "created_at": "2026-07-13T13:44:55.093Z",
+      "updated_at": "2026-07-15T13:10:12.205Z",
+      "full_name": "COCKS",
       "membership": "standard",
-      "updated_at": "2026-07-13T13:44:55.093Z"
+      "notes": ""
+    },
+    {
+      "id": "mh5ldqqo3rb",
+      "created_at": "2026-07-15T13:03:39.105Z",
+      "updated_at": "2026-07-15T13:03:39.105Z",
+      "full_name": "iTz_Vampire",
+      "membership": "standard"
     }
   ],
   "safe_boxes": [
     {
-      "citizen_id": "citizen-1",
-      "box_number": 1,
-      "expires_at": "2026-12-31",
-      "activated_at": "2026-01-01",
       "id": "safe-1",
-      "notes": "Cassetta vip",
-      "active": true
+      "box_number": 1,
+      "citizen_id": "citizen-1",
+      "activated_at": "2026-01-01",
+      "expires_at": "2026-12-31",
+      "active": true,
+      "notes": "Cassetta vip"
     },
     {
-      "citizen_id": null,
-      "box_number": 2,
       "id": "safe-2",
-      "notes": null,
+      "box_number": 2,
+      "citizen_id": null,
       "activated_at": null,
       "expires_at": null,
-      "active": false
+      "active": false,
+      "notes": null
     },
     {
-      "citizen_id": null,
-      "box_number": 3,
-      "active": false,
-      "activated_at": null,
-      "expires_at": null,
       "id": "safe-3",
+      "box_number": 3,
+      "citizen_id": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
       "notes": null
     },
     {
-      "activated_at": null,
-      "expires_at": null,
       "id": "safe-4",
-      "notes": null,
-      "active": false,
+      "box_number": 4,
       "citizen_id": null,
-      "box_number": 4
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
+      "notes": null
     },
     {
-      "citizen_id": null,
-      "box_number": 5,
-      "active": false,
-      "expires_at": null,
-      "activated_at": null,
       "id": "safe-5",
+      "box_number": 5,
+      "citizen_id": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
       "notes": null
     },
     {
-      "citizen_id": null,
+      "id": "safe-6",
       "box_number": 6,
-      "active": false,
-      "expires_at": null,
-      "activated_at": null,
-      "notes": null,
-      "id": "safe-6"
-    },
-    {
       "citizen_id": null,
-      "box_number": 7,
-      "active": false,
       "activated_at": null,
       "expires_at": null,
-      "notes": null,
-      "id": "safe-7"
-    },
-    {
-      "expires_at": null,
-      "activated_at": null,
-      "notes": null,
-      "id": "safe-8",
       "active": false,
-      "citizen_id": null,
-      "box_number": 8
-    },
-    {
-      "citizen_id": null,
-      "box_number": 9,
-      "active": false,
-      "activated_at": null,
-      "expires_at": null,
-      "id": "safe-9",
       "notes": null
     },
     {
+      "id": "safe-7",
+      "box_number": 7,
       "citizen_id": null,
-      "box_number": 10,
-      "active": false,
-      "id": "safe-10",
-      "notes": null,
       "activated_at": null,
-      "expires_at": null
+      "expires_at": null,
+      "active": false,
+      "notes": null
+    },
+    {
+      "id": "safe-8",
+      "box_number": 8,
+      "citizen_id": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
+      "notes": null
+    },
+    {
+      "id": "safe-9",
+      "box_number": 9,
+      "citizen_id": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
+      "notes": null
+    },
+    {
+      "id": "safe-10",
+      "box_number": 10,
+      "citizen_id": null,
+      "activated_at": null,
+      "expires_at": null,
+      "active": false,
+      "notes": null
     }
   ],
   "badge_weeks": [
     {
-      "created_at": "2026-07-12T13:12:44.188Z",
-      "label": "Settimana 1",
       "id": "week-1",
-      "ended_at": null,
+      "label": "Settimana 1",
+      "active": true,
       "started_at": "2026-07-01",
-      "active": true
+      "ended_at": null,
+      "created_at": "2026-07-12T13:12:44.188Z"
     }
   ],
   "badge_sessions": [
     {
-      "week_id": "week-1",
+      "created_at": "2026-07-14T13:25:07.750Z",
+      "updated_at": "2026-07-14T13:44:48.031Z",
       "id": "i9bmrfm0y1n",
       "user_id": "mock-user-id-1234",
-      "created_at": "2026-07-14T13:25:07.750Z",
-      "updated_at": "2026-07-14T13:25:07.750Z"
+      "week_id": "week-1",
+      "ended_at": "2026-07-14T13:44:28.779Z"
+    },
+    {
+      "created_at": "2026-07-14T13:39:42.546Z",
+      "ended_at": "2026-07-14T13:44:19.980Z",
+      "started_at": "2026-07-14T13:39:42.546Z",
+      "user_id": "mock-user-id-1234",
+      "updated_at": "2026-07-14T13:44:43.372Z",
+      "id": "ga869crtaoe",
+      "week_id": "week-1"
+    },
+    {
+      "id": "l5sr8dhzpq8",
+      "created_at": "2026-07-14T13:51:33.111Z",
+      "updated_at": "2026-07-14T13:52:08.902Z",
+      "started_at": "2026-07-14T13:51:33.111Z",
+      "ended_at": "2026-07-14T13:51:53.752Z",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-1"
+    },
+    {
+      "id": "zkzjzuor1g",
+      "created_at": "2026-07-14T23:41:01.460Z",
+      "updated_at": "2026-07-15T12:42:18.496Z",
+      "started_at": "2026-07-14T23:41:01.460Z",
+      "ended_at": "2026-07-15T12:42:01.975Z",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-1"
+    },
+    {
+      "id": "wixyx62r95k",
+      "created_at": "2026-07-15T12:42:20.090Z",
+      "updated_at": "2026-07-15T12:42:25.411Z",
+      "started_at": "2026-07-15T12:42:20.090Z",
+      "ended_at": "2026-07-15T12:42:08.886Z",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-1"
+    },
+    {
+      "id": "mbhzfdgtxhm",
+      "created_at": "2026-07-15T13:04:36.802Z",
+      "updated_at": "2026-07-15T13:04:41.739Z",
+      "started_at": "2026-07-15T13:04:36.802Z",
+      "ended_at": "2026-07-15T13:04:41.687Z",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-1"
     }
   ],
   "nights": [
     {
-      "updated_at": "2026-07-13T13:44:23.175Z",
-      "title": "Serata di Gala",
-      "night_date": "2026-07-09",
-      "notes": "Ottima affluenza.",
-      "id": "night-1",
-      "created_at": "2026-07-12T13:12:44.188Z",
-      "total": 600,
-      "is_closed": true
+      "id": "m6yrh884oym",
+      "created_at": "2026-07-14T23:40:07.000Z",
+      "updated_at": "2026-07-15T13:07:08.246Z",
+      "night_date": "2026-07-14",
+      "title": null,
+      "is_closed": true,
+      "total": 0
     },
     {
+      "id": "xicpgtb1nb",
+      "created_at": "2026-07-15T13:07:03.281Z",
+      "updated_at": "2026-07-15T13:07:03.281Z",
+      "night_date": "2026-07-15",
+      "title": null,
       "is_closed": false,
-      "total": 300,
-      "created_at": "2026-07-13T13:44:06.697Z",
-      "id": "gr9k3ae0vd5",
-      "updated_at": "2026-07-13T13:44:06.697Z",
-      "night_date": "2026-07-13",
-      "title": null
+      "total": 0
     }
   ],
   "conversion_settings": [
     {
-      "max_eur_per_day": 2000,
-      "updated_at": "2026-07-12T13:12:44.188Z",
+      "id": true,
       "max_dobloni_per_day": 10000,
-      "id": true
+      "max_eur_per_day": 2000,
+      "updated_at": "2026-07-12T13:12:44.188Z"
     }
   ],
   "conversions": [
     {
-      "created_by": "mock-user-id-1234",
-      "night_id": "night-1",
-      "dobloni_amount": 15000,
-      "input_amount": 1500,
-      "citizen_id": "citizen-2",
-      "direction": "cash_to_dobloni",
-      "eur_amount": 1500,
       "id": "conv-fxcy3b9lhat",
+      "citizen_id": "citizen-2",
+      "night_id": "night-1",
+      "direction": "cash_to_dobloni",
+      "input_amount": 1500,
+      "eur_amount": 1500,
+      "dobloni_amount": 15000,
+      "created_by": "mock-user-id-1234",
       "created_at": "2026-07-13T13:38:07.393Z"
     },
     {
-      "direction": "cash_to_dobloni",
+      "id": "conv-vnha4qv9ud8",
       "citizen_id": "citizen-2",
-      "input_amount": 500,
-      "dobloni_amount": 5000,
       "night_id": "night-1",
-      "created_by": "mock-user-id-1234",
-      "created_at": "2026-07-13T13:38:50.476Z",
+      "direction": "cash_to_dobloni",
+      "input_amount": 500,
       "eur_amount": 500,
-      "id": "conv-vnha4qv9ud8"
+      "dobloni_amount": 5000,
+      "created_by": "mock-user-id-1234",
+      "created_at": "2026-07-13T13:38:50.476Z"
     },
     {
-      "night_id": "night-1",
-      "created_by": "mock-user-id-1234",
-      "direction": "dobloni_to_cash",
+      "id": "conv-ae8ukqrwg8",
       "citizen_id": "citizen-2",
-      "dobloni_amount": 7600,
+      "night_id": "night-1",
+      "direction": "dobloni_to_cash",
       "input_amount": 7600,
       "eur_amount": 570,
-      "id": "conv-ae8ukqrwg8",
+      "dobloni_amount": 7600,
+      "created_by": "mock-user-id-1234",
       "created_at": "2026-07-13T13:39:22.383Z"
     },
     {
-      "created_by": "mock-user-id-1234",
+      "id": "conv-tywkokib24",
+      "citizen_id": "citizen-2",
       "night_id": "night-1",
       "direction": "dobloni_to_cash",
       "input_amount": 200,
-      "dobloni_amount": 200,
-      "citizen_id": "citizen-2",
       "eur_amount": 15,
-      "id": "conv-tywkokib24",
+      "dobloni_amount": 200,
+      "created_by": "mock-user-id-1234",
       "created_at": "2026-07-13T13:39:39.747Z"
     },
     {
-      "direction": "dobloni_to_cash",
+      "id": "conv-dl7r8ttlqcn",
       "citizen_id": "citizen-2",
-      "dobloni_amount": 2000,
-      "input_amount": 2000,
       "night_id": "night-1",
-      "created_by": "mock-user-id-1234",
-      "created_at": "2026-07-13T13:40:11.923Z",
+      "direction": "dobloni_to_cash",
+      "input_amount": 2000,
       "eur_amount": 150,
-      "id": "conv-dl7r8ttlqcn"
+      "dobloni_amount": 2000,
+      "created_by": "mock-user-id-1234",
+      "created_at": "2026-07-13T13:40:11.923Z"
     }
   ],
   "conversion_resets": [],
   "stables": [
     {
-      "owner_citizen_id": "citizen-1",
       "id": "stable-1",
-      "name": "Scuderia San Siro"
+      "name": "Scuderia San Siro",
+      "owner_citizen_id": "citizen-1"
     }
   ],
   "horses": [
@@ -281,157 +573,167 @@
       "sponsor": "Rolex"
     },
     {
-      "stable_id": null,
+      "id": "horse-2",
       "name": "Saetta",
-      "sponsor": null,
-      "id": "horse-2"
+      "stable_id": null,
+      "sponsor": null
     }
   ],
   "services": [
     {
       "id": "srv-1",
-      "is_qty_editable": true,
-      "updated_at": "2026-07-13T12:55:31.689Z",
-      "billing": "per_night",
-      "price": 150,
-      "include_in_nights": true,
+      "category_id": "cat-1",
       "name": "Cena Gourmet",
-      "category_id": "cat-1"
+      "price": 150,
+      "billing": "per_night",
+      "include_in_nights": true,
+      "is_qty_editable": true,
+      "updated_at": "2026-07-13T12:55:31.689Z"
     },
     {
       "id": "srv-2",
-      "price": 300,
-      "billing": "per_night",
       "category_id": "cat-2",
-      "name": "Guardia del corpo"
+      "name": "Guardia del corpo",
+      "price": 300,
+      "billing": "per_night"
     }
   ],
   "service_categories": [
     {
-      "sort_order": 1,
+      "id": "cat-1",
       "name": "Ristorazione",
-      "id": "cat-1"
+      "sort_order": 2,
+      "updated_at": "2026-07-15T13:04:07.334Z"
     },
     {
       "id": "cat-2",
       "name": "Sicurezza",
-      "sort_order": 2
+      "sort_order": 1,
+      "updated_at": "2026-07-15T13:04:07.217Z"
     }
   ],
   "purchased_services": [],
   "sanctions": [
     {
       "id": "wzi8ld5eufa",
+      "created_at": "2026-07-14T13:00:08.683Z",
+      "updated_at": "2026-07-14T13:02:58.705Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "richiamo_verbale",
       "reason": "Richiamo di test",
       "created_by_id": "mock-user-id-1234",
-      "updated_at": "2026-07-14T13:02:58.705Z",
-      "created_at": "2026-07-14T13:00:08.683Z",
-      "user_id": "user-mzd7g48d9j",
-      "type": "richiamo_verbale",
-      "expires_at": null,
       "created_by_name": "Giuse84pro",
-      "is_active": false
+      "is_active": false,
+      "expires_at": null
     },
     {
-      "user_id": "user-mzd7g48d9j",
-      "created_at": "2026-07-14T13:02:12.077Z",
-      "created_by_id": "mock-user-id-1234",
       "id": "sgnp11e689",
-      "reason": "Richiamo di test (2)",
+      "created_at": "2026-07-14T13:02:12.077Z",
       "updated_at": "2026-07-14T13:02:58.707Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "richiamo_verbale",
+      "reason": "Richiamo di test (2)",
+      "created_by_id": "mock-user-id-1234",
       "created_by_name": "Giuse84pro",
       "is_active": false,
-      "expires_at": null,
-      "type": "richiamo_verbale"
+      "expires_at": null
     },
     {
-      "type": "richiamo_verbale",
-      "expires_at": null,
-      "is_active": false,
-      "created_by_name": "Giuse84pro",
-      "updated_at": "2026-07-14T13:02:58.711Z",
       "id": "z65r8fz108",
+      "created_at": "2026-07-14T13:02:58.702Z",
+      "updated_at": "2026-07-14T13:02:58.711Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "richiamo_verbale",
       "reason": "Richiamo di test (3)",
       "created_by_id": "mock-user-id-1234",
-      "created_at": "2026-07-14T13:02:58.702Z",
-      "user_id": "user-mzd7g48d9j"
-    },
-    {
-      "expires_at": null,
-      "type": "warn",
-      "is_active": false,
-      "created_by_name": "Sistema",
-      "updated_at": "2026-07-14T13:03:58.314Z",
-      "created_by_id": "system",
-      "id": "vkkxz7gtve",
-      "reason": "Conversione automatica: accumulo di 3 richiami verbali nel mese.",
-      "user_id": "user-mzd7g48d9j",
-      "created_at": "2026-07-14T13:02:58.712Z"
-    },
-    {
-      "is_active": false,
       "created_by_name": "Giuse84pro",
-      "type": "sospensione",
-      "expires_at": "2026-07-15T13:03:43.310Z",
-      "created_at": "2026-07-14T13:03:58.314Z",
-      "user_id": "user-mzd7g48d9j",
-      "updated_at": "2026-07-14T13:04:48.937Z",
-      "id": "rioxy03i58s",
-      "reason": "Sospensione di test",
-      "created_by_id": "mock-user-id-1234"
-    },
-    {
-      "created_at": "2026-07-14T13:05:27.498Z",
-      "user_id": "user-mzd7g48d9j",
-      "updated_at": "2026-07-14T13:05:55.290Z",
-      "reason": "Espulsione di test",
-      "id": "ujs0p9mk3si",
-      "created_by_id": "mock-user-id-1234",
       "is_active": false,
-      "created_by_name": "Giuse84pro",
-      "type": "espulsione",
       "expires_at": null
+    },
+    {
+      "id": "vkkxz7gtve",
+      "created_at": "2026-07-14T13:02:58.712Z",
+      "updated_at": "2026-07-14T13:03:58.314Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "warn",
+      "reason": "Conversione automatica: accumulo di 3 richiami verbali nel mese.",
+      "created_by_id": "system",
+      "created_by_name": "Sistema",
+      "is_active": false,
+      "expires_at": null
+    },
+    {
+      "id": "rioxy03i58s",
+      "created_at": "2026-07-14T13:03:58.314Z",
+      "updated_at": "2026-07-14T13:04:48.937Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "sospensione",
+      "reason": "Sospensione di test",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro",
+      "is_active": false,
+      "expires_at": "2026-07-15T13:03:43.310Z"
+    },
+    {
+      "id": "ujs0p9mk3si",
+      "created_at": "2026-07-14T13:05:27.498Z",
+      "updated_at": "2026-07-14T13:05:55.290Z",
+      "user_id": "user-mzd7g48d9j",
+      "type": "espulsione",
+      "reason": "Espulsione di test",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro",
+      "is_active": false,
+      "expires_at": null
+    }
+  ],
+  "maintenance_settings": [
+    {
+      "id": "global",
+      "created_at": "2026-07-15T13:02:46.203Z",
+      "updated_at": "2026-07-15T13:25:25.682Z",
+      "is_maintenance": true
     }
   ],
   "night_items": [
     {
       "created_at": "2026-07-13T13:24:38.480Z",
-      "qty": 2,
-      "service_id": "srv-1",
-      "id": "laqj56jq07l",
+      "citizen_id": "citizen-2",
       "updated_at": "2026-07-13T13:24:38.480Z",
       "service_name": "Cena Gourmet",
-      "subtotal": 300,
-      "citizen_id": "citizen-2",
-      "unit_price": 150,
-      "created_by": "mock-user-id-1234",
-      "night_id": "night-1"
-    },
-    {
       "night_id": "night-1",
-      "created_by": "mock-user-id-1234",
-      "citizen_id": "citizen-2",
       "subtotal": 300,
-      "unit_price": 300,
-      "service_id": "srv-2",
-      "id": "iopy8u0cyu8",
-      "service_name": "Guardia del corpo",
-      "updated_at": "2026-07-13T13:24:38.480Z",
-      "created_at": "2026-07-13T13:24:38.480Z",
-      "qty": 1
+      "created_by": "mock-user-id-1234",
+      "unit_price": 150,
+      "qty": 2,
+      "id": "laqj56jq07l",
+      "service_id": "srv-1"
     },
     {
-      "created_by": "mock-user-id-1234",
-      "night_id": "gr9k3ae0vd5",
+      "id": "iopy8u0cyu8",
+      "qty": 1,
+      "service_id": "srv-2",
       "unit_price": 300,
       "subtotal": 300,
-      "citizen_id": "j323w5ywwgt",
-      "updated_at": "2026-07-13T13:45:02.751Z",
+      "night_id": "night-1",
       "service_name": "Guardia del corpo",
+      "created_by": "mock-user-id-1234",
+      "created_at": "2026-07-13T13:24:38.480Z",
+      "updated_at": "2026-07-13T13:24:38.480Z",
+      "citizen_id": "citizen-2"
+    },
+    {
       "id": "l14i0uq1gp",
+      "created_at": "2026-07-13T13:45:02.751Z",
+      "updated_at": "2026-07-13T13:45:02.751Z",
+      "night_id": "gr9k3ae0vd5",
+      "citizen_id": "j323w5ywwgt",
       "service_id": "srv-2",
+      "service_name": "Guardia del corpo",
+      "unit_price": 300,
       "qty": 1,
-      "created_at": "2026-07-13T13:45:02.751Z"
+      "subtotal": 300,
+      "created_by": "mock-user-id-1234"
     }
   ]
 }

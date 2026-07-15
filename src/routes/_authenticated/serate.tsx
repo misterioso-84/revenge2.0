@@ -70,6 +70,9 @@ function useCan() {
 function NightsPage() {
   const qc = useQueryClient();
   const can = useCan();
+  const canRead =
+    can("serate.crea") || can("serate.gestisci") || can("serate.consulta") || can("serate.incassi");
+
   const [newOpen, setNewOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [lookupOpen, setLookupOpen] = useState(false);
@@ -87,6 +90,7 @@ function NightsPage() {
       if (error) throw error;
       return (data ?? []) as Night[];
     },
+    enabled: canRead,
   });
 
   const del = useMutation({
@@ -99,6 +103,26 @@ function NightsPage() {
       toast.success("Serata eliminata");
     },
   });
+
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

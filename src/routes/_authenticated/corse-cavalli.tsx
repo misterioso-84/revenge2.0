@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, Home, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/corse-cavalli")({
   component: HorsePage,
@@ -41,6 +42,10 @@ type Citizen = { id: string; full_name: string };
 
 function HorsePage() {
   const qc = useQueryClient();
+  const { isAdmin, permissions = [] } = useAuth();
+  const canRead = isAdmin || permissions.includes("corse.read");
+  const canWrite = isAdmin || permissions.includes("corse.write");
+
   const [stableDlg, setStableDlg] = useState<Stable | null | undefined>(undefined); // undefined = closed
   const [horseDlg, setHorseDlg] = useState<{ horse?: Horse; stableId?: string | null } | null>(
     null,
@@ -55,6 +60,7 @@ function HorsePage() {
         .order("name");
       return (data ?? []) as Stable[];
     },
+    enabled: canRead,
   });
   const { data: horses = [] } = useQuery({
     queryKey: ["horses"],
@@ -62,6 +68,7 @@ function HorsePage() {
       const { data } = await supabase.from("horses").select("*").order("name");
       return (data ?? []) as Horse[];
     },
+    enabled: canRead,
   });
   const { data: citizens = [] } = useQuery({
     queryKey: ["citizens-mini"],
@@ -69,6 +76,7 @@ function HorsePage() {
       const { data } = await supabase.from("citizens").select("id, full_name").order("full_name");
       return (data ?? []) as Citizen[];
     },
+    enabled: canRead,
   });
 
   const delStable = useMutation({
@@ -94,6 +102,27 @@ function HorsePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione (richiesto:{" "}
+                <strong>Vedere corse dei cavalli</strong>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const horsesWithoutStable = horses.filter((h) => !h.stable_id);
 
   return (
@@ -103,14 +132,16 @@ function HorsePage() {
           <h1 className="text-3xl font-bold">Corse dei Cavalli</h1>
           <p className="text-muted-foreground">Scuderie, cavalli e sponsor</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setStableDlg(null)}>
-            <Home className="h-4 w-4" /> Nuova scuderia
-          </Button>
-          <Button onClick={() => setHorseDlg({})}>
-            <Plus className="h-4 w-4" /> Nuovo cavallo
-          </Button>
-        </div>
+        {canWrite && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setStableDlg(null)}>
+              <Home className="h-4 w-4" /> Nuova scuderia
+            </Button>
+            <Button onClick={() => setHorseDlg({})}>
+              <Plus className="h-4 w-4" /> Nuovo cavallo
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -138,21 +169,23 @@ function HorsePage() {
                     {s.citizens?.full_name ?? <span className="italic">non assegnato</span>}
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => setStableDlg(s)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() =>
-                      confirm("Eliminare la scuderia? I cavalli resteranno senza scuderia.") &&
-                      delStable.mutate(s.id)
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                {canWrite && (
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => setStableDlg(s)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() =>
+                        confirm("Eliminare la scuderia? I cavalli resteranno senza scuderia.") &&
+                        delStable.mutate(s.id)
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-2">
                 {sHorses.length === 0 ? (
@@ -165,20 +198,23 @@ function HorsePage() {
                       <HorseRow
                         key={h.id}
                         horse={h}
+                        canWrite={canWrite}
                         onEdit={() => setHorseDlg({ horse: h })}
                         onDelete={() => delHorse.mutate(h.id)}
                       />
                     ))}
                   </ul>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => setHorseDlg({ stableId: s.id })}
-                >
-                  <Plus className="h-3 w-3" /> Aggiungi cavallo
-                </Button>
+                {canWrite && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setHorseDlg({ stableId: s.id })}
+                  >
+                    <Plus className="h-3 w-3" /> Aggiungi cavallo
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
@@ -197,6 +233,7 @@ function HorsePage() {
                   <HorseRow
                     key={h.id}
                     horse={h}
+                    canWrite={canWrite}
                     onEdit={() => setHorseDlg({ horse: h })}
                     onDelete={() => delHorse.mutate(h.id)}
                   />
@@ -236,10 +273,12 @@ function HorsePage() {
 
 function HorseRow({
   horse,
+  canWrite,
   onEdit,
   onDelete,
 }: {
   horse: Horse;
+  canWrite?: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -256,19 +295,21 @@ function HorseRow({
           </div>
         )}
       </div>
-      <div className="flex gap-0.5 shrink-0">
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-          <Pencil className="h-3 w-3" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7"
-          onClick={() => confirm("Eliminare il cavallo?") && onDelete()}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
+      {canWrite && (
+        <div className="flex gap-0.5 shrink-0">
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            onClick={() => confirm("Eliminare il cavallo?") && onDelete()}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </li>
   );
 }

@@ -40,7 +40,10 @@ export const Route = createFileRoute("/_authenticated/servizi")({
 
 function ServicesPage() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, permissions = [] } = useAuth();
+  const canRead = isAdmin || permissions.includes("servizi.read");
+  const canWrite = isAdmin || permissions.includes("servizi.write");
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
@@ -55,6 +58,7 @@ function ServicesPage() {
       if (error) throw error;
       return data;
     },
+    enabled: canRead,
   });
 
   const { data: categories = [] } = useQuery({
@@ -63,6 +67,7 @@ function ServicesPage() {
       const { data } = await supabase.from("service_categories").select("*").order("sort_order");
       return data ?? [];
     },
+    enabled: canRead,
   });
 
   const del = useMutation({
@@ -100,6 +105,27 @@ function ServicesPage() {
       .map(([name, value]) => ({ name, items: value.items }));
   }, [services, categories]);
 
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full border-red-200/50 bg-red-50/5 dark:bg-red-950/5 shadow-lg">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">Accesso Negato</h2>
+              <p className="text-sm text-muted-foreground">
+                Non disponi dei permessi necessari per visualizzare questa sezione (richiesto:{" "}
+                <strong>Vedere catalogo servizi</strong>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -107,7 +133,7 @@ function ServicesPage() {
           <h1 className="text-3xl font-bold">Catalogo Servizi</h1>
           <p className="text-muted-foreground">Listino prezzi e gestione</p>
         </div>
-        {isAdmin && (
+        {canWrite && (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -141,7 +167,7 @@ function ServicesPage() {
                   <TableHead>Servizio</TableHead>
                   <TableHead>Fatturazione</TableHead>
                   <TableHead className="text-right">Prezzo</TableHead>
-                  {isAdmin && <TableHead className="w-32"></TableHead>}
+                  {canWrite && <TableHead className="w-32"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,7 +219,7 @@ function ServicesPage() {
                           : "Ricorrente"}
                     </TableCell>
                     <TableCell className="text-right font-mono">{formatMoney(s.price)}</TableCell>
-                    {isAdmin && (
+                    {canWrite && (
                       <TableCell>
                         <div className="flex gap-1 justify-end">
                           <Button
