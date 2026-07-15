@@ -64,6 +64,7 @@ function BadgePage() {
 
   const { data: weeks = [] } = useQuery<Week[]>({
     queryKey: ["badge-weeks"],
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("badge_weeks")
@@ -80,6 +81,7 @@ function BadgePage() {
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-sessions", weekId],
     enabled: !!weekId,
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("badge_sessions")
@@ -92,7 +94,7 @@ function BadgePage() {
 
   const { data: activeSessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-active"],
-    refetchInterval: 15000,
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("badge_sessions")
@@ -105,6 +107,7 @@ function BadgePage() {
 
   const { data: profiles = [] } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("id,username,display_name");
       if (error) throw error;

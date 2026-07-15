@@ -3,6 +3,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Users,
   CalendarDays,
@@ -108,6 +111,53 @@ const FEATURES: FeatureItem[] = [
 
 function DashboardPage() {
   const { profile, isAdmin, permissions, userSanctions } = useAuth();
+  const qc = useQueryClient();
+
+  const { data: maintenanceData } = useQuery({
+    queryKey: ["maintenance-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("maintenance_settings")
+        .select("*")
+        .eq("id", "global")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const isMaintenance = !!maintenanceData?.is_maintenance;
+
+  const toggleMaintenance = useMutation({
+    mutationFn: async () => {
+      const { data: existing } = await supabase
+        .from("maintenance_settings")
+        .select("*")
+        .eq("id", "global")
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("maintenance_settings")
+          .update({ is_maintenance: !isMaintenance, updated_at: new Date().toISOString() })
+          .eq("id", "global");
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("maintenance_settings")
+          .insert({ id: "global", is_maintenance: true, updated_at: new Date().toISOString() });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["maintenance-settings"] });
+      toast.success(
+        isMaintenance ? "Modalità manutenzione disattivata" : "Modalità manutenzione attivata!",
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err.message);
+    },
+  });
 
   const displayName = profile?.display_name || profile?.username || "Collaboratore";
 
@@ -359,6 +409,44 @@ function DashboardPage() {
           })}
         </div>
       </div>
+
+      {isAdmin && (
+        <Card className="border-amber-500/30 bg-amber-500/5 max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" /> Pannello Amministratore ·
+              Manutenzione
+            </CardTitle>
+            <CardDescription>
+              Attivando la modalità manutenzione, tutti gli operatori verranno reindirizzati a una
+              pagina di cortesia di manutenzione attiva. Solo gli amministratori manterranno
+              l'accesso completo al pannello.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between flex-wrap gap-4">
+            <div className="space-y-1">
+              <div className="font-semibold text-sm">
+                Stato Manutenzione:{" "}
+                {isMaintenance ? (
+                  <span className="text-amber-500 font-bold uppercase">Attiva</span>
+                ) : (
+                  <span className="text-muted-foreground font-bold uppercase">Disattivata</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tutti gli altri utenti vedranno la schermata di cortesia in tempo reale.
+              </p>
+            </div>
+            <Button
+              variant={isMaintenance ? "destructive" : "outline"}
+              onClick={() => toggleMaintenance.mutate()}
+              disabled={toggleMaintenance.isPending}
+            >
+              {isMaintenance ? "Disattiva Manutenzione" : "Attiva Manutenzione"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Signature Footer */}
       <div className="pt-10 pb-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">

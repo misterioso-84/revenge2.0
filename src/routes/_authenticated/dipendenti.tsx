@@ -59,6 +59,7 @@ function DipendentiPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const canVedere = isAdmin || permissions.includes("badge.visualizza");
+  const canSanzioni = isAdmin || permissions.includes("dipendenti.sanzioni");
 
   // Keep a live ticker for active session elapsed time
   const [now, setNow] = useState(Date.now());
@@ -70,6 +71,7 @@ function DipendentiPage() {
   // 1. Fetch weeks
   const { data: weeks = [] } = useQuery<Week[]>({
     queryKey: ["badge-weeks"],
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_weeks")
@@ -88,6 +90,7 @@ function DipendentiPage() {
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-sessions", weekId],
     enabled: !!weekId,
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_sessions")
@@ -101,7 +104,7 @@ function DipendentiPage() {
   // 3. Fetch active sessions (for active/inactive badge status)
   const { data: activeSessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-active"],
-    refetchInterval: 15000,
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_sessions")
@@ -115,6 +118,7 @@ function DipendentiPage() {
   // 4. Fetch all employees profiles
   const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
+    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -303,14 +307,16 @@ function DipendentiPage() {
 
                       {/* Sanctions Button */}
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
-                          onClick={() => setSanctionsTarget(p)}
-                        >
-                          <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
-                        </Button>
+                        {canSanzioni && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
+                            onClick={() => setSanctionsTarget(p)}
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

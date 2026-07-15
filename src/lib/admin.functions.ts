@@ -59,7 +59,7 @@ export const createPanelUser = createServerFn({ method: "POST" })
       password: data.password,
       email_confirm: true,
       user_metadata: {
-        username: data.username.toLowerCase(),
+        username: data.username,
         display_name: data.displayName ?? data.username,
       },
     });
@@ -86,7 +86,7 @@ export const updatePanelUser = createServerFn({ method: "POST" })
     const { data: existing } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("username", data.username.toLowerCase())
+      .ilike("username", data.username)
       .neq("id", data.userId)
       .maybeSingle();
 
@@ -97,7 +97,7 @@ export const updatePanelUser = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({
-        username: data.username.toLowerCase(),
+        username: data.username,
         display_name: data.displayName || null,
       })
       .eq("id", data.userId);

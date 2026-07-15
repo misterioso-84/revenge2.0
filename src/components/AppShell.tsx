@@ -21,7 +21,7 @@ import {
   LayoutDashboard,
   UserCheck,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type NavItem = {
   to: string;
@@ -49,6 +49,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const path = useRouterState({ select: (s) => s.location.pathname });
+
+  const { data: maintenanceData } = useQuery({
+    queryKey: ["maintenance-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("maintenance_settings")
+        .select("*")
+        .eq("id", "global")
+        .maybeSingle();
+      return data;
+    },
+    refetchInterval: 5000,
+  });
+
+  const isMaintenanceActive = !!maintenanceData?.is_maintenance;
+
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("sidebar-collapsed") === "1";
@@ -76,6 +92,51 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (n.adminOnly) return isAdmin;
     return true;
   });
+
+  if (isMaintenanceActive && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-8 space-y-6 shadow-2xl shadow-amber-500/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="h-14 w-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center animate-pulse">
+              <span className="text-3xl">⚙️</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white uppercase">
+              Modalità Manutenzione
+            </h1>
+            <p className="text-sm text-slate-400">
+              Il pannello è attualmente in manutenzione per l'aggiornamento dei sistemi.
+            </p>
+          </div>
+
+          <div className="border-t border-slate-800 pt-5 space-y-4 text-sm">
+            <div className="flex justify-between py-1 border-b border-slate-800/50">
+              <span className="text-slate-400 font-medium">Stato:</span>
+              <span className="font-semibold text-amber-400 uppercase">Manutenzione Attiva</span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-slate-800/50">
+              <span className="text-slate-400 font-medium">Nota:</span>
+              <span className="font-semibold text-slate-200 text-right">
+                Il tuo account non è stato ristretto
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" onClick={signOut}>
+              Scollegati
+            </Button>
+            <p className="text-[10px] text-center text-slate-500">
+              Torna più tardi quando la manutenzione sarà completata.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (activeSuspension) {
     const isPermanent = activeSuspension.type === "espulsione" || !activeSuspension.expires_at;

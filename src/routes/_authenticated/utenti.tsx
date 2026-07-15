@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ import {
   Check,
   X,
   Calendar,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +79,7 @@ function UsersPage() {
   const [editTarget, setEditTarget] = useState<any>(null);
   const [resetTarget, setResetTarget] = useState<any>(null);
   const [rolesTarget, setRolesTarget] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   // Query modificata per estrarre correttamente i dati uniti dal client
   const { data: users = [] } = useQuery({
@@ -111,6 +113,25 @@ function UsersPage() {
     },
   });
 
+  const filteredUsers = useMemo(() => {
+    return users.filter((u: any) => {
+      const q = search.toLowerCase().trim();
+      if (!q) return true;
+
+      const username = (u.username ?? "").toLowerCase();
+      const displayName = (u.display_name ?? "").toLowerCase();
+      const roleStr = u.roles?.includes("admin") ? "admin" : "operatore";
+      const customRolesStr = (u.custom_roles ?? []).map((r: any) => r.name.toLowerCase()).join(" ");
+
+      return (
+        username.includes(q) ||
+        displayName.includes(q) ||
+        roleStr.includes(q) ||
+        customRolesStr.includes(q)
+      );
+    });
+  }, [users, search]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -123,95 +144,119 @@ function UsersPage() {
         </Button>
       </div>
 
-      <Card className="border-accent/30 bg-accent/5">
-        <CardContent className="py-4 text-sm flex items-start gap-3">
-          <Shield className="h-5 w-5 text-accent mt-0.5" />
-          <div>
-            <strong>Sicurezza password:</strong> le password sono <strong>cifrate</strong> e non
-            visibili (neanche all'admin). Se un utente la dimentica, usa <em>Reset password</em> per
-            assegnargliene una nuova.
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-2 max-w-sm border border-border bg-card rounded-lg px-3 py-1.5 shadow-sm">
+        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Input
+          placeholder="Cerca per username, nome o ruolo..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+        />
+      </div>
 
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Ruolo</TableHead>
-                <TableHead>Ruoli personalizzati</TableHead>
-                <TableHead className="w-56"></TableHead>
+                <TableHead className="py-2.5 px-3 h-auto">Username</TableHead>
+                <TableHead className="py-2.5 px-3 h-auto">Nome</TableHead>
+                <TableHead className="py-2.5 px-3 h-auto">Ruolo</TableHead>
+                <TableHead className="py-2.5 px-3 h-auto">Ruoli personalizzati</TableHead>
+                <TableHead className="py-2.5 px-3 h-auto w-56"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u: any) => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-mono">{u.username}</TableCell>
-                  <TableCell>{u.display_name ?? "-"}</TableCell>
-                  <TableCell>
-                    {u.roles?.includes("admin") ? (
-                      <Badge className="bg-primary">Admin</Badge>
-                    ) : (
-                      <Badge variant="secondary">Operatore</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {u.custom_roles?.length === 0
-                      ? "—"
-                      : u.custom_roles?.map((r: any) => r.name).join(", ")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-end flex-wrap">
-                      <Button size="sm" variant="outline" onClick={() => setEditTarget(u)}>
-                        <Pencil className="h-3 w-3 mr-1" /> Modifica
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setRolesTarget(u)}>
-                        Ruoli
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setResetTarget(u)}>
-                        <KeyRound className="h-3 w-3" /> Reset
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title={u.roles?.includes("admin") ? "Rimuovi admin" : "Promuovi ad admin"}
-                        onClick={async () => {
-                          await adminFn({
-                            data: { userId: u.id, admin: !u.roles?.includes("admin") },
-                          });
-                          qc.invalidateQueries({ queryKey: ["panel-users"] });
-                          toast.success("Aggiornato");
-                        }}
-                      >
-                        {u.roles?.includes("admin") ? (
-                          <ShieldOff className="h-4 w-4" />
-                        ) : (
-                          <Shield className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={async () => {
-                          if (!confirm(`Eliminare ${u.username}?`)) return;
-                          try {
-                            await delFn({ data: { userId: u.id } });
-                            qc.invalidateQueries({ queryKey: ["panel-users"] });
-                            toast.success("Eliminato");
-                          } catch (e: any) {
-                            toast.error(e.message);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    Nessun utente trovato
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredUsers.map((u: any) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-mono py-2 px-3">{u.username}</TableCell>
+                    <TableCell className="py-2 px-3">{u.display_name ?? "-"}</TableCell>
+                    <TableCell className="py-2 px-3">
+                      {u.roles?.includes("admin") ? (
+                        <Badge className="bg-primary">Admin</Badge>
+                      ) : (
+                        <Badge variant="secondary">Operatore</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground py-2 px-3">
+                      {u.custom_roles?.length === 0
+                        ? "—"
+                        : u.custom_roles?.map((r: any) => r.name).join(", ")}
+                    </TableCell>
+                    <TableCell className="py-2 px-3">
+                      <div className="flex gap-1 justify-end flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          onClick={() => setEditTarget(u)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" /> Modifica
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          onClick={() => setRolesTarget(u)}
+                        >
+                          Ruoli
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          onClick={() => setResetTarget(u)}
+                        >
+                          <KeyRound className="h-3 w-3" /> Reset
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          title={u.roles?.includes("admin") ? "Rimuovi admin" : "Promuovi ad admin"}
+                          onClick={async () => {
+                            await adminFn({
+                              data: { userId: u.id, admin: !u.roles?.includes("admin") },
+                            });
+                            qc.invalidateQueries({ queryKey: ["panel-users"] });
+                            toast.success("Aggiornato");
+                          }}
+                        >
+                          {u.roles?.includes("admin") ? (
+                            <ShieldOff className="h-4 w-4" />
+                          ) : (
+                            <Shield className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={async () => {
+                            if (!confirm(`Eliminare ${u.username}?`)) return;
+                            try {
+                              await delFn({ data: { userId: u.id } });
+                              qc.invalidateQueries({ queryKey: ["panel-users"] });
+                              toast.success("Eliminato");
+                            } catch (e: any) {
+                              toast.error(e.message);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

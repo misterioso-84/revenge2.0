@@ -52,4 +52,5 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "badge.gestisci", label: "Forzare apertura/chiusura badge altrui" },
   { key: "conversioni.esegui", label: "Eseguire conversioni Soldi/Dobloni" },
   { key: "conversioni.storico", label: "Vedere lo storico delle conversioni" },
+  { key: "dipendenti.sanzioni", label: "Gestire sanzioni dei dipendenti" },
 ];

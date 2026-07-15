@@ -764,7 +764,7 @@ function AddCitizenToNightDialog({
       const { data } = await supabase
         .from("services")
         .select(
-          "id, name, price, billing, include_in_nights, is_qty_editable, service_categories(name)",
+          "id, name, price, billing, include_in_nights, is_qty_editable, service_categories(name, sort_order)",
         )
         .eq("active", true)
         .order("name");
@@ -782,13 +782,16 @@ function AddCitizenToNightDialog({
   );
 
   const grouped = useMemo(() => {
-    const m = new Map<string, typeof services>();
-    services.forEach((s) => {
+    const m = new Map<string, { list: typeof services; sort_order: number }>();
+    services.forEach((s: any) => {
       const k = s.service_categories?.name ?? "Altro";
-      if (!m.has(k)) m.set(k, []);
-      m.get(k)!.push(s);
+      const sortOrder = s.service_categories?.sort_order ?? 999;
+      if (!m.has(k)) m.set(k, { list: [], sort_order: sortOrder });
+      m.get(k)!.list.push(s);
     });
-    return Array.from(m.entries());
+    return Array.from(m.entries())
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, val]) => [name, val.list] as [string, typeof services]);
   }, [services]);
 
   const save = useMutation({

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, Layers, ArrowUp, ArrowDown } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,11 +77,28 @@ function ServicesPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const grouped: Record<string, any[]> = {};
-  services.forEach((s: any) => {
-    const k = s.service_categories?.name ?? "Altro";
-    (grouped[k] ??= []).push(s);
-  });
+  const grouped = useMemo(() => {
+    const m = new Map<string, { items: any[]; sort_order: number }>();
+
+    categories.forEach((cat: any) => {
+      m.set(cat.name, { items: [], sort_order: cat.sort_order ?? 999 });
+    });
+
+    m.set("Altro", { items: [], sort_order: 99999 });
+
+    services.forEach((s: any) => {
+      const k = s.service_categories?.name ?? "Altro";
+      if (!m.has(k)) {
+        m.set(k, { items: [], sort_order: s.service_categories?.sort_order ?? 999 });
+      }
+      m.get(k)!.items.push(s);
+    });
+
+    return Array.from(m.entries())
+      .filter(([_, value]) => value.items.length > 0)
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, value]) => ({ name, items: value.items }));
+  }, [services, categories]);
 
   return (
     <div className="space-y-6">
@@ -112,11 +129,11 @@ function ServicesPage() {
         )}
       </div>
 
-      {Object.entries(grouped).map(([cat, items]) => (
-        <Card key={cat}>
+      {grouped.map(({ name, items }) => (
+        <Card key={name}>
           <CardContent className="p-0">
             <div className="px-4 py-3 border-b border-border bg-card/50">
-              <h2 className="font-semibold text-primary">{cat}</h2>
+              <h2 className="font-semibold text-primary">{name}</h2>
             </div>
             <Table>
               <TableHeader>
@@ -394,6 +411,76 @@ function ManageCategoriesDialog({ open, onOpenChange, categories }: any) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateCategoryOrder = useMutation({
+    mutationFn: async ({
+      id1,
+      order1,
+      id2,
+      order2,
+    }: {
+      id1: string;
+      order1: number;
+      id2: string;
+      order2: number;
+    }) => {
+      const { error: err1 } = await supabase
+        .from("service_categories")
+        .update({ sort_order: order1 })
+        .eq("id", id1);
+      if (err1) throw err1;
+
+      const { error: err2 } = await supabase
+        .from("service_categories")
+        .update({ sort_order: order2 })
+        .eq("id", id2);
+      if (err2) throw err2;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["service-categories"] });
+      qc.invalidateQueries({ queryKey: ["services-full"] });
+      toast.success("Ordinamento aggiornato");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const current = categories[index];
+    const prev = categories[index - 1];
+
+    const currentOrder = current.sort_order ?? index;
+    const prevOrder = prev.sort_order ?? index - 1;
+
+    const newCurrentOrder = prevOrder === currentOrder ? currentOrder - 1 : prevOrder;
+    const newPrevOrder = prevOrder === currentOrder ? currentOrder + 1 : currentOrder;
+
+    updateCategoryOrder.mutate({
+      id1: current.id,
+      order1: newCurrentOrder,
+      id2: prev.id,
+      order2: newPrevOrder,
+    });
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === categories.length - 1) return;
+    const current = categories[index];
+    const next = categories[index + 1];
+
+    const currentOrder = current.sort_order ?? index;
+    const nextOrder = next.sort_order ?? index + 1;
+
+    const newCurrentOrder = nextOrder === currentOrder ? currentOrder + 1 : nextOrder;
+    const newNextOrder = nextOrder === currentOrder ? currentOrder - 1 : nextOrder;
+
+    updateCategoryOrder.mutate({
+      id1: current.id,
+      order1: newCurrentOrder,
+      id2: next.id,
+      order2: newNextOrder,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -408,21 +495,41 @@ function ManageCategoriesDialog({ open, onOpenChange, categories }: any) {
                 Nessuna categoria presente.
               </div>
             ) : (
-              categories.map((c: any) => (
+              categories.map((c: any, index: number) => (
                 <div key={c.id} className="flex items-center justify-between p-3 bg-card">
                   <span className="text-sm font-medium">{c.name}</span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      if (confirm(`Sei sicuro di voler eliminare la categoria "${c.name}"?`)) {
-                        delCategory.mutate(c.id);
-                      }
-                    }}
-                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0 || updateCategoryOrder.isPending}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === categories.length - 1 || updateCategoryOrder.isPending}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm(`Sei sicuro di voler eliminare la categoria "${c.name}"?`)) {
+                          delCategory.mutate(c.id);
+                        }
+                      }}
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}

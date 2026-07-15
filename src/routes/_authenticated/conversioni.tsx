@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, RotateCcw, Save, Coins, Euro } from "lucide-react";
+import { ArrowRight, RotateCcw, Save, Coins, Euro, Plus } from "lucide-react";
 import { formatDateTime, formatMoney, formatDobloni } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -54,6 +54,16 @@ function ConversionsPage() {
   const canExec = can("conversioni.esegui");
   const canHist = can("conversioni.storico");
 
+  const [activeTab, setActiveTab] = useState<string>("");
+
+  useEffect(() => {
+    if (activeTab === "" && (permissions.length > 0 || isAdmin)) {
+      if (canExec) setActiveTab("convert");
+      else if (canHist) setActiveTab("history");
+      else setActiveTab("limits");
+    }
+  }, [permissions, isAdmin, canExec, canHist, activeTab]);
+
   return (
     <div className="space-y-8">
       <div>
@@ -63,7 +73,10 @@ function ConversionsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue={canExec ? "convert" : canHist ? "history" : "limits"}>
+      <Tabs
+        value={activeTab || (canExec ? "convert" : canHist ? "history" : "limits")}
+        onValueChange={setActiveTab}
+      >
         <TabsList>
           {canExec && <TabsTrigger value="convert">Nuova conversione</TabsTrigger>}
           {canHist && <TabsTrigger value="history">Storico</TabsTrigger>}
@@ -130,6 +143,31 @@ function ConvertPanel() {
     if (!citizenSearch) return citizens;
     return citizens.filter((c) => c.full_name.toLowerCase().includes(citizenSearch.toLowerCase()));
   }, [citizens, citizenSearch]);
+
+  const exactExists = useMemo(() => {
+    const t = citizenSearch.trim().toLowerCase();
+    return !!citizens.find((c) => c.full_name.toLowerCase() === t);
+  }, [citizens, citizenSearch]);
+
+  const createCitizen = useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase
+        .from("citizens")
+        .insert({ full_name: name.trim(), membership: "standard" })
+        .select("id, full_name")
+        .single();
+      if (error) throw error;
+      return data as Citizen;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["citizens-mini"] });
+      setCitizenId(data.id);
+      setCitizenSearch(data.full_name);
+      setIsOpen(false);
+      toast.success("Cittadino creato");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const handleSelectCitizen = (c: Citizen) => {
     setCitizenId(c.id);
@@ -336,22 +374,33 @@ function ConvertPanel() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={handleCloseDropdown} />
                   <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border rounded-md shadow-md max-h-60 overflow-y-auto">
-                    {filteredCitizens.length === 0 ? (
+                    {filteredCitizens.length === 0 && !citizenSearch.trim() ? (
                       <div className="p-2 text-sm text-muted-foreground">
                         Nessun cittadino trovato
                       </div>
                     ) : (
-                      filteredCitizens.map((c) => (
-                        <div
-                          key={c.id}
-                          className={`p-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground ${
-                            c.id === citizenId ? "bg-accent/50" : ""
-                          }`}
-                          onClick={() => handleSelectCitizen(c)}
-                        >
-                          {c.full_name}
-                        </div>
-                      ))
+                      <>
+                        {filteredCitizens.map((c) => (
+                          <div
+                            key={c.id}
+                            className={`p-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                              c.id === citizenId ? "bg-accent/50" : ""
+                            }`}
+                            onClick={() => handleSelectCitizen(c)}
+                          >
+                            {c.full_name}
+                          </div>
+                        ))}
+                        {citizenSearch.trim() && !exactExists && (
+                          <div
+                            className="p-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-primary border-t flex items-center gap-2 font-medium"
+                            onClick={() => createCitizen.mutate(citizenSearch)}
+                          >
+                            <Plus className="h-4 w-4" />
+                            Crea cittadino: <strong>{citizenSearch.trim()}</strong>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </>
