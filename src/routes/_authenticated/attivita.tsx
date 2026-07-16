@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,15 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 export const Route = createFileRoute("/_authenticated/attivita")({
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw redirect({ to: "/auth" });
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id);
+    if (!roles?.some((r) => r.role === "admin")) throw redirect({ to: "/cittadini" });
+  },
   component: AttivitaPage,
 });
 

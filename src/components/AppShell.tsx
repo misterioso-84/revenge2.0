@@ -43,7 +43,7 @@ const NAV: NavItem[] = [
   { to: "/badge", label: "Badge & Timbrature", icon: Clock },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
-  { to: "/attivita", label: "Registro Attività", icon: History },
+  { to: "/attivita", label: "Registro Attività", icon: History, adminOnly: true },
   { to: "/utenti", label: "Utenti", icon: UserCog, adminOnly: true },
   { to: "/ruoli", label: "Ruoli & Permessi", icon: ShieldCheck, adminOnly: true },
 ];
@@ -152,9 +152,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return permissions.includes("badge.visualizza");
     }
     if (n.to === "/congedi") {
-      return true; // accessible to any logged in employee
-    }
-    if (n.to === "/attivita") {
       return true; // accessible to any logged in employee
     }
     return true;
