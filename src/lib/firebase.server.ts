@@ -1,5 +1,13 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, doc, setDoc, collection, getDocs, Firestore } from "firebase/firestore/lite";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  getDocs,
+  Firestore,
+} from "firebase/firestore/lite";
 import config from "../../firebase-applet-config.json";
 
 interface FirebaseConfig {
@@ -51,6 +59,17 @@ export async function loadDbFromFirebase(): Promise<Record<string, unknown[]> | 
   if (!db) return null;
 
   try {
+    // 1. Try to load from the optimized single-document structure first
+    const docRef = doc(db, "app_state", "global");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const dbData = docSnap.data() as Record<string, unknown[]>;
+      console.log("Loaded optimized single-document DB from Firestore:", Object.keys(dbData));
+      return dbData;
+    }
+
+    // 2. Migration fallback: If not found, load individual tables and migrate
+    console.log("Single-document state not found. Migrating legacy individual Firestore tables...");
     const collRef = collection(db, "app_tables");
     const querySnapshot = await getDocs(collRef);
     if (querySnapshot.empty) {
@@ -62,7 +81,10 @@ export async function loadDbFromFirebase(): Promise<Record<string, unknown[]> | 
     querySnapshot.forEach((docSnap) => {
       data[docSnap.id] = (docSnap.data().data as unknown[]) || [];
     });
-    console.log("Loaded tables from Firestore:", Object.keys(data));
+
+    // Save the migrated state back as a single document immediately to complete migration
+    await setDoc(docRef, data);
+    console.log("Migration successful: Saved all legacy tables to optimized single-document.");
     return data;
   } catch (err) {
     console.error("Error loading DB from Firebase:", err);
@@ -75,12 +97,9 @@ export async function saveDbToFirebase(data: Record<string, unknown[]>): Promise
   if (!db) return;
 
   try {
-    const promises = Object.entries(data).map(async ([tableName, list]) => {
-      const docRef = doc(db, "app_tables", tableName);
-      await setDoc(docRef, { data: list });
-    });
-    await Promise.all(promises);
-    console.log("Successfully saved all tables to Firestore.");
+    const docRef = doc(db, "app_state", "global");
+    await setDoc(docRef, data);
+    console.log("Saved DB state to Firestore.");
   } catch (err) {
     console.error("Error saving DB to Firebase:", err);
   }
