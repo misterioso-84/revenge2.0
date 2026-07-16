@@ -2,10 +2,10 @@
   "profiles": [
     {
       "id": "mock-user-id-1234",
-      "updated_at": "2026-07-13T14:01:29.800Z",
+      "updated_at": "2026-07-16T07:41:26.321Z",
       "display_name": "Giuse84pro",
       "created_at": "2026-07-12T13:12:44.187Z",
-      "username": "giuse84pro"
+      "username": "Giuse84pro"
     },
     {
       "id": "user-b9p6dwg58ru",
@@ -277,7 +277,22 @@
       ]
     }
   ],
-  "user_custom_roles": [],
+  "user_custom_roles": [
+    {
+      "id": "hy2r6g15il4",
+      "created_at": "2026-07-15T13:38:14.985Z",
+      "updated_at": "2026-07-15T13:38:14.985Z",
+      "user_id": "mock-user-id-1234",
+      "custom_role_id": "745nc4e6n1r"
+    },
+    {
+      "id": "0iv02dpf89og",
+      "created_at": "2026-07-15T13:38:32.333Z",
+      "updated_at": "2026-07-15T13:38:32.333Z",
+      "user_id": "user-o5yk1ko0qa",
+      "custom_role_id": "qb8h239wnp"
+    }
+  ],
   "citizens": [
     {
       "membership": "elite",
@@ -468,6 +483,15 @@
       "updated_at": "2026-07-15T13:04:41.739Z",
       "started_at": "2026-07-15T13:04:36.802Z",
       "ended_at": "2026-07-15T13:04:41.687Z",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-1"
+    },
+    {
+      "id": "zptyrgxyxz",
+      "created_at": "2026-07-16T07:25:19.996Z",
+      "updated_at": "2026-07-16T07:25:27.258Z",
+      "started_at": "2026-07-16T07:25:19.997Z",
+      "ended_at": "2026-07-16T07:25:26.393Z",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1"
     }
@@ -687,12 +711,35 @@
       "expires_at": null
     }
   ],
+  "leave_requests": [],
+  "audit_logs": [
+    {
+      "id": "log-v13vqrlyi8m",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "update",
+      "table_name": "profiles",
+      "details": "Aggiornato profilo utente: Giuse84pro",
+      "created_at": "2026-07-16T07:41:26.321Z"
+    },
+    {
+      "id": "log-3dudmla68f9",
+      "user_id": "mock-user-id-1234",
+      "username": "giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "update",
+      "table_name": "profiles",
+      "details": "Aggiornato profilo utente: Giuse84pro",
+      "created_at": "2026-07-16T07:41:18.649Z"
+    }
+  ],
   "maintenance_settings": [
     {
       "id": "global",
       "created_at": "2026-07-15T13:02:46.203Z",
-      "updated_at": "2026-07-15T13:25:25.682Z",
-      "is_maintenance": true
+      "updated_at": "2026-07-15T13:37:25.377Z",
+      "is_maintenance": false
     }
   ],
   "night_items": [

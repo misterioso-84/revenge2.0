@@ -168,17 +168,23 @@ function getInitialDb() {
     purchased_services: [],
     sanctions: [],
     leave_requests: [],
+    audit_logs: [],
   };
 
   return db;
 }
 
 let cachedDb: Record<string, any[]> | null = null;
+let lastLoadTime = 0;
+const CACHE_TTL = 1500; // 1.5 seconds cache TTL to handle page refresh while avoiding double-loads in same render
 let isInitializing = false;
 let initPromise: Promise<Record<string, any[]>> | null = null;
 
 async function loadDb(): Promise<Record<string, any[]>> {
-  if (cachedDb) return cachedDb;
+  const now = Date.now();
+  if (cachedDb && now - lastLoadTime < CACHE_TTL) {
+    return cachedDb;
+  }
 
   if (isInitializing && initPromise) {
     return initPromise;
@@ -194,7 +200,11 @@ async function loadDb(): Promise<Record<string, any[]>> {
           "[Firebase Sync] Successfully loaded database from Firestore. Merging with initial DB and updating local cache...",
         );
         const initialDb = getInitialDb();
-        cachedDb = { ...initialDb, ...fbData };
+        // Ensure audit_logs is initialized
+        const mergedDb = { ...initialDb, ...fbData };
+        mergedDb.audit_logs = mergedDb.audit_logs || [];
+        cachedDb = mergedDb;
+        lastLoadTime = Date.now();
         try {
           fs.writeFileSync(DB_FILE, JSON.stringify(cachedDb, null, 2), "utf-8");
         } catch (e) {
@@ -222,7 +232,9 @@ async function loadDb(): Promise<Record<string, any[]>> {
       localDb = getInitialDb();
     }
 
+    localDb.audit_logs = localDb.audit_logs || [];
     cachedDb = localDb;
+    lastLoadTime = Date.now();
 
     console.log("[Firebase Sync] Seeding Firestore with database state...");
     saveDbToFirebase(localDb).catch((err) => {
@@ -239,7 +251,9 @@ async function loadDb(): Promise<Record<string, any[]>> {
 }
 
 function saveDb(db: Record<string, any[]>) {
+  db.audit_logs = db.audit_logs || [];
   cachedDb = db;
+  lastLoadTime = Date.now(); // Trust our written local state immediately
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
   } catch (e) {
@@ -250,6 +264,162 @@ function saveDb(db: Record<string, any[]>) {
   saveDbToFirebase(db).catch((err) => {
     console.error("[Firebase Sync] Failed to save database state to Firestore:", err);
   });
+}
+
+function logOperation(
+  db: any,
+  operation: string,
+  table: string | undefined,
+  query: any,
+  result: any,
+) {
+  // Only log write actions or important RPC calls
+  const isWrite =
+    ["insert", "update", "delete", "upsert"].includes(operation) ||
+    (operation === "rpc" && ["perform_conversion"].includes(query.name));
+
+  if (!isWrite) return;
+
+  db.audit_logs = db.audit_logs || [];
+
+  const session = getActiveSession(db);
+  const userId = session?.user?.id || "system";
+  const username = session?.user?.user_metadata?.username || "sistema";
+  const userDisplayName = session?.user?.user_metadata?.display_name || "Sistema";
+
+  let details = "";
+  const tableLabel = table || query.name || "sistema";
+
+  if (operation === "rpc") {
+    if (query.name === "perform_conversion") {
+      const dir =
+        query.args?._direction === "cash_to_dobloni" ? "Euro ➔ Dobloni" : "Dobloni ➔ Euro";
+      const amtStr =
+        query.args?._direction === "cash_to_dobloni"
+          ? `${query.args?._input} €`
+          : `${query.args?._input} Dobloni`;
+      details = `Eseguita conversione valuta (${dir}) di ${amtStr}`;
+    } else {
+      details = `Eseguita operazione di sistema: ${query.name}`;
+    }
+  } else if (table === "citizens") {
+    if (operation === "insert") {
+      const name = Array.isArray(query.insertData)
+        ? query.insertData.map((x: any) => x.full_name).join(", ")
+        : query.insertData?.full_name;
+      details = `Registrato nuovo cittadino: ${name}`;
+    } else if (operation === "update") {
+      const name = query.updateData?.full_name || "";
+      const extra = name ? `: ${name}` : "";
+      details = `Aggiornato cittadino${extra}`;
+    } else if (operation === "delete") {
+      details = `Eliminato cittadino dal database`;
+    } else {
+      details = `Modificata anagrafica cittadini`;
+    }
+  } else if (table === "leave_requests") {
+    if (operation === "insert") {
+      const start = query.insertData?.start_date;
+      const end = query.insertData?.end_date;
+      details = `Inviata richiesta di congedo dal ${start} al ${end}`;
+    } else if (operation === "update") {
+      const status = query.updateData?.status;
+      const statusLabel =
+        status === "approved" ? "APPROVATO" : status === "rejected" ? "RIFIUTATO" : status;
+      const userStr = result?.data?.[0]?.display_name || result?.data?.[0]?.username || "";
+      const extra = userStr ? ` per ${userStr}` : "";
+      details = `Congedo ${statusLabel}${extra}`;
+    } else if (operation === "delete") {
+      details = `Annullato congedo`;
+    } else {
+      details = `Gestito congedo`;
+    }
+  } else if (table === "conversions") {
+    if (operation === "insert") {
+      const dir =
+        query.insertData?.direction === "cash_to_dobloni" ? "Euro ➔ Dobloni" : "Dobloni ➔ Euro";
+      details = `Registrata conversione valuta (${dir})`;
+    } else {
+      details = `Modificato record di conversione`;
+    }
+  } else if (table === "nights") {
+    if (operation === "insert") {
+      details = `Creata nuova serata: ${query.insertData?.title || query.insertData?.night_date}`;
+    } else if (operation === "update") {
+      const isClosed = query.updateData?.is_closed;
+      if (isClosed === true) {
+        details = `Chiusa serata: ${result?.data?.[0]?.title || result?.data?.[0]?.night_date || "ID " + query.filters?.[0]?.value}`;
+      } else {
+        details = `Aggiornata serata: ${query.updateData?.title || "ID " + query.filters?.[0]?.value}`;
+      }
+    } else if (operation === "delete") {
+      details = `Eliminata serata dal database`;
+    } else {
+      details = `Gestito record serata`;
+    }
+  } else if (table === "services") {
+    if (operation === "insert") {
+      details = `Aggiunto servizio a catalogo: ${query.insertData?.name}`;
+    } else if (operation === "update") {
+      details = `Aggiornato servizio: ${query.updateData?.name || "ID " + query.filters?.[0]?.value}`;
+    } else if (operation === "delete") {
+      details = `Eliminato servizio dal catalogo`;
+    }
+  } else if (table === "badge_sessions") {
+    if (operation === "insert") {
+      details = `Iniziata sessione di lavoro (timbratura ingresso)`;
+    } else if (operation === "update") {
+      const endedAt = query.updateData?.ended_at;
+      details = endedAt ? `Chiusa sessione di lavoro (timbratura uscita)` : `Aggiornata timbratura`;
+    } else if (operation === "delete") {
+      details = `Eliminata timbratura`;
+    }
+  } else if (table === "sanctions") {
+    if (operation === "insert") {
+      const type = query.insertData?.type;
+      const typeLabel =
+        type === "richiamo_verbale"
+          ? "Richiamo Verbale"
+          : type === "warn"
+            ? "Warn"
+            : type === "sospensione"
+              ? "Sospensione"
+              : type === "espulsione"
+                ? "Espulsione"
+                : type;
+      details = `Assegnato provvedimento disciplinare (${typeLabel})`;
+    } else if (operation === "update") {
+      details = `Aggiornato provvedimento disciplinare`;
+    } else if (operation === "delete") {
+      details = `Eliminato provvedimento disciplinare`;
+    }
+  } else if (table === "safe_boxes") {
+    details = `Aggiornato stato cassette di sicurezza`;
+  } else if (table === "custom_roles") {
+    details = `Modificato ruolo personalizzato: ${query.insertData?.name || query.updateData?.name || ""}`;
+  } else if (table === "profiles") {
+    details = `Aggiornato profilo utente: ${query.updateData?.display_name || ""}`;
+  } else {
+    details = `${operation.toUpperCase()} su tabella ${tableLabel}`;
+  }
+
+  const logEntry = {
+    id: "log-" + Math.random().toString(36).substring(2, 15),
+    user_id: userId,
+    username: username,
+    user_display_name: userDisplayName,
+    action: operation,
+    table_name: tableLabel,
+    details: details,
+    created_at: new Date().toISOString(),
+  };
+
+  db.audit_logs.unshift(logEntry); // Add to beginning of array
+
+  // Keep last 1000 logs to prevent infinite size growth
+  if (db.audit_logs.length > 1000) {
+    db.audit_logs = db.audit_logs.slice(0, 1000);
+  }
 }
 
 function recalculateNightsTotals(db: Record<string, any[]>) {
@@ -490,6 +660,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       };
 
       db.conversions = [...conversions, newConversion];
+      logOperation(db, "rpc", undefined, query, { data: newConversion });
       saveDb(db);
 
       return { data: newConversion, error: null };
@@ -557,6 +728,16 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
             itemVal = true;
           }
           return Array.isArray(value) && value.includes(itemVal);
+        });
+      } else if (op === "ilike") {
+        filtered = filtered.filter((item) => {
+          const itemVal = item[column];
+          if (typeof itemVal !== "string" || typeof value !== "string") {
+            return String(itemVal).toLowerCase() === String(value).toLowerCase();
+          }
+          const cleanValue = value.replace(/%/g, ".*");
+          const regex = new RegExp(`^${cleanValue}$`, "i");
+          return regex.test(itemVal);
         });
       }
     }
@@ -682,6 +863,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "night_items") {
       recalculateNightsTotals(db);
     }
+    logOperation(db, operation, table, query, { data: insertedRows });
     saveDb(db);
 
     return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
@@ -729,6 +911,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       }
     }
 
+    logOperation(db, operation, table, query, { data: results });
     saveDb(db);
     return { data: Array.isArray(insertData) ? results : results[0], error: null };
   }
@@ -754,6 +937,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "night_items") {
       recalculateNightsTotals(db);
     }
+    logOperation(db, operation, table, query, { data: updatedRows });
     saveDb(db);
     return { data: updatedRows, error: null };
   }
@@ -778,6 +962,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "night_items") {
       recalculateNightsTotals(db);
     }
+    logOperation(db, operation, table, query, { data: deletedRows });
     saveDb(db);
     return { data: deletedRows, error: null };
   }

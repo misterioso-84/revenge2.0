@@ -120,7 +120,7 @@ function setCookie(name: string, value: string, days: number) {
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
     expires = "; expires=" + date.toUTCString();
   }
-  document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+  document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=None; Secure";
 }
 
 function eraseCookie(name: string) {
@@ -164,6 +164,9 @@ class MockSupabaseClient {
     },
     getSession: async () => {
       if (this.hasLoadedSession) {
+        if (this.cachedSession?.user?.id) {
+          setCookie("casino_userId", this.cachedSession.user.id, 1);
+        }
         return { data: { session: this.cachedSession }, error: null };
       }
 
@@ -177,6 +180,7 @@ class MockSupabaseClient {
             if (parsed.createdAt && now - parsed.createdAt < oneDayMs) {
               this.cachedSession = parsed.session;
               this.hasLoadedSession = true;
+              setCookie("casino_userId", parsed.session.user.id, 1);
               return { data: { session: parsed.session }, error: null };
             } else {
               localStorage.removeItem("casinorevenge_session");

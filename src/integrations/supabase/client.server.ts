@@ -63,6 +63,11 @@ class MockPostgrestServerBuilder {
     return this;
   }
 
+  ilike(column: string, value: string) {
+    this.filters.push({ column, value, op: "ilike" as any });
+    return this;
+  }
+
   in(column: string, values: any[]) {
     this.filters.push({ column, value: values, op: "in" });
     return this;

@@ -21,9 +21,9 @@ import {
   AlertTriangle,
   Check,
   ShieldAlert,
+  Palmtree,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
-import { LeaveRequestsList } from "@/components/LeaveRequestsList";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -91,6 +91,13 @@ const FEATURES: FeatureItem[] = [
     to: "/badge",
     icon: Clock,
     permissions: ["badge.timbra", "badge.visualizza", "badge.settimane", "badge.gestisci"],
+  },
+  {
+    title: "Richiesta & Gestione Congedi",
+    description: "Invia richieste di congedo o approva i periodi di ferie approvati del personale.",
+    to: "/congedi",
+    icon: Palmtree,
+    permissions: [],
   },
   {
     title: "Gestione Utenti",
@@ -166,6 +173,7 @@ function DashboardPage() {
   const visibleFeatures = FEATURES.filter((f) => {
     if (isAdmin) return true;
     if (f.adminOnly) return false;
+    if (f.to === "/congedi") return true; // Accessible to all authenticated employees
     // Show if user has at least one permission in the feature's permission list
     return f.permissions.some((p) => permissions.includes(p));
   });
@@ -323,9 +331,6 @@ function DashboardPage() {
           </div>
         )}
       </div>
-
-      {/* Leave Requests section */}
-      <LeaveRequestsList />
 
       {/* Features Section */}
       <div className="space-y-6">

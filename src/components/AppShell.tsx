@@ -20,6 +20,8 @@ import {
   PanelLeftOpen,
   LayoutDashboard,
   UserCheck,
+  Palmtree,
+  History,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -40,6 +42,8 @@ const NAV: NavItem[] = [
   { to: "/cassette", label: "Cassette di Sicurezza", icon: Lock },
   { to: "/badge", label: "Badge & Timbrature", icon: Clock },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
+  { to: "/congedi", label: "Congedi", icon: Palmtree },
+  { to: "/attivita", label: "Registro Attività", icon: History },
   { to: "/utenti", label: "Utenti", icon: UserCog, adminOnly: true },
   { to: "/ruoli", label: "Ruoli & Permessi", icon: ShieldCheck, adminOnly: true },
 ];
@@ -57,6 +61,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const path = useRouterState({ select: (s) => s.location.pathname });
+
+  const [bypassedLeave, setBypassedLeave] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("bypassed-leave") === "true";
+    }
+    return false;
+  });
+
+  const handleBypass = () => {
+    setBypassedLeave(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("bypassed-leave", "true");
+    }
+  };
 
   const { data: maintenanceData } = useQuery({
     queryKey: ["maintenance-settings"],
@@ -94,10 +112,51 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const items = NAV.filter((n) => {
-    if (n.to === "/dipendenti") {
-      return isAdmin || permissions.includes("badge.visualizza");
+    if (isAdmin) return true;
+    if (n.adminOnly) return false;
+
+    if (n.to === "/cittadini") {
+      return permissions.includes("cittadini.read");
     }
-    if (n.adminOnly) return isAdmin;
+    if (n.to === "/serate") {
+      return (
+        permissions.includes("serate.crea") ||
+        permissions.includes("serate.gestisci") ||
+        permissions.includes("serate.consulta") ||
+        permissions.includes("serate.incassi")
+      );
+    }
+    if (n.to === "/conversioni") {
+      return (
+        permissions.includes("conversioni.esegui") || permissions.includes("conversioni.storico")
+      );
+    }
+    if (n.to === "/servizi") {
+      return permissions.includes("servizi.read");
+    }
+    if (n.to === "/corse-cavalli") {
+      return permissions.includes("corse.read");
+    }
+    if (n.to === "/cassette") {
+      return permissions.includes("cassette.read");
+    }
+    if (n.to === "/badge") {
+      return (
+        permissions.includes("badge.timbra") ||
+        permissions.includes("badge.visualizza") ||
+        permissions.includes("badge.settimane") ||
+        permissions.includes("badge.gestisci")
+      );
+    }
+    if (n.to === "/dipendenti") {
+      return permissions.includes("badge.visualizza");
+    }
+    if (n.to === "/congedi") {
+      return true; // accessible to any logged in employee
+    }
+    if (n.to === "/attivita") {
+      return true; // accessible to any logged in employee
+    }
     return true;
   });
 
@@ -231,7 +290,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (activeLeave) {
+  if (activeLeave && !bypassedLeave) {
     const startDateFormatted = new Date(activeLeave.start_date).toLocaleDateString("it-IT", {
       day: "numeric",
       month: "long",
@@ -287,6 +346,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="space-y-3 pt-2">
+            {isAdmin && (
+              <Button
+                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold"
+                onClick={handleBypass}
+              >
+                Bypass (Amministratore)
+              </Button>
+            )}
             <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" onClick={signOut}>
               Scollegati
             </Button>
