@@ -168,6 +168,7 @@ function getInitialDb() {
     purchased_services: [],
     sanctions: [],
     leave_requests: [],
+    night_items: [],
     audit_logs: [],
   };
 

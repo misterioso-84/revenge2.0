@@ -269,10 +269,12 @@ function CitizenPicker({
   value,
   onChange,
   allowCreate = true,
+  excludeIds,
 }: {
   value: Citizen | null;
   onChange: (c: Citizen | null) => void;
   allowCreate?: boolean;
+  excludeIds?: Set<string>;
 }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -338,24 +340,42 @@ function CitizenPicker({
       />
       {focused && (
         <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-md shadow-lg max-h-72 overflow-y-auto">
-          {matches.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className="w-full text-left px-3 py-2 hover:bg-accent/40 text-sm flex justify-between"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onChange(c);
-                setQ("");
-                setFocused(false);
-              }}
-            >
-              <span>{c.full_name}</span>
-              <span className="text-xs text-muted-foreground">
-                {MEMBERSHIP_LABEL[c.membership]}
-              </span>
-            </button>
-          ))}
+          {matches.map((c) => {
+            const isExcluded = excludeIds?.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center ${
+                  isExcluded
+                    ? "opacity-60 cursor-not-allowed bg-accent/5 text-muted-foreground"
+                    : "hover:bg-accent/40"
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  if (isExcluded) {
+                    toast.error("Questo cittadino è già presente in questa serata!");
+                    return;
+                  }
+                  onChange(c);
+                  setQ("");
+                  setFocused(false);
+                }}
+              >
+                <span className="flex items-center gap-1.5 font-medium">
+                  {c.full_name}
+                  {isExcluded && (
+                    <span className="text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/20 font-normal">
+                      Già in serata
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {MEMBERSHIP_LABEL[c.membership]}
+                </span>
+              </button>
+            );
+          })}
           {allowCreate && q.trim() && !exactExists && (
             <button
               type="button"
@@ -870,7 +890,7 @@ function AddCitizenToNightDialog({
         {!initialCitizen && (
           <div>
             <Label>Cittadino *</Label>
-            <CitizenPicker value={citizen} onChange={setCitizen} />
+            <CitizenPicker value={citizen} onChange={setCitizen} excludeIds={existingCitizenIds} />
           </div>
         )}
 
