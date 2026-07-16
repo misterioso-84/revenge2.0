@@ -86,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         .maybeSingle();
       return data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 60000,
   });
 
   const isMaintenanceActive = !!maintenanceData?.is_maintenance;

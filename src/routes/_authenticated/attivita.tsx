@@ -63,7 +63,6 @@ function AttivitaPage() {
       if (error) throw error;
       return (data as any[]) ?? [];
     },
-    refetchInterval: 3000, // fast refetch to keep synchronized in real time
   });
 
   // Fetch unique users list for filtering (only if admin)

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { loadDbFromFirebase, saveDbToFirebase } from "../../lib/firebase.server";
+import { loadDbFromNeon, saveDbToNeon } from "../../lib/neon.server";
 import { getRequest } from "@tanstack/react-start/server";
 
 const DB_FILE = path.join(process.cwd(), "mock-db.json");
@@ -194,15 +194,14 @@ async function loadDb(): Promise<Record<string, any[]>> {
   isInitializing = true;
   initPromise = (async () => {
     try {
-      console.log("[Firebase Sync] Attempting to load database from Firestore...");
-      const fbData = await loadDbFromFirebase();
-      if (fbData) {
+      console.log("[Neon Sync] Attempting to load database from Neon Postgres...");
+      const pgData = await loadDbFromNeon();
+      if (pgData) {
         console.log(
-          "[Firebase Sync] Successfully loaded database from Firestore. Merging with initial DB and updating local cache...",
+          "[Neon Sync] Successfully loaded database from Neon. Merging with initial DB and updating local cache...",
         );
         const initialDb = getInitialDb();
-        // Ensure audit_logs is initialized
-        const mergedDb = { ...initialDb, ...fbData };
+        const mergedDb = { ...initialDb, ...pgData };
         mergedDb.audit_logs = mergedDb.audit_logs || [];
         cachedDb = mergedDb;
         lastLoadTime = Date.now();
@@ -214,10 +213,10 @@ async function loadDb(): Promise<Record<string, any[]>> {
         return cachedDb;
       }
     } catch (err) {
-      console.error("[Firebase Sync] Failed to load from Firebase:", err);
+      console.error("[Neon Sync] Failed to load from Neon Postgres:", err);
     }
 
-    console.log("[Firebase Sync] Falling back to local mock-db.json...");
+    console.log("[Neon Sync] Falling back to local mock-db.json...");
     let localDb: Record<string, any[]> | null = null;
     try {
       if (fs.existsSync(DB_FILE)) {
@@ -229,7 +228,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
     }
 
     if (!localDb) {
-      console.log("[Firebase Sync] No local mock DB found. Creating initial DB...");
+      console.log("[Neon Sync] No local mock DB found. Creating initial DB...");
       localDb = getInitialDb();
     }
 
@@ -237,9 +236,9 @@ async function loadDb(): Promise<Record<string, any[]>> {
     cachedDb = localDb;
     lastLoadTime = Date.now();
 
-    console.log("[Firebase Sync] Seeding Firestore with database state...");
-    saveDbToFirebase(localDb).catch((err) => {
-      console.error("[Firebase Sync] Failed to seed Firestore in background:", err);
+    console.log("[Neon Sync] Seeding Neon Postgres with database state...");
+    saveDbToNeon(localDb).catch((err) => {
+      console.error("[Neon Sync] Failed to seed Neon Postgres in background:", err);
     });
 
     return cachedDb;
@@ -261,9 +260,9 @@ function saveDb(db: Record<string, any[]>) {
     console.error("Error saving mock db:", e);
   }
 
-  console.log("[Firebase Sync] Saving database state to Firestore in background...");
-  saveDbToFirebase(db).catch((err) => {
-    console.error("[Firebase Sync] Failed to save database state to Firestore:", err);
+  console.log("[Neon Sync] Saving database state to Neon Postgres in background...");
+  saveDbToNeon(db).catch((err) => {
+    console.error("[Neon Sync] Failed to save database state to Neon Postgres:", err);
   });
 }
 

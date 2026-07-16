@@ -84,7 +84,6 @@ function DipendentiPage() {
   // 1. Fetch weeks
   const { data: weeks = [] } = useQuery<Week[]>({
     queryKey: ["badge-weeks"],
-    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_weeks")
@@ -104,7 +103,6 @@ function DipendentiPage() {
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-sessions", weekId],
     enabled: canRead && !!weekId,
-    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_sessions")
@@ -118,7 +116,6 @@ function DipendentiPage() {
   // 3. Fetch active sessions (for active/inactive badge status)
   const { data: activeSessions = [] } = useQuery<Session[]>({
     queryKey: ["badge-active"],
-    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("badge_sessions")
@@ -133,7 +130,6 @@ function DipendentiPage() {
   // 4. Fetch all employees profiles
   const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
-    refetchInterval: 2000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")

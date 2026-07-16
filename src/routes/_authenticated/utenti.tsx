@@ -555,7 +555,6 @@ function UserActivityDialog({ user, onClose }: { user: any; onClose: () => void 
       if (error) throw error;
       return (data as any[]) ?? [];
     },
-    refetchInterval: 3000, // keep updated
   });
 
   // Unique tables for filter
