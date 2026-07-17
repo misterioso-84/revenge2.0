@@ -1035,8 +1035,12 @@ export async function handleMockAuth(query: any): Promise<any> {
 
   if (action === "signInWithPassword") {
     const { email, password } = payload;
-    const username = email.split("@")[0];
-    const profile = db.profiles.find((p) => p.username.toLowerCase() === username.toLowerCase());
+    const rawUsername = email.split("@")[0].toLowerCase();
+
+    // Map common admin/user aliases to the actual database admin username
+    const username =
+      rawUsername === "admin" || rawUsername === "beppemonti84" ? "giuse84pro" : rawUsername;
+    const profile = db.profiles.find((p) => p.username.toLowerCase() === username);
 
     if (!profile) {
       return { data: { session: null }, error: { message: "Credenziali non valide." } };
