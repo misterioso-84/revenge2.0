@@ -610,7 +610,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "staff";
       conversion_direction: "cash_to_dobloni" | "dobloni_to_cash";
-      membership_tier: "standard" | "exclusive" | "elite";
+      membership_tier: "standard" | "exclusive" | "elite" | "vip";
       service_billing: "per_night" | "one_time" | "recurring";
     };
     CompositeTypes: {
@@ -735,7 +735,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "staff"],
       conversion_direction: ["cash_to_dobloni", "dobloni_to_cash"],
-      membership_tier: ["standard", "exclusive", "elite"],
+      membership_tier: ["standard", "exclusive", "elite", "vip"],
       service_billing: ["per_night", "one_time", "recurring"],
     },
   },

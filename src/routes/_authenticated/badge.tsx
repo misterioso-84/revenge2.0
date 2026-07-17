@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Play, Square, Clock, Plus, Lock as LockIcon, Users } from "lucide-react";
+import { WeekSessionsDialog } from "@/components/WeekSessionsDialog";
 
 export const Route = createFileRoute("/_authenticated/badge")({
   component: BadgePage,
@@ -83,6 +84,7 @@ function BadgePage() {
   });
   const active = weeks.find((w) => w.active) ?? null;
   const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
+  const [viewingWeek, setViewingWeek] = useState<Week | null>(null);
   const weekId = selectedWeekId ?? active?.id ?? weeks[0]?.id ?? null;
 
   const { data: sessions = [] } = useQuery<Session[]>({
@@ -567,7 +569,7 @@ function BadgePage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => setSelectedWeekId(w.id)}>
+                      <Button size="sm" variant="outline" onClick={() => setViewingWeek(w)}>
                         Vedi
                       </Button>
                     </TableCell>
@@ -577,6 +579,14 @@ function BadgePage() {
             </Table>
           </CardContent>
         </Card>
+      )}
+      {viewingWeek && (
+        <WeekSessionsDialog
+          open={!!viewingWeek}
+          onClose={() => setViewingWeek(null)}
+          week={viewingWeek}
+          profiles={profiles}
+        />
       )}
     </div>
   );

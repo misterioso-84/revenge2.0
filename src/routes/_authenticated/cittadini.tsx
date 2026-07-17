@@ -44,7 +44,7 @@ type Citizen = {
   id: string;
   full_name: string;
   nickname: string | null;
-  membership: "standard" | "exclusive" | "elite";
+  membership: "standard" | "exclusive" | "elite" | "vip";
   membership_since: string | null;
   notes: string | null;
   created_at: string;
@@ -246,11 +246,13 @@ function CitizensPage() {
 
 function MembershipBadge({ tier }: { tier: string }) {
   const cls =
-    tier === "elite"
-      ? "bg-primary text-primary-foreground"
-      : tier === "exclusive"
-        ? "bg-secondary text-secondary-foreground"
-        : "bg-muted text-muted-foreground";
+    tier === "vip"
+      ? "bg-amber-500 text-amber-950 font-bold border border-amber-400 shadow-md shadow-amber-500/10"
+      : tier === "elite"
+        ? "bg-primary text-primary-foreground"
+        : tier === "exclusive"
+          ? "bg-secondary text-secondary-foreground"
+          : "bg-muted text-muted-foreground";
   return <Badge className={cls}>{MEMBERSHIP_LABEL[tier]}</Badge>;
 }
 
@@ -265,7 +267,7 @@ function CitizenDialog({
 }) {
   const qc = useQueryClient();
   const isEdit = !!citizen;
-  const [membership, setMembership] = useState<"standard" | "exclusive" | "elite">(
+  const [membership, setMembership] = useState<"standard" | "exclusive" | "elite" | "vip">(
     citizen?.membership ?? "standard",
   );
 

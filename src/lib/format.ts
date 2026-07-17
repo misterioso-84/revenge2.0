@@ -31,6 +31,7 @@ export const MEMBERSHIP_LABEL: Record<string, string> = {
   standard: "Standard",
   exclusive: "Exclusive",
   elite: "Èlite",
+  vip: "VIP",
 };
 
 export const PERMISSIONS: { key: string; label: string }[] = [
