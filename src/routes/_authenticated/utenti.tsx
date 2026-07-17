@@ -80,6 +80,7 @@ function UsersPage() {
   const delFn = useServerFn(deletePanelUser);
   const adminFn = useServerFn(setUserAdmin);
   const assignFn = useServerFn(assignCustomRole);
+  const updateSanctionFn = useServerFn(updateSanction);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any>(null);
@@ -94,6 +95,45 @@ function UsersPage() {
     description: string;
     onConfirm: () => void;
   }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
+
+  const { data: sanctions = [], refetch: refetchSanctions } = useQuery<any[]>({
+    queryKey: ["all-sanctions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sanctions").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 10000,
+  });
+
+  const activeExpulsionsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const s of sanctions) {
+      if (s.is_active && s.type === "espulsione") {
+        map.set(s.user_id, s);
+      }
+    }
+    return map;
+  }, [sanctions]);
+
+  const handleRemoveExpulsion = async (userId: string) => {
+    const s = activeExpulsionsMap.get(userId);
+    if (!s) return;
+    try {
+      await updateSanctionFn({
+        data: {
+          sanctionId: s.id,
+          isActive: false,
+        },
+      });
+      toast.success("Sanzione di espulsione rimossa con successo!");
+      refetchSanctions();
+      qc.invalidateQueries({ queryKey: ["panel-users"] });
+      qc.invalidateQueries({ queryKey: ["all-sanctions"] });
+    } catch (err: any) {
+      toast.error(err.message || "Errore nella rimozione dell'espulsione");
+    }
+  };
 
   // Query modificata per estrarre correttamente i dati uniti dal client
   const { data: users = [] } = useQuery({
@@ -190,7 +230,16 @@ function UsersPage() {
               ) : (
                 filteredUsers.map((u: any) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-mono py-2 px-3">{u.username}</TableCell>
+                    <TableCell className="font-mono py-2 px-3">
+                      <div className="flex flex-col gap-1">
+                        <span>{u.username}</span>
+                        {activeExpulsionsMap.has(u.id) && (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider w-fit">
+                            <Skull className="h-3 w-3 animate-pulse" /> Espulso Permanente
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="py-2 px-3">{u.display_name ?? "-"}</TableCell>
                     <TableCell className="py-2 px-3">
                       {u.roles?.includes("admin") ? (
@@ -206,6 +255,16 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="py-2 px-3">
                       <div className="flex gap-1 justify-end flex-wrap">
+                        {activeExpulsionsMap.has(u.id) && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+                            onClick={() => handleRemoveExpulsion(u.id)}
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" /> Rimuovi Espulsione
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"

@@ -439,8 +439,168 @@ function recalculateNightsTotals(db: Record<string, any[]>) {
   }));
 }
 
+function runAutoCreateJobs(db: Record<string, any[]>): boolean {
+  let modified = false;
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Rome",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const dateMap = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+
+    const year = parseInt(dateMap.year);
+    const month = parseInt(dateMap.month);
+    const day = parseInt(dateMap.day);
+    const hour = parseInt(dateMap.hour);
+
+    const businessDate = new Date(
+      year,
+      month - 1,
+      day,
+      hour,
+      parseInt(dateMap.minute ?? "0"),
+      parseInt(dateMap.second ?? "0"),
+    );
+    if (hour < 3) {
+      businessDate.setDate(businessDate.getDate() - 1);
+    }
+
+    const busYear = businessDate.getFullYear();
+    const busMonth = String(businessDate.getMonth() + 1).padStart(2, "0");
+    const busDay = String(businessDate.getDate()).padStart(2, "0");
+    const targetNightDate = `${busYear}-${busMonth}-${busDay}`;
+
+    db.nights = db.nights || [];
+    const nightExists = db.nights.some((n: any) => n.night_date === targetNightDate);
+
+    if (!nightExists) {
+      console.log(`[Auto Job] Creating new business day (giornata) for date: ${targetNightDate}`);
+
+      db.nights = db.nights.map((n: any) => {
+        if (!n.is_closed) {
+          modified = true;
+          return { ...n, is_closed: true, updated_at: new Date().toISOString() };
+        }
+        return n;
+      });
+
+      const newNight = {
+        id: "night-" + Math.random().toString(36).substring(2, 12),
+        night_date: targetNightDate,
+        title: `Giornata del ${busDay}/${busMonth}/${busYear}`,
+        total: 0,
+        is_closed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        notes: "Creata automaticamente dal sistema",
+      };
+      db.nights.push(newNight);
+      modified = true;
+    }
+
+    const romeDateForWeek = new Date(
+      year,
+      month - 1,
+      day,
+      hour,
+      parseInt(dateMap.minute ?? "0"),
+      parseInt(dateMap.second ?? "0"),
+    );
+    const currentDay = romeDateForWeek.getDay(); // 0 = Sunday, 1 = Monday...
+    const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
+    const mondayDate = new Date(romeDateForWeek);
+    mondayDate.setDate(romeDateForWeek.getDate() + mondayDiff);
+
+    const monYear = mondayDate.getFullYear();
+    const monMonth = String(mondayDate.getMonth() + 1).padStart(2, "0");
+    const monDay = String(mondayDate.getDate()).padStart(2, "0");
+    const currentMondayStr = `${monYear}-${monMonth}-${monDay}`;
+
+    db.badge_weeks = db.badge_weeks || [];
+    db.badge_sessions = db.badge_sessions || [];
+
+    const activeWeek = db.badge_weeks.find((w: any) => w.active);
+    const needsNewWeek =
+      !activeWeek || (activeWeek.started_at && activeWeek.started_at < currentMondayStr);
+
+    if (needsNewWeek) {
+      console.log(`[Auto Job] Creating new badge week starting on Monday: ${currentMondayStr}`);
+
+      if (activeWeek) {
+        db.badge_weeks = db.badge_weeks.map((w: any) => {
+          if (w.id === activeWeek.id) {
+            modified = true;
+            return {
+              ...w,
+              active: false,
+              ended_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+          }
+          return w;
+        });
+
+        db.badge_sessions = db.badge_sessions.map((s: any) => {
+          if (s.week_id === activeWeek.id && !s.ended_at) {
+            modified = true;
+            return {
+              ...s,
+              ended_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+          }
+          return s;
+        });
+      }
+
+      const monYearTwo = String(monYear).slice(-2);
+      const monMonthStr = String(monMonth).padStart(2, "0");
+      const monDayStr = String(monDay).padStart(2, "0");
+
+      const sundayDate = new Date(mondayDate);
+      sundayDate.setDate(mondayDate.getDate() + 6);
+      const sunYearTwo = String(sundayDate.getFullYear()).slice(-2);
+      const sunMonthStr = String(sundayDate.getMonth() + 1).padStart(2, "0");
+      const sunDayStr = String(sundayDate.getDate()).padStart(2, "0");
+
+      const weekLabel = `Settimana dal ${monDayStr}/${monMonthStr}/${monYearTwo} - ${sunDayStr}/${sunMonthStr}/${sunYearTwo}`;
+
+      const newWeekId = "week-" + Math.random().toString(36).substring(2, 12);
+      const newWeek = {
+        id: newWeekId,
+        label: weekLabel,
+        active: true,
+        started_at: currentMondayStr,
+        ended_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: "system",
+      };
+      db.badge_weeks.push(newWeek);
+      modified = true;
+    }
+  } catch (error) {
+    console.error("Error in runAutoCreateJobs:", error);
+  }
+  return modified;
+}
+
 export async function queryMockDb(query: any): Promise<{ data: any; error: any }> {
   const db = await loadDb();
+
+  const modified = runAutoCreateJobs(db);
+  if (modified) {
+    await saveDb(db);
+  }
+
   const {
     table,
     operation,

@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SanctionsDialog } from "@/components/SanctionsDialog";
+import { ForceLeaveDialog } from "@/components/ForceLeaveDialog";
 import {
   Clock,
   Calendar,
@@ -26,6 +27,7 @@ import {
   Check,
   X,
   Palmtree,
+  Ban,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -54,6 +56,7 @@ type Prof = {
   id: string;
   username: string;
   display_name: string | null;
+  badge_start_time?: string | null;
 };
 
 function fmtDur(sec: number) {
@@ -68,6 +71,7 @@ function DipendentiPage() {
   const { user, isAdmin, permissions = [] } = useAuth();
   const qc = useQueryClient();
   const [sanctionsTarget, setSanctionsTarget] = useState<Prof | null>(null);
+  const [forceLeaveTarget, setForceLeaveTarget] = useState<Prof | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const canVedere = isAdmin || permissions.includes("badge.visualizza");
@@ -136,7 +140,7 @@ function DipendentiPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("*")
         .order("display_name", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Prof[];
@@ -157,8 +161,57 @@ function DipendentiPage() {
     refetchInterval: 10000,
   });
 
+  // 5b. Fetch sanctions to determine active suspensions and expulsions
+  const { data: sanctions = [] } = useQuery<any[]>({
+    queryKey: ["all-sanctions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sanctions").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: canRead,
+    refetchInterval: 10000,
+  });
+
+  const activeSanctionsMap = useMemo(() => {
+    const map = new Map<string, { type: string; expires_at: string | null; reason: string }>();
+    const nowTime = new Date().getTime();
+    for (const s of sanctions) {
+      if (!s.is_active) continue;
+      if (s.type === "espulsione") {
+        map.set(s.user_id, { type: "espulsione", expires_at: null, reason: s.reason });
+      } else if (s.type === "sospensione") {
+        if (!s.expires_at) {
+          map.set(s.user_id, { type: "espulsione", expires_at: null, reason: s.reason }); // Treat permanent suspension as expulsion too
+        } else {
+          const expTime = new Date(s.expires_at).getTime();
+          if (expTime > nowTime) {
+            const existing = map.get(s.user_id);
+            if (!existing || existing.type !== "espulsione") {
+              map.set(s.user_id, {
+                type: "sospensione",
+                expires_at: s.expires_at,
+                reason: s.reason,
+              });
+            }
+          }
+        }
+      }
+    }
+    return map;
+  }, [sanctions]);
+
   const leaveUserIds = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Rome",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const dateMap = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+    const todayStr = `${dateMap.year}-${dateMap.month}-${dateMap.day}`;
+
     const activeLeaves = leaveRequests.filter((l: any) => {
       if (l.status !== "approved") return false;
       return l.start_date <= todayStr && l.end_date >= todayStr;
@@ -200,15 +253,21 @@ function DipendentiPage() {
     return map;
   }, [activeSessions]);
 
-  // Filter profiles based on search term
+  // Filter profiles based on search term and exclude permanently expelled ones
   const filteredProfiles = useMemo(() => {
     return profiles.filter((p) => {
+      // If permanently expelled, exclude entirely from list
+      const activeSanc = activeSanctionsMap.get(p.id);
+      if (activeSanc && activeSanc.type === "espulsione") {
+        return false;
+      }
+
       const name = (p.display_name ?? "").toLowerCase();
       const username = p.username.toLowerCase();
       const term = searchTerm.toLowerCase();
       return name.includes(term) || username.includes(term);
     });
-  }, [profiles, searchTerm]);
+  }, [profiles, searchTerm, activeSanctionsMap]);
 
   if (!canVedere) {
     return (
@@ -297,10 +356,20 @@ function DipendentiPage() {
                 </TableRow>
               ) : (
                 filteredProfiles.map((p) => {
-                  const isActive = activeUserMap.has(p.id);
+                  const startStr = activeUserMap.get(p.id)?.started_at || p.badge_start_time;
+                  const isActive = activeUserMap.has(p.id) || !!p.badge_start_time;
                   const isLeave = leaveUserIds.has(p.id);
+                  const activeSanc = activeSanctionsMap.get(p.id);
                   const totalSec = totals.get(p.id) ?? 0;
                   const count = sessionCounts.get(p.id) ?? 0;
+
+                  const activeElapsed =
+                    isActive && startStr
+                      ? (() => {
+                          const start = new Date(startStr).getTime();
+                          return isNaN(start) ? 0 : Math.max(0, (now - start) / 1000);
+                        })()
+                      : 0;
 
                   return (
                     <TableRow
@@ -322,9 +391,37 @@ function DipendentiPage() {
                       {/* Badge status */}
                       <TableCell>
                         {isActive ? (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-semibold uppercase tracking-wider animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                            In servizio
+                          <div className="flex flex-col gap-1">
+                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-semibold uppercase tracking-wider animate-pulse w-fit">
+                              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                              In servizio
+                            </div>
+                            {activeElapsed > 0 && (
+                              <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                Attivo da:{" "}
+                                <span className="text-green-400 font-bold">
+                                  {fmtDur(activeElapsed)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : activeSanc?.type === "sospensione" ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-xs font-semibold uppercase tracking-wider gap-1">
+                              <Ban className="h-3.5 w-3.5 text-red-500" />
+                              Sospeso Temp.
+                            </div>
+                            {activeSanc.expires_at && (
+                              <div className="text-[10px] text-red-400/80 font-medium">
+                                Fino al:{" "}
+                                {new Date(activeSanc.expires_at).toLocaleString("it-IT", {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            )}
                           </div>
                         ) : isLeave ? (
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-semibold uppercase tracking-wider gap-1">
@@ -348,18 +445,30 @@ function DipendentiPage() {
                         {fmtDur(totalSec)}
                       </TableCell>
 
-                      {/* Sanctions Button */}
+                      {/* Actions */}
                       <TableCell className="text-right">
-                        {canSanzioni && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
-                            onClick={() => setSanctionsTarget(p)}
-                          >
-                            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-amber-800/40 bg-amber-950/25 hover:bg-amber-900/40 text-amber-200 font-semibold"
+                              onClick={() => setForceLeaveTarget(p)}
+                            >
+                              <Palmtree className="h-3.5 w-3.5 mr-1.5" /> Forza Congedo
+                            </Button>
+                          )}
+                          {canSanzioni && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/40 font-semibold"
+                              onClick={() => setSanctionsTarget(p)}
+                            >
+                              <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -373,6 +482,11 @@ function DipendentiPage() {
       {/* Render Sanctions management popup */}
       {sanctionsTarget && (
         <SanctionsDialog user={sanctionsTarget} onClose={() => setSanctionsTarget(null)} />
+      )}
+
+      {/* Render Force Leave popup */}
+      {forceLeaveTarget && (
+        <ForceLeaveDialog user={forceLeaveTarget} onClose={() => setForceLeaveTarget(null)} />
       )}
     </div>
   );

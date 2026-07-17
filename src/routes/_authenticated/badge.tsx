@@ -37,7 +37,12 @@ type Session = {
   started_at: string;
   ended_at: string | null;
 };
-type Prof = { id: string; username: string; display_name: string | null };
+type Prof = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  badge_start_time?: string | null;
+};
 
 function fmtDur(sec: number) {
   sec = Math.max(0, Math.floor(sec));
@@ -111,7 +116,7 @@ function BadgePage() {
   const { data: profiles = [] } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id,username,display_name");
+      const { data, error } = await supabase.from("profiles").select("*");
       if (error) throw error;
       return (data ?? []) as Prof[];
     },
@@ -186,7 +191,26 @@ function BadgePage() {
   const [newWeekLabel, setNewWeekLabel] = useState("");
   const openWeek = async () => {
     if (active) return toast.error("Chiudi prima la settimana attiva");
-    const label = newWeekLabel.trim() || `Settimana ${new Date().toLocaleDateString("it-IT")}`;
+    const defaultLabel = (() => {
+      const date = new Date();
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(date.setDate(diff));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const pad = (num: number) => String(num).padStart(2, "0");
+      const monD = pad(monday.getDate());
+      const monM = pad(monday.getMonth() + 1);
+      const monY = String(monday.getFullYear()).slice(-2);
+
+      const sunD = pad(sunday.getDate());
+      const sunM = pad(sunday.getMonth() + 1);
+      const sunY = String(sunday.getFullYear()).slice(-2);
+
+      return `Settimana dal ${monD}/${monM}/${monY} - ${sunD}/${sunM}/${sunY}`;
+    })();
+    const label = newWeekLabel.trim() || defaultLabel;
     const { error } = await (supabase as any)
       .from("badge_weeks")
       .insert({ label, created_by: user?.id ?? null });
@@ -463,16 +487,39 @@ function BadgePage() {
                   const p = profById[uid];
                   const sess = sessions.filter((s) => s.user_id === uid);
                   const total = totals.get(uid) ?? 0;
-                  const isActive = activeSessions.some((s) => s.user_id === uid);
+                  const activeSess = activeSessions.find((s) => s.user_id === uid);
+                  const isActive = !!activeSess || !!p?.badge_start_time;
+
+                  const activeElapsed = isActive
+                    ? (() => {
+                        const startStr = activeSess?.started_at || p?.badge_start_time;
+                        if (!startStr) return 0;
+                        const start = new Date(startStr).getTime();
+                        return isNaN(start) ? 0 : Math.max(0, (now - start) / 1000);
+                      })()
+                    : 0;
+
                   return (
                     <TableRow key={uid}>
                       <TableCell className="font-medium">
-                        {p?.display_name ?? p?.username ?? uid.slice(0, 8)}
-                        {isActive && (
-                          <Badge className="ml-2 bg-green-500/20 text-green-500 text-[10px]">
-                            Attivo
-                          </Badge>
-                        )}
+                        <div>
+                          <div className="flex items-center">
+                            {p?.display_name ?? p?.username ?? uid.slice(0, 8)}
+                            {isActive && (
+                              <Badge className="ml-2 bg-green-500/20 text-green-500 text-[10px]">
+                                Attivo
+                              </Badge>
+                            )}
+                          </div>
+                          {isActive && activeElapsed > 0 && (
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                              Servizio da:{" "}
+                              <span className="text-green-500 font-semibold">
+                                {fmtDur(activeElapsed)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{sess.length}</TableCell>
                       <TableCell className="font-mono text-lg">{fmtDur(total)}</TableCell>
