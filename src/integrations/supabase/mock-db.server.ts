@@ -807,6 +807,9 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         };
       }
 
+      const session = getActiveSession(db);
+      const creatorId = session?.user?.id || "mock-user-id-1234";
+
       const newConversion = {
         id: "conv-" + Math.random().toString(36).substring(2, 15),
         citizen_id: citizenId,
@@ -815,7 +818,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         input_amount: input,
         eur_amount: eur,
         dobloni_amount: dob,
-        created_by: "mock-user-id-1234",
+        created_by: creatorId,
         created_at: new Date().toISOString(),
       };
 
