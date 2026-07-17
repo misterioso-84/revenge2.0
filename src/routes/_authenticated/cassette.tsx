@@ -34,6 +34,7 @@ import { Plus, Pencil, Trash2, Lock, AlertTriangle, CheckCircle2 } from "lucide-
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/cassette")({
   component: SafesPage,
@@ -92,6 +93,13 @@ function SafesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SafeBox | null>(null);
   const [filter, setFilter] = useState<"tutte" | Status>("tutte");
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
   const { data: safes = [] } = useQuery({
     queryKey: ["safes"],
@@ -264,7 +272,12 @@ function SafesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() =>
-                              confirm(`Eliminare cassetta #${s.box_number}?`) && del.mutate(s.id)
+                              setDeleteConfirm({
+                                isOpen: true,
+                                title: "Elimina cassetta di sicurezza",
+                                description: `Sei sicuro di voler eliminare DEFINITIVAMENTE la cassetta di sicurezza #${s.box_number}? Tutti i relativi storici e assegnazioni verranno persi.`,
+                                onConfirm: () => del.mutate(s.id),
+                              })
                             }
                           >
                             <Trash2 className="h-4 w-4" />
@@ -291,6 +304,14 @@ function SafesPage() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        onClose={() => setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

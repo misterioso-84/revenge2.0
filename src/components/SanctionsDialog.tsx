@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   AlertTriangle,
   Plus,
@@ -74,6 +75,13 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editReason, setEditReason] = useState("");
   const [editExpires, setEditExpires] = useState("");
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
   const {
     data: sanctions = [],
@@ -169,23 +177,25 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
     }
   };
 
-  const handleDeleteCompletely = async (id: string) => {
-    if (
-      !confirm(
+  const handleDeleteCompletely = (id: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      title: "Elimina sanzione definitivamente",
+      description:
         "Sei sicuro di voler eliminare DEFINITIVAMENTE questa sanzione dal database? Non apparirà più nello storico.",
-      )
-    )
-      return;
-    try {
-      await deleteFn({
-        data: { sanctionId: id },
-      });
-      toast.success("Sanzione eliminata definitivamente.");
-      refetch();
-      qc.invalidateQueries({ queryKey: ["panel-users"] });
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+      onConfirm: async () => {
+        try {
+          await deleteFn({
+            data: { sanctionId: id },
+          });
+          toast.success("Sanzione eliminata definitivamente.");
+          refetch();
+          qc.invalidateQueries({ queryKey: ["panel-users"] });
+        } catch (err: any) {
+          toast.error(err.message);
+        }
+      },
+    });
   };
 
   const getBadgeStyle = (t: string) => {
@@ -513,6 +523,14 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        onClose={() => setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))}
+      />
     </Dialog>
   );
 }

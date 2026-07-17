@@ -34,6 +34,7 @@ import { Plus, Pencil, Trash2, History } from "lucide-react";
 import { MEMBERSHIP_LABEL, formatDate, formatMoney, formatDobloni } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/cittadini")({
   component: CitizensPage,
@@ -60,6 +61,13 @@ function CitizensPage() {
 
   const [historyCitizen, setHistoryCitizen] = useState<Citizen | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
   const { data: citizens = [] } = useQuery({
     queryKey: ["citizens"],
@@ -192,7 +200,14 @@ function CitizensPage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => confirm(`Eliminare ${c.full_name}?`) && del.mutate(c.id)}
+                            onClick={() =>
+                              setDeleteConfirm({
+                                isOpen: true,
+                                title: "Elimina cittadino",
+                                description: `Sei sicuro di voler eliminare DEFINITIVAMENTE il cittadino "${c.full_name}"? Tutti i dati e lo storico collegati verranno persi.`,
+                                onConfirm: () => del.mutate(c.id),
+                              })
+                            }
                             className="text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -217,6 +232,14 @@ function CitizensPage() {
           citizen={historyCitizen}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        onClose={() => setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

@@ -46,6 +46,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   createPanelUser,
   updatePanelUser,
@@ -86,6 +87,13 @@ function UsersPage() {
   const [rolesTarget, setRolesTarget] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [activityTarget, setActivityTarget] = useState<any>(null);
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
   // Query modificata per estrarre correttamente i dati uniti dal client
   const { data: users = [] } = useQuery({
@@ -253,16 +261,22 @@ function UsersPage() {
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8"
-                          onClick={async () => {
-                            if (!confirm(`Eliminare ${u.username}?`)) return;
-                            try {
-                              await delFn({ data: { userId: u.id } });
-                              qc.invalidateQueries({ queryKey: ["panel-users"] });
-                              toast.success("Eliminato");
-                            } catch (e: any) {
-                              toast.error(e.message);
-                            }
-                          }}
+                          onClick={() =>
+                            setDeleteConfirm({
+                              isOpen: true,
+                              title: "Elimina utente",
+                              description: `Sei sicuro di voler eliminare DEFINITIVAMENTE l'utente "${u.username}"? Questa azione rimuoverà il suo account di accesso.`,
+                              onConfirm: async () => {
+                                try {
+                                  await delFn({ data: { userId: u.id } });
+                                  qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                  toast.success("Eliminato");
+                                } catch (e: any) {
+                                  toast.error(e.message);
+                                }
+                              },
+                            })
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -321,6 +335,14 @@ function UsersPage() {
       {activityTarget && (
         <UserActivityDialog user={activityTarget} onClose={() => setActivityTarget(null)} />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        onClose={() => setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

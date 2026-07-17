@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   Calendar,
   Send,
@@ -44,6 +45,13 @@ function CongediPage() {
 
   const [activeTab, setActiveTab] = useState<"miei" | "gestione">("miei");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
   const canGestisciCongedi =
     isAdmin || permissions.includes("congedi.gestisci") || permissions.includes("badge.gestisci");
@@ -436,7 +444,15 @@ function CongediPage() {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  onClick={() => cancelPendingRequest.mutate(l.id)}
+                                  onClick={() =>
+                                    setDeleteConfirm({
+                                      isOpen: true,
+                                      title: "Annulla richiesta congedo",
+                                      description:
+                                        "Sei sicuro di voler annullare questa richiesta di congedo in attesa?",
+                                      onConfirm: () => cancelPendingRequest.mutate(l.id),
+                                    })
+                                  }
                                   disabled={cancelPendingRequest.isPending}
                                   className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                   title="Annulla richiesta"
@@ -835,6 +851,14 @@ function CongediPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        onClose={() => setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
