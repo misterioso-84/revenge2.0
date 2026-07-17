@@ -93,6 +93,7 @@ function DipendentiPage() {
       return (data ?? []) as Week[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
 
   const activeWeek = weeks.find((w) => w.active) ?? null;
@@ -111,6 +112,7 @@ function DipendentiPage() {
       if (error) throw error;
       return (data ?? []) as Session[];
     },
+    refetchInterval: 10000,
   });
 
   // 3. Fetch active sessions (for active/inactive badge status)
@@ -125,6 +127,7 @@ function DipendentiPage() {
       return (data ?? []) as Session[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
 
   // 4. Fetch all employees profiles
@@ -139,7 +142,29 @@ function DipendentiPage() {
       return (data ?? []) as Prof[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
+
+  // 5. Fetch leave requests to determine active leave status
+  const { data: leaveRequests = [] } = useQuery({
+    queryKey: ["all-leaves"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leave_requests").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: canRead,
+    refetchInterval: 10000,
+  });
+
+  const leaveUserIds = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const activeLeaves = leaveRequests.filter((l: any) => {
+      if (l.status !== "approved") return false;
+      return l.start_date <= todayStr && l.end_date >= todayStr;
+    });
+    return new Set(activeLeaves.map((l: any) => l.user_id));
+  }, [leaveRequests]);
 
   // Calculations for session totals
   const totals = useMemo(() => {
@@ -273,6 +298,7 @@ function DipendentiPage() {
               ) : (
                 filteredProfiles.map((p) => {
                   const isActive = activeUserMap.has(p.id);
+                  const isLeave = leaveUserIds.has(p.id);
                   const totalSec = totals.get(p.id) ?? 0;
                   const count = sessionCounts.get(p.id) ?? 0;
 
@@ -299,6 +325,11 @@ function DipendentiPage() {
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-semibold uppercase tracking-wider animate-pulse">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                             In servizio
+                          </div>
+                        ) : isLeave ? (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-semibold uppercase tracking-wider gap-1">
+                            <Palmtree className="h-3.5 w-3.5 text-amber-500" />
+                            In congedo
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700/50 text-xs font-semibold uppercase tracking-wider">

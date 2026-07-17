@@ -74,6 +74,7 @@ function BadgePage() {
       return (data ?? []) as Week[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
   const active = weeks.find((w) => w.active) ?? null;
   const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
@@ -90,6 +91,7 @@ function BadgePage() {
       if (error) throw error;
       return (data ?? []) as Session[];
     },
+    refetchInterval: 10000,
   });
 
   const { data: activeSessions = [] } = useQuery<Session[]>({
@@ -103,6 +105,7 @@ function BadgePage() {
       return (data ?? []) as Session[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
 
   const { data: profiles = [] } = useQuery<Prof[]>({
@@ -113,6 +116,7 @@ function BadgePage() {
       return (data ?? []) as Prof[];
     },
     enabled: canRead,
+    refetchInterval: 10000,
   });
 
   const profById = useMemo(

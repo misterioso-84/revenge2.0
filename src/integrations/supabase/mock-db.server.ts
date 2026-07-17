@@ -176,14 +176,11 @@ function getInitialDb() {
 }
 
 let cachedDb: Record<string, any[]> | null = null;
-let lastLoadTime = 0;
-const CACHE_TTL = 1500; // 1.5 seconds cache TTL to handle page refresh while avoiding double-loads in same render
 let isInitializing = false;
 let initPromise: Promise<Record<string, any[]>> | null = null;
 
 async function loadDb(): Promise<Record<string, any[]>> {
-  const now = Date.now();
-  if (cachedDb && now - lastLoadTime < CACHE_TTL) {
+  if (cachedDb) {
     return cachedDb;
   }
 
@@ -204,7 +201,6 @@ async function loadDb(): Promise<Record<string, any[]>> {
         const mergedDb = { ...initialDb, ...pgData };
         mergedDb.audit_logs = mergedDb.audit_logs || [];
         cachedDb = mergedDb;
-        lastLoadTime = Date.now();
         try {
           fs.writeFileSync(DB_FILE, JSON.stringify(cachedDb, null, 2), "utf-8");
         } catch (e) {
@@ -234,12 +230,14 @@ async function loadDb(): Promise<Record<string, any[]>> {
 
     localDb.audit_logs = localDb.audit_logs || [];
     cachedDb = localDb;
-    lastLoadTime = Date.now();
 
     console.log("[Neon Sync] Seeding Neon Postgres with database state...");
-    saveDbToNeon(localDb).catch((err) => {
-      console.error("[Neon Sync] Failed to seed Neon Postgres in background:", err);
-    });
+    try {
+      await saveDbToNeon(localDb);
+      console.log("[Neon Sync] Database state successfully seeded to Neon Postgres.");
+    } catch (err) {
+      console.error("[Neon Sync] Failed to seed Neon Postgres:", err);
+    }
 
     return cachedDb;
   })();
@@ -250,20 +248,22 @@ async function loadDb(): Promise<Record<string, any[]>> {
   return result;
 }
 
-function saveDb(db: Record<string, any[]>) {
+async function saveDb(db: Record<string, any[]>) {
   db.audit_logs = db.audit_logs || [];
   cachedDb = db;
-  lastLoadTime = Date.now(); // Trust our written local state immediately
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
   } catch (e) {
     console.error("Error saving mock db:", e);
   }
 
-  console.log("[Neon Sync] Saving database state to Neon Postgres in background...");
-  saveDbToNeon(db).catch((err) => {
+  console.log("[Neon Sync] Saving database state to Neon Postgres...");
+  try {
+    await saveDbToNeon(db);
+    console.log("[Neon Sync] Database state successfully saved to Neon Postgres.");
+  } catch (err) {
     console.error("[Neon Sync] Failed to save database state to Neon Postgres:", err);
-  });
+  }
 }
 
 function logOperation(
@@ -661,7 +661,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
 
       db.conversions = [...conversions, newConversion];
       logOperation(db, "rpc", undefined, query, { data: newConversion });
-      saveDb(db);
+      await saveDb(db);
 
       return { data: newConversion, error: null };
     }
@@ -864,7 +864,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       recalculateNightsTotals(db);
     }
     logOperation(db, operation, table, query, { data: insertedRows });
-    saveDb(db);
+    await saveDb(db);
 
     return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
   }
@@ -912,7 +912,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     }
 
     logOperation(db, operation, table, query, { data: results });
-    saveDb(db);
+    await saveDb(db);
     return { data: Array.isArray(insertData) ? results : results[0], error: null };
   }
 
@@ -938,7 +938,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       recalculateNightsTotals(db);
     }
     logOperation(db, operation, table, query, { data: updatedRows });
-    saveDb(db);
+    await saveDb(db);
     return { data: updatedRows, error: null };
   }
 
@@ -963,7 +963,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       recalculateNightsTotals(db);
     }
     logOperation(db, operation, table, query, { data: deletedRows });
-    saveDb(db);
+    await saveDb(db);
     return { data: deletedRows, error: null };
   }
 
@@ -1013,7 +1013,7 @@ export async function handleMockAuth(query: any): Promise<any> {
       role,
     });
 
-    saveDb(db);
+    await saveDb(db);
 
     // Save as current active mock session
     const mockUser = {
@@ -1040,7 +1040,16 @@ export async function handleMockAuth(query: any): Promise<any> {
     // Map common admin/user aliases to the actual database admin username
     const username =
       rawUsername === "admin" || rawUsername === "beppemonti84" ? "giuse84pro" : rawUsername;
-    const profile = db.profiles.find((p) => p.username.toLowerCase() === username);
+    let profile = db.profiles.find((p) => p.username.toLowerCase() === username);
+
+    // Dynamic robust fallback: If we look for the main administrator and "giuse84pro" profile
+    // doesn't exist yet, fallback to finding "admin" or the first profile in the database
+    if (
+      !profile &&
+      (username === "giuse84pro" || rawUsername === "admin" || rawUsername === "beppemonti84")
+    ) {
+      profile = db.profiles.find((p) => p.username.toLowerCase() === "admin") || db.profiles[0];
+    }
 
     if (!profile) {
       return { data: { session: null }, error: { message: "Credenziali non valide." } };

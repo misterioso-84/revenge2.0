@@ -83,6 +83,7 @@ function CongediPage() {
       return data ?? [];
     },
     enabled: !!user?.id,
+    refetchInterval: 10000,
   });
 
   // Fetch ALL leaves for admin management
@@ -98,6 +99,7 @@ function CongediPage() {
       return data ?? [];
     },
     enabled: canGestisciCongedi,
+    refetchInterval: 10000,
   });
 
   // Submit a leave request (for employees)

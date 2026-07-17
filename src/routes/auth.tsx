@@ -49,14 +49,6 @@ function AuthPage() {
     });
   }, [navigate, mounted]);
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
-        <div className="text-center text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);

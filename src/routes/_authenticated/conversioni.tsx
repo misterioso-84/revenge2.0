@@ -678,11 +678,13 @@ function HistoryPanel() {
         nights: { night_date: string; title: string | null } | null;
       })[];
     },
+    refetchInterval: 10000,
   });
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles-all"],
     queryFn: async () =>
       (await supabase.from("profiles").select("id, username, display_name")).data ?? [],
+    refetchInterval: 10000,
   });
   const profBy = Object.fromEntries((profiles as any[]).map((p) => [p.id, p]));
 
