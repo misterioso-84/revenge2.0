@@ -1,24 +1,22 @@
-import { Client } from "pg";
-
-export async function getNeonClient(): Promise<Client | null> {
+export async function getNeonClient(): Promise<any> {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     console.warn("[Neon Database] DATABASE_URL is not set.");
     return null;
   }
 
-  const client = new Client({
-    connectionString,
-    ssl: {
-      rejectUnauthorized: false, // Necessary for AWS/Neon connection
-    },
-  });
-
   try {
+    const { Client } = await import("pg");
+    const client = new Client({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false, // Necessary for AWS/Neon connection
+      },
+    });
     await client.connect();
     return client;
   } catch (err) {
-    console.error("[Neon Database] Failed to connect:", err);
+    console.error("[Neon Database] Failed to connect or import pg:", err);
     return null;
   }
 }

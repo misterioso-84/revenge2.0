@@ -1,11 +1,24 @@
-import fs from "fs";
-import path from "path";
 import { loadDbFromNeon, saveDbToNeon } from "../../lib/neon.server";
 import { loadDbFromFirestore, saveDbToFirestore } from "../../lib/firebase.server";
 import { getRequest } from "@tanstack/react-start/server";
 import initialDbStatic from "../../../mock-db.json";
 
-const DB_FILE = path.join(process.cwd(), "mock-db.json");
+let fsModule: any = null;
+let pathModule: any = null;
+
+async function getFsAndPath() {
+  if (fsModule && pathModule) return { fs: fsModule, path: pathModule };
+  if (typeof window === "undefined" && typeof process !== "undefined" && process.versions?.node) {
+    try {
+      fsModule = await import(/* @vite-ignore */ "fs");
+      pathModule = await import(/* @vite-ignore */ "path");
+      return { fs: fsModule, path: pathModule };
+    } catch (e) {
+      // Ignore
+    }
+  }
+  return { fs: null, path: null };
+}
 
 function getInitialDb() {
   const defaultUser = {
@@ -205,8 +218,10 @@ async function loadDb(): Promise<Record<string, any[]>> {
         mergedDb.audit_logs = mergedDb.audit_logs || [];
         cachedDb = mergedDb;
         try {
-          if (typeof fs !== "undefined" && fs.writeFileSync) {
-            fs.writeFileSync(DB_FILE, JSON.stringify(cachedDb, null, 2), "utf-8");
+          const { fs, path } = await getFsAndPath();
+          if (fs && path) {
+            const dbFile = path.join(process.cwd(), "mock-db.json");
+            fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
           }
         } catch (e) {
           console.error("Error saving local DB cache:", e);
@@ -230,8 +245,10 @@ async function loadDb(): Promise<Record<string, any[]>> {
         mergedDb.audit_logs = mergedDb.audit_logs || [];
         cachedDb = mergedDb;
         try {
-          if (typeof fs !== "undefined" && fs.writeFileSync) {
-            fs.writeFileSync(DB_FILE, JSON.stringify(cachedDb, null, 2), "utf-8");
+          const { fs, path } = await getFsAndPath();
+          if (fs && path) {
+            const dbFile = path.join(process.cwd(), "mock-db.json");
+            fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
           }
         } catch (e) {
           console.error("Error saving local DB cache:", e);
@@ -246,9 +263,13 @@ async function loadDb(): Promise<Record<string, any[]>> {
     console.log("[Sync Fallback] Falling back to local mock-db.json...");
     let localDb: Record<string, any[]> | null = null;
     try {
-      if (typeof fs !== "undefined" && fs.existsSync && fs.existsSync(DB_FILE)) {
-        const raw = fs.readFileSync(DB_FILE, "utf-8");
-        localDb = JSON.parse(raw);
+      const { fs, path } = await getFsAndPath();
+      if (fs && path) {
+        const dbFile = path.join(process.cwd(), "mock-db.json");
+        if (fs.existsSync(dbFile)) {
+          const raw = fs.readFileSync(dbFile, "utf-8");
+          localDb = JSON.parse(raw);
+        }
       }
     } catch (e) {
       console.error("Error loading mock db from file:", e);
@@ -305,8 +326,10 @@ async function saveDb(db: Record<string, any[]>) {
 
   // 1. Save to local file system
   try {
-    if (typeof fs !== "undefined" && fs.writeFileSync) {
-      fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+    const { fs, path } = await getFsAndPath();
+    if (fs && path) {
+      const dbFile = path.join(process.cwd(), "mock-db.json");
+      fs.writeFileSync(dbFile, JSON.stringify(db, null, 2), "utf-8");
     }
   } catch (e) {
     console.error("Error saving mock db locally:", e);
@@ -1214,10 +1237,15 @@ export async function handleMockAuth(query: any): Promise<any> {
 
   if (action === "signUp") {
     const { email, password, options } = payload;
-    const username = options?.data?.username || email.split("@")[0];
-    const display_name = options?.data?.display_name || username;
+    // Safely check both options (standard auth) and direct user_metadata (admin.createUser auth)
+    const username =
+      payload.user_metadata?.username || options?.data?.username || email.split("@")[0];
+    const display_name =
+      payload.user_metadata?.display_name || options?.data?.display_name || username;
 
-    const existingUser = db.profiles.find((p) => p.username === username);
+    const existingUser = db.profiles.find(
+      (p) => p.username && p.username.toLowerCase() === username.toLowerCase(),
+    );
     if (existingUser) {
       return { data: { user: null }, error: { message: "Utente già esistente." } };
     }
@@ -1268,7 +1296,7 @@ export async function handleMockAuth(query: any): Promise<any> {
     // Map common admin/user aliases to the actual database admin username
     const username =
       rawUsername === "admin" || rawUsername === "beppemonti84" ? "giuse84pro" : rawUsername;
-    let profile = db.profiles.find((p) => p.username.toLowerCase() === username);
+    let profile = db.profiles.find((p) => p.username && p.username.toLowerCase() === username);
 
     // Dynamic robust fallback: If we look for the main administrator and "giuse84pro" profile
     // doesn't exist yet, fallback to finding "admin" or the first profile in the database
@@ -1276,7 +1304,9 @@ export async function handleMockAuth(query: any): Promise<any> {
       !profile &&
       (username === "giuse84pro" || rawUsername === "admin" || rawUsername === "beppemonti84")
     ) {
-      profile = db.profiles.find((p) => p.username.toLowerCase() === "admin") || db.profiles[0];
+      profile =
+        db.profiles.find((p) => p.username && p.username.toLowerCase() === "admin") ||
+        db.profiles[0];
     }
 
     if (!profile) {
@@ -1286,7 +1316,10 @@ export async function handleMockAuth(query: any): Promise<any> {
     const mockUser = {
       id: profile.id,
       email,
-      user_metadata: { username: profile.username, display_name: profile.display_name },
+      user_metadata: {
+        username: profile.username || "user",
+        display_name: profile.display_name || profile.username || "Collaboratore",
+      },
     };
 
     const session = {
@@ -1328,10 +1361,10 @@ function getActiveSession(db: any) {
           refresh_token: "mock-refresh",
           user: {
             id: profile.id,
-            email: `${profile.username}@revenge.local`,
+            email: `${profile.username || "user"}@revenge.local`,
             user_metadata: {
-              username: profile.username,
-              display_name: profile.display_name,
+              username: profile.username || "user",
+              display_name: profile.display_name || profile.username || "Collaboratore",
             },
           },
         };

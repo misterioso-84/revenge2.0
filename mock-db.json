@@ -48,6 +48,34 @@
       "created_at": "2026-07-17T14:39:58.144Z",
       "updated_at": "2026-07-17T14:42:03.618Z",
       "display_name": "COCKS"
+    },
+    {
+      "id": "user-qp33j87j32",
+      "username": "hartigno",
+      "created_at": "2026-07-18T11:39:54.802Z",
+      "updated_at": "2026-07-18T11:39:54.802Z",
+      "display_name": "hartigno"
+    },
+    {
+      "id": "user-e5kis5pzbdf",
+      "username": "24sxpe",
+      "created_at": "2026-07-18T12:14:03.866Z",
+      "updated_at": "2026-07-18T12:14:03.866Z",
+      "display_name": "24sxpe"
+    },
+    {
+      "id": "user-gzz24upzhb6",
+      "username": "superficiale5",
+      "created_at": "2026-07-18T12:14:38.151Z",
+      "updated_at": "2026-07-18T12:14:38.151Z",
+      "display_name": "superficiale5"
+    },
+    {
+      "id": "user-820cawfdbkl",
+      "username": "malsana",
+      "created_at": "2026-07-18T12:15:13.219Z",
+      "updated_at": "2026-07-18T12:15:13.219Z",
+      "display_name": "malsana"
     }
   ],
   "user_roles": [
@@ -108,6 +136,26 @@
       "id": "role-64kjhqcvzlv",
       "role": "staff",
       "user_id": "user-m96sy1nqsjj"
+    },
+    {
+      "id": "role-vhh30f8aag",
+      "role": "staff",
+      "user_id": "user-qp33j87j32"
+    },
+    {
+      "id": "role-asorqex6bem",
+      "role": "staff",
+      "user_id": "user-e5kis5pzbdf"
+    },
+    {
+      "id": "role-t4n4piwm7vl",
+      "role": "staff",
+      "user_id": "user-gzz24upzhb6"
+    },
+    {
+      "id": "role-6ejrkbocumb",
+      "role": "staff",
+      "user_id": "user-820cawfdbkl"
     }
   ],
   "custom_roles": [
@@ -298,6 +346,41 @@
       "created_at": "2026-07-17T14:40:04.244Z",
       "updated_at": "2026-07-17T14:40:04.244Z",
       "custom_role_id": "2vu11boct4i"
+    },
+    {
+      "id": "4lz9434b9fl",
+      "user_id": "user-qp33j87j32",
+      "created_at": "2026-07-18T11:40:03.857Z",
+      "updated_at": "2026-07-18T11:40:03.857Z",
+      "custom_role_id": "2vu11boct4i"
+    },
+    {
+      "id": "cha43jogjfu",
+      "user_id": "user-e5kis5pzbdf",
+      "created_at": "2026-07-18T12:14:13.390Z",
+      "updated_at": "2026-07-18T12:14:13.390Z",
+      "custom_role_id": "w19dv9baafi"
+    },
+    {
+      "id": "kxqvnfhbak",
+      "user_id": "user-gzz24upzhb6",
+      "created_at": "2026-07-18T12:14:48.920Z",
+      "updated_at": "2026-07-18T12:14:48.920Z",
+      "custom_role_id": "f91ux1xggt"
+    },
+    {
+      "id": "kqm2hzkkif",
+      "user_id": "user-820cawfdbkl",
+      "created_at": "2026-07-18T12:15:25.160Z",
+      "updated_at": "2026-07-18T12:15:25.160Z",
+      "custom_role_id": "qb8h239wnp"
+    },
+    {
+      "id": "nu4lwfxrc7i",
+      "user_id": "user-o5yk1ko0qa",
+      "created_at": "2026-07-18T12:40:31.362Z",
+      "updated_at": "2026-07-18T12:40:31.362Z",
+      "custom_role_id": "qb8h239wnp"
     }
   ],
   "citizens": [
@@ -389,6 +472,102 @@
       "created_at": "2026-07-17T21:28:59.883Z",
       "membership": "standard",
       "updated_at": "2026-07-17T21:28:59.883Z"
+    },
+    {
+      "id": "alp3apwo7pe",
+      "notes": "",
+      "full_name": "addas",
+      "created_at": "2026-07-18T06:26:20.860Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T06:26:20.860Z"
+    },
+    {
+      "id": "u215e8pfyra",
+      "notes": "",
+      "full_name": "RealYannSommer",
+      "created_at": "2026-07-18T06:26:49.339Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T06:26:49.339Z"
+    },
+    {
+      "id": "39vs0xmtmyh",
+      "notes": "",
+      "full_name": "CryX_YZ",
+      "created_at": "2026-07-18T08:33:45.594Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:33:45.594Z"
+    },
+    {
+      "id": "moas532z2oh",
+      "notes": "",
+      "full_name": "arter216ita",
+      "created_at": "2026-07-18T08:38:10.460Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:38:10.460Z"
+    },
+    {
+      "id": "qdj5r8lictb",
+      "notes": "",
+      "full_name": "PrestoDeer",
+      "created_at": "2026-07-18T08:39:00.429Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:39:00.429Z"
+    },
+    {
+      "id": "s870kbpi7xq",
+      "notes": "",
+      "full_name": "rhxmbuu_",
+      "created_at": "2026-07-18T08:39:26.127Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:39:26.127Z"
+    },
+    {
+      "id": "xpwdnkpequ8",
+      "notes": "",
+      "full_name": "GhostVigo",
+      "created_at": "2026-07-18T08:39:48.859Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:39:48.859Z"
+    },
+    {
+      "id": "94gxym0m4jk",
+      "notes": "",
+      "full_name": "AldoMoretti",
+      "created_at": "2026-07-18T08:43:58.929Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T08:43:58.929Z"
+    },
+    {
+      "id": "26treoz9nmd",
+      "notes": "",
+      "full_name": "Atxms_",
+      "created_at": "2026-07-18T11:33:07.251Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T11:33:07.251Z"
+    },
+    {
+      "id": "fykh96chd9",
+      "notes": "",
+      "full_name": "AlfredoHP03",
+      "created_at": "2026-07-18T11:55:45.317Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T11:55:45.317Z"
+    },
+    {
+      "id": "8m81pnzeooa",
+      "notes": "",
+      "full_name": "On1woe",
+      "created_at": "2026-07-18T12:21:49.724Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T12:21:49.724Z"
+    },
+    {
+      "id": "mpt8npt1sr",
+      "notes": "",
+      "full_name": "MDP22",
+      "created_at": "2026-07-18T12:22:40.425Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T12:22:40.425Z"
     }
   ],
   "safe_boxes": [
@@ -593,6 +772,69 @@
       "created_at": "2026-07-17T21:10:46.198Z",
       "started_at": "2026-07-17T21:10:46.198Z",
       "updated_at": "2026-07-17T22:01:06.387Z"
+    },
+    {
+      "id": "ufxdu1c0zte",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T09:28:59.103Z",
+      "created_at": "2026-07-18T08:58:08.894Z",
+      "started_at": "2026-07-18T08:58:08.894Z",
+      "updated_at": "2026-07-18T09:28:59.391Z"
+    },
+    {
+      "id": "oseebnovjo",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T11:13:17.683Z",
+      "created_at": "2026-07-18T11:04:38.807Z",
+      "started_at": "2026-07-18T11:04:38.807Z",
+      "updated_at": "2026-07-18T11:13:17.958Z"
+    },
+    {
+      "id": "pofbzwh9imb",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": null,
+      "created_at": "2026-07-18T11:18:02.741Z",
+      "started_at": "2026-07-18T11:18:02.741Z",
+      "updated_at": "2026-07-18T11:18:02.741Z"
+    },
+    {
+      "id": "o8a734fkbsb",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T11:41:58.542Z",
+      "created_at": "2026-07-18T11:41:06.866Z",
+      "started_at": "2026-07-18T11:41:06.866Z",
+      "updated_at": "2026-07-18T11:42:18.031Z"
+    },
+    {
+      "id": "jaiz9kea69",
+      "user_id": "user-qp33j87j32",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T12:37:27.963Z",
+      "created_at": "2026-07-18T12:37:25.748Z",
+      "started_at": "2026-07-18T12:37:25.748Z",
+      "updated_at": "2026-07-18T12:37:27.518Z"
+    },
+    {
+      "id": "j7ppy0gi4mm",
+      "user_id": "user-o5yk1ko0qa",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T12:56:56.751Z",
+      "created_at": "2026-07-18T12:56:31.623Z",
+      "started_at": "2026-07-18T12:56:31.623Z",
+      "updated_at": "2026-07-18T12:56:57.357Z"
+    },
+    {
+      "id": "tr48nv0alen",
+      "user_id": "user-o5yk1ko0qa",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T12:56:59.353Z",
+      "created_at": "2026-07-18T12:56:32.963Z",
+      "started_at": "2026-07-18T12:56:32.963Z",
+      "updated_at": "2026-07-18T12:56:59.972Z"
     }
   ],
   "nights": [
@@ -618,10 +860,20 @@
       "id": "nrop7ziuijq",
       "title": null,
       "total": 300,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-07-17T08:08:05.801Z",
       "night_date": "2026-07-17",
-      "updated_at": "2026-07-17T08:08:05.801Z"
+      "updated_at": "2026-07-18T06:20:14.524Z"
+    },
+    {
+      "id": "night-20t60avmva",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 18/07/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-07-18T06:20:14.524Z",
+      "night_date": "2026-07-18",
+      "updated_at": "2026-07-18T06:20:14.524Z"
     }
   ],
   "conversion_settings": [
@@ -775,6 +1027,116 @@
       "eur_amount": 5,
       "input_amount": 5,
       "dobloni_amount": 50
+    },
+    {
+      "id": "conv-0g9u59lgos0f",
+      "night_id": "night-20t60avmva",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "moas532z2oh",
+      "created_at": "2026-07-18T08:49:20.121Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 750,
+      "input_amount": 10000,
+      "dobloni_amount": 10000
+    },
+    {
+      "id": "conv-8507geo22zk",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "dwozr73n9aq",
+      "created_at": "2026-07-18T09:15:55.046Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 75,
+      "input_amount": 75,
+      "dobloni_amount": 750
+    },
+    {
+      "id": "conv-rl63kb1m7wo",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "dwozr73n9aq",
+      "created_at": "2026-07-18T09:17:06.867Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 25,
+      "input_amount": 25,
+      "dobloni_amount": 250
+    },
+    {
+      "id": "conv-t0dw5vlw8zp",
+      "night_id": "night-20t60avmva",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "26treoz9nmd",
+      "created_at": "2026-07-18T11:33:22.300Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 750,
+      "input_amount": 10000,
+      "dobloni_amount": 10000
+    },
+    {
+      "id": "conv-a993syozee",
+      "night_id": "night-20t60avmva",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "fykh96chd9",
+      "created_at": "2026-07-18T11:55:55.020Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 750,
+      "input_amount": 10000,
+      "dobloni_amount": 10000
+    },
+    {
+      "id": "conv-npqgyac2z9b",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "8m81pnzeooa",
+      "created_at": "2026-07-18T12:21:59.152Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 100,
+      "input_amount": 100,
+      "dobloni_amount": 1000
+    },
+    {
+      "id": "conv-l9gwfkdjmz",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "mpt8npt1sr",
+      "created_at": "2026-07-18T12:22:50.862Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 240,
+      "input_amount": 240,
+      "dobloni_amount": 2400
+    },
+    {
+      "id": "conv-6ipse7iweig",
+      "night_id": "night-20t60avmva",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "mpt8npt1sr",
+      "created_at": "2026-07-18T12:29:57.529Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 318,
+      "input_amount": 4240,
+      "dobloni_amount": 4240
+    },
+    {
+      "id": "conv-6ggiphn3np8",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "8m81pnzeooa",
+      "created_at": "2026-07-18T12:30:08.168Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 15,
+      "input_amount": 15,
+      "dobloni_amount": 150
+    },
+    {
+      "id": "conv-93aeaezbqri",
+      "night_id": "night-20t60avmva",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "8m81pnzeooa",
+      "created_at": "2026-07-18T12:32:25.384Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 33,
+      "input_amount": 440,
+      "dobloni_amount": 440
     }
   ],
   "conversion_resets": [],
@@ -920,6 +1282,18 @@
       "removed_by_id": "mock-user-id-1234",
       "created_by_name": "Giuse84pro",
       "removed_by_name": "Giuse84pro"
+    },
+    {
+      "id": "f03v78fx69a",
+      "type": "richiamo_verbale",
+      "reason": "Comportamento scorretto + mancato fatturato",
+      "user_id": "user-e5kis5pzbdf",
+      "is_active": true,
+      "created_at": "2026-07-18T12:50:58.132Z",
+      "expires_at": null,
+      "updated_at": "2026-07-18T12:50:58.132Z",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro"
     }
   ],
   "leave_requests": [],
@@ -978,6 +1352,416 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-hppat6hn9qd",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:56:59.973Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-28fy5t28bxm",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:56:57.358Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-sed9i1kxhb",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T12:56:32.963Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-a5o47woaqi8",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T12:56:31.623Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-9plr9phuze9",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Richiamo Verbale)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:50:58.132Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-rzz6sm43t3",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:40:31.362Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xoaj72eb1a",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-qp33j87j32",
+      "username": "hartigno",
+      "created_at": "2026-07-18T12:37:27.518Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "hartigno"
+    },
+    {
+      "id": "log-2abi2er4gtg",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-qp33j87j32",
+      "username": "hartigno",
+      "created_at": "2026-07-18T12:37:25.748Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "hartigno"
+    },
+    {
+      "id": "log-slgd2vn7lsa",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 440 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:32:25.384Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-gplsk0ht696",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 15 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:30:08.168Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-mfm47tlrrui",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 4240 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:29:57.529Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-1f6ok8zffo",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 240 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:22:50.862Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-0pdf8qajeyr",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: MDP22",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:22:40.425Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-gkoyml2xrbk",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 100 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:21:59.152Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-c4cjejc27t",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: On1woe",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T12:21:49.724Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-v7dh61azbvn",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:15:25.160Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-mg8m59wvkk",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:14:48.920Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xezkd3l5eog",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T12:14:13.390Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3wqal4u901v",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 10000 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:55:55.020Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-4chzqvuxhcx",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: AlfredoHP03",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:55:45.317Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-r1ougl83c5b",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T11:42:18.031Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-i47hk9we268",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T11:41:06.866Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-021vw1pt1wi3",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T11:40:03.857Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ijg93q1jxxs",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 10000 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:33:22.300Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-ai66nmzsh9",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: Atxms_",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:33:07.251Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-9bqqya7xm4d",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:18:02.741Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-c2ru81jbwnn",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:13:17.958Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-kummql282l",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T11:04:38.807Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-9tnibbms6t",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T09:28:59.391Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-df4cue6fxe",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 25 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T09:17:06.867Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-7unni9m5xd",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 75 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T09:15:55.046Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-pix6so6el27",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:58:08.894Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-ztc7u1t4p89",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 10000 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:49:20.121Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-zw0r3fy02ln",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: AldoMoretti",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:43:58.929Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-n3ogrz7oa3l",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: GhostVigo",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:39:48.859Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-4j34jv3w7rs",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: rhxmbuu_",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:39:26.127Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-5x5ob275hl8",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: PrestoDeer",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:39:00.429Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-hy2z20cajon",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: arter216ita",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:38:10.460Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-v9kll2jdp5",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: CryX_YZ",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T08:33:45.594Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-pkuba62eem",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: RealYannSommer",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T06:26:49.339Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-g294ar7mix",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: addas",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T06:26:20.860Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
     {
       "id": "log-57eq6s0feq5",
       "action": "update",
