@@ -54,7 +54,7 @@ function fmtDur(sec: number) {
 }
 
 function BadgePage() {
-  const { user, isAdmin, permissions = [] } = useAuth();
+  const { user, isAdmin, permissions = [], activeSuspension, activeLeave } = useAuth();
   const qc = useQueryClient();
   const can = (p: string) => isAdmin || permissions.includes(p);
   const canTimbra = can("badge.timbra");
@@ -169,6 +169,13 @@ function BadgePage() {
   const clockIn = async () => {
     if (!active) return toast.error("Nessuna settimana attiva");
     if (!user) return;
+    if (activeSuspension) {
+      const typeStr = activeSuspension.type === "espulsione" ? "espulso" : "sospeso";
+      return toast.error(`Non puoi timbrare: sei attualmente ${typeStr}.`);
+    }
+    if (activeLeave) {
+      return toast.error("Non puoi timbrare: sei attualmente in congedo.");
+    }
     const { error } = await (supabase as any)
       .from("badge_sessions")
       .insert({ user_id: user.id, week_id: active.id });

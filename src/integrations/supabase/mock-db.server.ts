@@ -1096,23 +1096,39 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
 
   if (operation === "insert") {
     const rowsToInsert = Array.isArray(insertData) ? insertData : [insertData];
-    const insertedRows = rowsToInsert.map((row) => ({
-      id: row.id || Math.random().toString(36).substring(2, 15),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      ...(table === "services" ? { active: true } : {}),
-      ...(table === "badge_sessions"
-        ? { started_at: row.started_at || new Date().toISOString(), ended_at: null }
-        : {}),
-      ...(table === "badge_weeks"
-        ? { started_at: row.started_at || new Date().toISOString(), active: true, ended_at: null }
-        : {}),
-      ...row,
-    }));
+    const insertedRows = rowsToInsert.map((row) => {
+      const base: any = {
+        id: row.id || Math.random().toString(36).substring(2, 15),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...(table === "services" ? { active: true } : {}),
+        ...row,
+      };
+
+      if (table === "badge_sessions") {
+        base.started_at = row.started_at || base.created_at;
+        if (row.ended_at === undefined) {
+          base.ended_at = null;
+        }
+      }
+
+      if (table === "badge_weeks") {
+        base.started_at = row.started_at || base.created_at;
+        base.active = row.active !== undefined ? row.active : true;
+        if (row.ended_at === undefined) {
+          base.ended_at = null;
+        }
+      }
+
+      return base;
+    });
 
     db[table] = [...db[table], ...insertedRows];
     if (table === "night_items") {
       recalculateNightsTotals(db);
+    }
+    if (table === "sanctions" || table === "leave_requests") {
+      insertedRows.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
     logOperation(db, operation, table, query, { data: insertedRows });
     await saveDb(db);
@@ -1162,6 +1178,9 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       }
     }
 
+    if (table === "sanctions" || table === "leave_requests") {
+      results.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
+    }
     logOperation(db, operation, table, query, { data: results });
     await saveDb(db);
     return { data: Array.isArray(insertData) ? results : results[0], error: null };
@@ -1187,6 +1206,9 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
 
     if (table === "night_items") {
       recalculateNightsTotals(db);
+    }
+    if (table === "sanctions" || table === "leave_requests") {
+      updatedRows.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
     logOperation(db, operation, table, query, { data: updatedRows });
     await saveDb(db);
@@ -1374,4 +1396,35 @@ function getActiveSession(db: any) {
     console.error("[Supabase Mock Server] Error reading session cookie:", e);
   }
   return null;
+}
+
+function checkAndTerminateActiveSessionsForUser(db: any, userId: string) {
+  if (!userId) return false;
+  const activeSanc = (db.sanctions || []).find((s: any) => {
+    if (s.user_id !== userId || !s.is_active) return false;
+    if (s.type === "espulsione") return true;
+    if (s.type === "sospensione") {
+      if (!s.expires_at) return true;
+      return new Date(s.expires_at) > new Date();
+    }
+    return false;
+  });
+
+  const activeLv = (db.leave_requests || []).find((l: any) => {
+    if (l.user_id !== userId || l.status !== "approved") return false;
+    const todayStr = new Date().toISOString().split("T")[0];
+    return todayStr >= l.start_date && todayStr <= l.end_date;
+  });
+
+  if (activeSanc || activeLv) {
+    let closedAny = false;
+    (db.badge_sessions || []).forEach((sess: any) => {
+      if (sess.user_id === userId && sess.ended_at === null) {
+        sess.ended_at = new Date().toISOString();
+        closedAny = true;
+      }
+    });
+    return closedAny;
+  }
+  return false;
 }

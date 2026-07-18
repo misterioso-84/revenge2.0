@@ -120,7 +120,9 @@ function setCookie(name: string, value: string, days: number) {
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
     expires = "; expires=" + date.toUTCString();
   }
-  document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=None; Secure";
+  const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+  const flags = isHttps ? "; SameSite=None; Secure" : "";
+  document.cookie = `${name}=${value || ""}${expires}; path=/${flags}`;
 }
 
 function eraseCookie(name: string) {

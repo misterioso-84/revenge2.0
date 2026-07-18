@@ -45,7 +45,7 @@ function AuthPage() {
   useEffect(() => {
     if (!mounted) return;
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/cittadini" });
+      if (data.session) navigate({ to: "/dashboard" });
     });
   }, [navigate, mounted]);
 
@@ -66,7 +66,7 @@ function AuthPage() {
       });
       if (error) throw error;
       toast.success("Accesso effettuato");
-      navigate({ to: "/cittadini" });
+      navigate({ to: "/dashboard" });
     } catch (err: any) {
       toast.error(err?.message ?? "Errore di accesso");
     } finally {
