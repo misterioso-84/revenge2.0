@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "AppState": {
+      "title": "AppState",
+      "description": "Serialized application state representing the mock database",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "description": "JSON serialized string of the database content"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the state was last updated"
+        }
+      },
+      "required": ["data", "updated_at"]
+    }
+  },
+  "firestore": {
+    "/app_state/{documentId}": {
+      "schema": "AppState",
+      "description": "Contains serialized snapshot of database state"
+    }
+  }
+}

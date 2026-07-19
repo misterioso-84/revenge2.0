@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { queryMockDb, handleMockAuth } from "./mock-db.server";
 
 export const mockDbProxy = createServerFn({ method: "POST" }).handler(
   async ({ data }: { data: any }) => {
     try {
+      const { queryMockDb } = await import("./mock-db.server");
       return await queryMockDb(data);
     } catch (e: any) {
       console.error("Error in mockDbProxy:", e);
@@ -15,6 +15,7 @@ export const mockDbProxy = createServerFn({ method: "POST" }).handler(
 export const mockAuthProxy = createServerFn({ method: "POST" }).handler(
   async ({ data }: { data: any }) => {
     try {
+      const { handleMockAuth } = await import("./mock-db.server");
       return await handleMockAuth(data);
     } catch (e: any) {
       console.error("Error in mockAuthProxy:", e);

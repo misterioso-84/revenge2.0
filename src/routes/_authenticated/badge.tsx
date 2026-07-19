@@ -256,6 +256,11 @@ function BadgePage() {
     return Math.max(0, (now - start) / 1000);
   }, [mySession, now]);
 
+  const myTotalSeconds = useMemo(() => {
+    if (!user) return 0;
+    return totals.get(user.id) ?? 0;
+  }, [totals, user]);
+
   if (!canRead) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -321,6 +326,21 @@ function BadgePage() {
                     </div>
                   </>
                 )}
+
+                <div className="pt-4 border-t border-border/40 mt-4 flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      Ore accumulate questa settimana
+                    </div>
+                    <div className="text-lg font-bold font-mono text-primary flex items-baseline gap-1.5">
+                      {fmtDur(myTotalSeconds)}
+                      <span className="text-xs text-muted-foreground font-sans font-normal">
+                        ({weeks.find((w) => w.id === weekId)?.label ?? "Settimana corrente"})
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="flex md:justify-end">
                 {mySession ? (
