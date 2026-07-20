@@ -19,6 +19,31 @@ import { toast } from "sonner";
 import { Play, Square, Clock, Plus, Lock as LockIcon, Users } from "lucide-react";
 import { WeekSessionsDialog } from "@/components/WeekSessionsDialog";
 
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("localStorage not accessible:", e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("localStorage not accessible:", e);
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("localStorage not accessible:", e);
+    }
+  },
+};
+
 export const Route = createFileRoute("/_authenticated/badge")({
   component: BadgePage,
 });
@@ -101,7 +126,11 @@ function BadgePage() {
     refetchInterval: 10000,
   });
 
-  const { data: activeSessions = [] } = useQuery<Session[]>({
+  const {
+    data: activeSessions = [],
+    isFetching: isFetchingActive,
+    isLoading: isLoadingActive,
+  } = useQuery<Session[]>({
     queryKey: ["badge-active"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -115,7 +144,11 @@ function BadgePage() {
     refetchInterval: 10000,
   });
 
-  const { data: profiles = [] } = useQuery<Prof[]>({
+  const {
+    data: profiles = [],
+    isFetching: isFetchingProfiles,
+    isLoading: isLoadingProfiles,
+  } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*");
@@ -131,7 +164,125 @@ function BadgePage() {
     [profiles],
   );
 
-  const mySession = activeSessions.find((s) => s.user_id === user?.id) ?? null;
+  // Load initial state from localStorage if available safely
+  const [localSession, setLocalSession] = useState<{ started_at: string; week_id: string } | null>(
+    () => {
+      if (typeof window !== "undefined" && user) {
+        const stored = safeLocalStorage.getItem(`badge_active_session_${user.id}`);
+        return stored ? JSON.parse(stored) : null;
+      }
+      return null;
+    },
+  );
+
+  const myProfile = useMemo(() => profiles.find((p) => p.id === user?.id), [profiles, user]);
+
+  // Sync localStorage and localSession state with server state safely
+  useEffect(() => {
+    if (!user) return;
+
+    const serverSession = activeSessions.find((s) => s.user_id === user.id);
+
+    if (serverSession) {
+      const sessionData = {
+        started_at: serverSession.started_at || serverSession.created_at,
+        week_id: serverSession.week_id,
+      };
+      safeLocalStorage.setItem(`badge_active_session_${user.id}`, JSON.stringify(sessionData));
+      setLocalSession(sessionData);
+    } else {
+      // ONLY clear local session if we are absolutely sure the server has no active session,
+      // and we are NOT currently fetching or loading the data, to prevent temporary resets on focus/alt-tab
+      if (isFetchingActive || isFetchingProfiles || isLoadingActive || isLoadingProfiles) {
+        return; // Don't clear during fetch or load to avoid transient reset bugs on Alt-Tab
+      }
+
+      const profilesLoaded = profiles.length > 0;
+      if (profilesLoaded && !myProfile?.badge_start_time) {
+        safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+        setLocalSession(null);
+      }
+    }
+  }, [
+    activeSessions,
+    user,
+    myProfile,
+    profiles,
+    isFetchingActive,
+    isFetchingProfiles,
+    isLoadingActive,
+    isLoadingProfiles,
+  ]);
+
+  // Sync from profile as secondary fallback safely
+  useEffect(() => {
+    if (user && myProfile?.badge_start_time) {
+      const sessionData = {
+        started_at: myProfile.badge_start_time,
+        week_id: active?.id || weekId || "current",
+      };
+      safeLocalStorage.setItem(`badge_active_session_${user.id}`, JSON.stringify(sessionData));
+      setLocalSession(sessionData);
+    }
+  }, [myProfile, user, active, weekId]);
+
+  // Resolved active session using local state or server state
+  const resolvedMySession = useMemo(() => {
+    if (!user) return null;
+
+    // 1. Live active session from query
+    const serverSession = activeSessions.find((s) => s.user_id === user.id);
+    if (serverSession) {
+      return {
+        id: serverSession.id,
+        started_at: serverSession.started_at || serverSession.created_at,
+        week_id: serverSession.week_id,
+      };
+    }
+
+    // 2. Profile badge_start_time (more direct source of truth than local fallback)
+    if (myProfile?.badge_start_time) {
+      return {
+        id: "profile-temp-id",
+        started_at: myProfile.badge_start_time,
+        week_id: active?.id || weekId || "current",
+      };
+    }
+
+    // 3. Local fallback from localStorage
+    if (localSession) {
+      return {
+        id: "local-temp-id",
+        started_at: localSession.started_at,
+        week_id: localSession.week_id,
+      };
+    }
+
+    return null;
+  }, [user, activeSessions, localSession, myProfile, active, weekId]);
+
+  const resolvedActiveSessions = useMemo(() => {
+    const list = [...activeSessions];
+
+    // Merge in any profile that has a badge_start_time set but is not yet in activeSessions
+    profiles.forEach((p) => {
+      if (p.badge_start_time) {
+        const alreadyIn = list.some((s) => s.user_id === p.id);
+        if (!alreadyIn) {
+          list.push({
+            id: `profile-temp-${p.id}`,
+            user_id: p.id,
+            week_id: active?.id || weekId || "current",
+            started_at: p.badge_start_time,
+            created_at: p.badge_start_time,
+            ended_at: null,
+          } as any);
+        }
+      }
+    });
+
+    return list;
+  }, [activeSessions, profiles, active, weekId]);
 
   const totals = useMemo(() => {
     const map = new Map<string, number>();
@@ -154,11 +305,11 @@ function BadgePage() {
 
   const employeeIds = useMemo(() => {
     const s = new Set<string>();
-    activeSessions.forEach((x) => s.add(x.user_id));
+    resolvedActiveSessions.forEach((x) => s.add(x.user_id));
     sessions.forEach((x) => s.add(x.user_id));
     if (canTimbra && user) s.add(user.id);
     return Array.from(s);
-  }, [activeSessions, sessions, canTimbra, user]);
+  }, [resolvedActiveSessions, sessions, canTimbra, user]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["badge-weeks"] });
@@ -169,6 +320,9 @@ function BadgePage() {
   const clockIn = async () => {
     if (!active) return toast.error("Nessuna settimana attiva");
     if (!user) return;
+    if (resolvedMySession) {
+      return toast.error("Hai già una timbratura attiva per questa settimana.");
+    }
     if (activeSuspension) {
       const typeStr = activeSuspension.type === "espulsione" ? "espulso" : "sospeso";
       return toast.error(`Non puoi timbrare: sei attualmente ${typeStr}.`);
@@ -176,22 +330,85 @@ function BadgePage() {
     if (activeLeave) {
       return toast.error("Non puoi timbrare: sei attualmente in congedo.");
     }
-    const { error } = await (supabase as any)
-      .from("badge_sessions")
-      .insert({ user_id: user.id, week_id: active.id });
-    if (error) toast.error(error.message);
-    else {
+
+    const nowIso = new Date().toISOString();
+
+    // Set local state immediately for instant feedback & resilience
+    const sessionData = { started_at: nowIso, week_id: active.id };
+    safeLocalStorage.setItem(`badge_active_session_${user.id}`, JSON.stringify(sessionData));
+    setLocalSession(sessionData);
+
+    const { error } = await (supabase as any).from("badge_sessions").insert({
+      user_id: user.id,
+      week_id: active.id,
+      started_at: nowIso,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      // Also update profile badge_start_time in parallel/sequence
+      await supabase.from("profiles").update({ badge_start_time: nowIso }).eq("id", user.id);
+
       toast.success("Badge attivato");
       invalidate();
     }
   };
+
   const clockOut = async (id: string) => {
+    let targetSessionId = id;
+
+    // Resolve temporary IDs to real active session
+    if (id === "profile-temp-id" || id === "local-temp-id") {
+      // First, query the server directly to find if there's any active session for this user
+      const { data: serverSessions, error: queryErr } = await (supabase as any)
+        .from("badge_sessions")
+        .select("*")
+        .eq("user_id", user?.id)
+        .is("ended_at", null);
+
+      if (!queryErr && serverSessions && serverSessions.length > 0) {
+        targetSessionId = serverSessions[0].id;
+      } else {
+        const memorySess = activeSessions.find((s) => s.user_id === user?.id);
+        if (memorySess) {
+          targetSessionId = memorySess.id;
+        } else {
+          // If there's really no server active session, we should just reset local/profile active state
+          if (user) {
+            safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+            setLocalSession(null);
+            await supabase.from("profiles").update({ badge_start_time: null }).eq("id", user.id);
+            toast.success("Stato badge locale ripristinato");
+            invalidate();
+          }
+          return;
+        }
+      }
+    }
+
+    const sess =
+      resolvedActiveSessions.find((s) => s.id === targetSessionId) ||
+      sessions.find((s) => s.id === targetSessionId);
+    const targetUserId = sess ? sess.user_id : user?.id;
+
+    if (targetUserId === user?.id) {
+      // Clear local state immediately
+      safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+      setLocalSession(null);
+    }
+
     const { error } = await (supabase as any)
       .from("badge_sessions")
       .update({ ended_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) toast.error(error.message);
-    else {
+      .eq("id", targetSessionId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      if (targetUserId) {
+        await supabase.from("profiles").update({ badge_start_time: null }).eq("id", targetUserId);
+      }
       toast.success("Badge chiuso");
       invalidate();
     }
@@ -230,13 +447,24 @@ function BadgePage() {
       invalidate();
     }
   };
+
   const closeWeek = async (w: Week) => {
     if (!confirm(`Chiudere "${w.label}"? Tutte le timbrature aperte verranno chiuse.`)) return;
+
+    // Find who was active in this week so we can clear their badge_start_time on profiles
+    const activeInWeek = activeSessions.filter((s) => s.week_id === w.id);
+
     await (supabase as any)
       .from("badge_sessions")
       .update({ ended_at: new Date().toISOString() })
       .eq("week_id", w.id)
       .is("ended_at", null);
+
+    // For each active user, update their profile badge_start_time to null
+    for (const s of activeInWeek) {
+      await supabase.from("profiles").update({ badge_start_time: null }).eq("id", s.user_id);
+    }
+
     const { error } = await (supabase as any)
       .from("badge_weeks")
       .update({ active: false, ended_at: new Date().toISOString() })
@@ -249,12 +477,12 @@ function BadgePage() {
   };
 
   const mySessionElapsed = useMemo(() => {
-    if (!mySession) return 0;
-    const startStr = mySession.started_at || mySession.created_at;
+    if (!resolvedMySession) return 0;
+    const startStr = resolvedMySession.started_at;
     const start = startStr ? new Date(startStr).getTime() : NaN;
     if (isNaN(start)) return 0;
     return Math.max(0, (now - start) / 1000);
-  }, [mySession, now]);
+  }, [resolvedMySession, now]);
 
   const myTotalSeconds = useMemo(() => {
     if (!user) return 0;
@@ -297,7 +525,7 @@ function BadgePage() {
                 <div className="text-sm uppercase tracking-widest text-muted-foreground">
                   Il tuo badge
                 </div>
-                {mySession ? (
+                {resolvedMySession ? (
                   <>
                     <div className="flex items-center gap-3">
                       <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
@@ -307,7 +535,8 @@ function BadgePage() {
                       {fmtDur(mySessionElapsed)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Iniziato alle {new Date(mySession.started_at).toLocaleTimeString("it-IT")}
+                      Iniziato alle{" "}
+                      {new Date(resolvedMySession.started_at).toLocaleTimeString("it-IT")}
                     </div>
                   </>
                 ) : (
@@ -343,12 +572,12 @@ function BadgePage() {
                 </div>
               </div>
               <div className="flex md:justify-end">
-                {mySession ? (
+                {resolvedMySession ? (
                   <Button
                     size="lg"
                     variant="destructive"
                     className="h-16 px-10 text-lg"
-                    onClick={() => clockOut(mySession.id)}
+                    onClick={() => clockOut(resolvedMySession.id)}
                   >
                     <Square className="h-6 w-6" /> Timbra uscita
                   </Button>
@@ -422,18 +651,18 @@ function BadgePage() {
               <Users className="h-5 w-5 text-green-500" />
               Attivi ora
               <Badge variant="secondary" className="ml-1">
-                {activeSessions.length}
+                {resolvedActiveSessions.length}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {activeSessions.length === 0 ? (
+            {resolvedActiveSessions.length === 0 ? (
               <div className="text-center text-muted-foreground py-8 border border-dashed rounded-md">
                 Nessun badge attivo
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {activeSessions.map((s) => {
+                {resolvedActiveSessions.map((s) => {
                   const p = profById[s.user_id];
                   const startStr = s.started_at || s.created_at;
                   const start = startStr ? new Date(startStr).getTime() : NaN;
@@ -516,7 +745,7 @@ function BadgePage() {
                   const p = profById[uid];
                   const sess = sessions.filter((s) => s.user_id === uid);
                   const total = totals.get(uid) ?? 0;
-                  const activeSess = activeSessions.find((s) => s.user_id === uid);
+                  const activeSess = resolvedActiveSessions.find((s) => s.user_id === uid);
                   const isActive = !!activeSess || !!p?.badge_start_time;
 
                   const activeElapsed = isActive

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, RotateCcw, Save, Coins, Euro, Plus } from "lucide-react";
-import { formatDateTime, formatMoney, formatDobloni } from "@/lib/format";
+import { formatDateTime, formatDate, formatMoney, formatDobloni } from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/conversioni")({
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/conversioni")({
 
 type Direction = "cash_to_dobloni" | "dobloni_to_cash";
 type Citizen = { id: string; full_name: string };
-type Night = { id: string; night_date: string; title: string | null };
+type Night = { id: string; night_date: string; title: string | null; is_closed?: boolean };
 type Settings = { id: boolean; max_dobloni_per_day: number; max_eur_per_day: number };
 type Conversion = {
   id: string;
@@ -140,8 +140,7 @@ function ConvertPanel() {
     queryFn: async () => {
       const { data } = await supabase
         .from("nights")
-        .select("id, night_date, title")
-        .eq("is_closed", false)
+        .select("id, night_date, title, is_closed")
         .order("night_date", { ascending: false })
         .limit(50);
       return (data ?? []) as Night[];
@@ -437,8 +436,9 @@ function ConvertPanel() {
                 <SelectContent>
                   {nights.map((n) => (
                     <SelectItem key={n.id} value={n.id}>
-                      {new Date(n.night_date).toLocaleDateString("it-IT")}
+                      {formatDate(n.night_date)}
                       {n.title ? ` · ${n.title}` : ""}
+                      {n.is_closed ? " (Chiusa)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

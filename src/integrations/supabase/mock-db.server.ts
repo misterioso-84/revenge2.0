@@ -453,7 +453,7 @@ function logOperation(
 
   db.audit_logs = db.audit_logs || [];
 
-  const session = getActiveSession(db);
+  const session = getActiveSessionSync(db);
   const userId = session?.user?.id || "system";
   const username = session?.user?.user_metadata?.username || "sistema";
   const userDisplayName = session?.user?.user_metadata?.display_name || "Sistema";
@@ -610,10 +610,51 @@ function recalculateNightsTotals(db: Record<string, any[]>) {
   }));
 }
 
+function runAutoCloseActiveSessions(db: any): boolean {
+  let modified = false;
+  db.badge_sessions = db.badge_sessions || [];
+  const now = new Date();
+
+  db.badge_sessions = db.badge_sessions.map((s: any) => {
+    if (!s.ended_at && s.started_at) {
+      const startTime = new Date(s.started_at);
+      const diffMs = now.getTime() - startTime.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      // Auto-close sessions that exceed 12 hours of continuous run
+      if (diffHours >= 12) {
+        modified = true;
+        const autoEndTime = new Date(startTime.getTime() + 12 * 60 * 60 * 1000).toISOString();
+
+        // Clear badge_start_time for the user in profiles so they can start fresh
+        const prof = (db.profiles || []).find((p: any) => p.id === s.user_id);
+        if (prof) {
+          prof.badge_start_time = null;
+        }
+
+        return {
+          ...s,
+          ended_at: autoEndTime,
+          updated_at: now.toISOString(),
+        };
+      }
+    }
+    return s;
+  });
+
+  return modified;
+}
+
 function runAutoCreateJobs(db: Record<string, any[]>): boolean {
   let modified = false;
   try {
     const now = new Date();
+
+    // Auto-close active sessions exceeding 12 hours
+    if (runAutoCloseActiveSessions(db)) {
+      modified = true;
+    }
+
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: "Europe/Rome",
       year: "numeric",
@@ -677,22 +718,21 @@ function runAutoCreateJobs(db: Record<string, any[]>): boolean {
       modified = true;
     }
 
-    const romeDateForWeek = new Date(
-      year,
-      month - 1,
-      day,
-      hour,
-      parseInt(dateMap.minute ?? "0"),
-      parseInt(dateMap.second ?? "0"),
-    );
-    const currentDay = romeDateForWeek.getDay(); // 0 = Sunday, 1 = Monday...
+    // Super-robust Europe/Rome calculation to find current week's Monday
+    const weekdayShort = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Rome",
+      weekday: "short",
+    }).format(now); // "Mon", "Tue", etc.
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const currentDay = weekdays.indexOf(weekdayShort);
     const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
-    const mondayDate = new Date(romeDateForWeek);
-    mondayDate.setDate(romeDateForWeek.getDate() + mondayDiff);
 
-    const monYear = mondayDate.getFullYear();
-    const monMonth = String(mondayDate.getMonth() + 1).padStart(2, "0");
-    const monDay = String(mondayDate.getDate()).padStart(2, "0");
+    const romeMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    const mondayDate = new Date(romeMidnight.getTime() + mondayDiff * 24 * 60 * 60 * 1000);
+
+    const monYear = mondayDate.getUTCFullYear();
+    const monMonth = String(mondayDate.getUTCMonth() + 1).padStart(2, "0");
+    const monDay = String(mondayDate.getUTCDate()).padStart(2, "0");
     const currentMondayStr = `${monYear}-${monMonth}-${monDay}`;
 
     db.badge_weeks = db.badge_weeks || [];
@@ -719,9 +759,15 @@ function runAutoCreateJobs(db: Record<string, any[]>): boolean {
           return w;
         });
 
+        // Automatically close all active badge sessions from the old week
         db.badge_sessions = db.badge_sessions.map((s: any) => {
           if (s.week_id === activeWeek.id && !s.ended_at) {
             modified = true;
+            // Clear badge_start_time for the user in profiles so they can start fresh
+            const prof = (db.profiles || []).find((p: any) => p.id === s.user_id);
+            if (prof) {
+              prof.badge_start_time = null;
+            }
             return {
               ...s,
               ended_at: new Date().toISOString(),
@@ -737,10 +783,10 @@ function runAutoCreateJobs(db: Record<string, any[]>): boolean {
       const monDayStr = String(monDay).padStart(2, "0");
 
       const sundayDate = new Date(mondayDate);
-      sundayDate.setDate(mondayDate.getDate() + 6);
-      const sunYearTwo = String(sundayDate.getFullYear()).slice(-2);
-      const sunMonthStr = String(sundayDate.getMonth() + 1).padStart(2, "0");
-      const sunDayStr = String(sundayDate.getDate()).padStart(2, "0");
+      sundayDate.setUTCDate(mondayDate.getUTCDate() + 6);
+      const sunYearTwo = String(sundayDate.getUTCFullYear()).slice(-2);
+      const sunMonthStr = String(sundayDate.getUTCMonth() + 1).padStart(2, "0");
+      const sunDayStr = String(sundayDate.getUTCDate()).padStart(2, "0");
 
       const weekLabel = `Settimana dal ${monDayStr}/${monMonthStr}/${monYearTwo} - ${sunDayStr}/${sunMonthStr}/${sunYearTwo}`;
 
@@ -764,10 +810,46 @@ function runAutoCreateJobs(db: Record<string, any[]>): boolean {
   return modified;
 }
 
+function matchFilters(item: any, table: string, filters: any[]): boolean {
+  for (const filter of filters) {
+    const { column, value, op } = filter;
+    let itemVal = item[column];
+    if (column === "active" && table === "services" && itemVal === undefined) {
+      itemVal = true;
+    }
+
+    if (op === "eq") {
+      if (itemVal !== value) return false;
+    } else if (op === "neq") {
+      if (itemVal === value) return false;
+    } else if (op === "is") {
+      if (value === null) {
+        if (itemVal !== null && itemVal !== undefined) return false;
+      } else {
+        if (itemVal !== value) return false;
+      }
+    } else if (op === "in") {
+      if (!Array.isArray(value) || !value.includes(itemVal)) return false;
+    } else if (op === "ilike") {
+      if (typeof itemVal !== "string" || typeof value !== "string") {
+        if (String(itemVal).toLowerCase() !== String(value).toLowerCase()) return false;
+      } else {
+        const cleanValue = value.replace(/%/g, ".*");
+        const regex = new RegExp(`^${cleanValue}$`, "i");
+        if (!regex.test(itemVal)) return false;
+      }
+    }
+  }
+  return true;
+}
+
 export async function queryMockDb(query: any): Promise<{ data: any; error: any }> {
   const db = await loadDb();
 
-  const modified = runAutoCreateJobs(db);
+  let modified = runAutoCreateJobs(db);
+  if (runAutoCloseActiveSessions(db)) {
+    modified = true;
+  }
   if (modified) {
     await saveDb(db);
   }
@@ -792,7 +874,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     db.maintenance_settings?.some((s: any) => s.id === "global" && s.is_maintenance) || false;
   if (isMaintenanceActive && table !== "maintenance_settings") {
     let isAdmin = false;
-    const session = getActiveSession(db);
+    const session = await getActiveSession(db);
     if (session && session.user) {
       const userId = session.user.id;
       const userRoles = db.user_roles || [];
@@ -978,7 +1060,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         };
       }
 
-      const session = getActiveSession(db);
+      const session = await getActiveSession(db);
       const creatorId = session?.user?.id || "mock-user-id-1234";
 
       const newConversion = {
@@ -1029,52 +1111,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     }
 
     // Apply filters
-    for (const filter of filters) {
-      const { column, value, op } = filter;
-      if (op === "eq") {
-        filtered = filtered.filter((item) => {
-          let itemVal = item[column];
-          if (column === "active" && table === "services" && itemVal === undefined) {
-            itemVal = true;
-          }
-          return itemVal === value;
-        });
-      } else if (op === "neq") {
-        filtered = filtered.filter((item) => {
-          let itemVal = item[column];
-          if (column === "active" && table === "services" && itemVal === undefined) {
-            itemVal = true;
-          }
-          return itemVal !== value;
-        });
-      } else if (op === "is") {
-        filtered = filtered.filter((item) => {
-          const itemVal = item[column];
-          if (value === null) {
-            return itemVal === null || itemVal === undefined;
-          }
-          return itemVal === value;
-        });
-      } else if (op === "in") {
-        filtered = filtered.filter((item) => {
-          let itemVal = item[column];
-          if (column === "active" && table === "services" && itemVal === undefined) {
-            itemVal = true;
-          }
-          return Array.isArray(value) && value.includes(itemVal);
-        });
-      } else if (op === "ilike") {
-        filtered = filtered.filter((item) => {
-          const itemVal = item[column];
-          if (typeof itemVal !== "string" || typeof value !== "string") {
-            return String(itemVal).toLowerCase() === String(value).toLowerCase();
-          }
-          const cleanValue = value.replace(/%/g, ".*");
-          const regex = new RegExp(`^${cleanValue}$`, "i");
-          return regex.test(itemVal);
-        });
-      }
-    }
+    filtered = filtered.filter((item) => matchFilters(item, table, filters));
 
     // Apply sorting
     if (orderBy) {
@@ -1124,6 +1161,11 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
           newItem.custom_roles = customRoles
             .filter((cr: any) => assignedRoleIds.includes(cr.id))
             .map((cr: any) => ({ id: cr.id, name: cr.name }));
+
+          const activeSess = (db.badge_sessions || []).find(
+            (s: any) => s.user_id === item.id && !s.ended_at,
+          );
+          newItem.badge_start_time = item.badge_start_time || activeSess?.started_at || null;
         }
         if (
           table === "safe_boxes" ||
@@ -1179,6 +1221,23 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
 
   if (operation === "insert") {
     const rowsToInsert = Array.isArray(insertData) ? insertData : [insertData];
+
+    // Block duplicate citizens based on trimmed, case-insensitive full_name
+    if (table === "citizens") {
+      for (const row of rowsToInsert) {
+        const fullName = (row.full_name || "").trim();
+        const existingCitizen = (db.citizens || []).find(
+          (c: any) => c.full_name?.trim().toLowerCase() === fullName.toLowerCase(),
+        );
+        if (existingCitizen) {
+          return {
+            data: null,
+            error: { message: `Un cittadino con il nome "${fullName}" è già registrato.` },
+          };
+        }
+      }
+    }
+
     const insertedRows = rowsToInsert.map((row) => {
       const base: any = {
         id: row.id || Math.random().toString(36).substring(2, 15),
@@ -1192,6 +1251,20 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         base.started_at = row.started_at || base.created_at;
         if (row.ended_at === undefined) {
           base.ended_at = null;
+        }
+        // Auto-close any existing active badge sessions for this user to prevent overlaps
+        if (!base.ended_at) {
+          db.badge_sessions = db.badge_sessions || [];
+          db.badge_sessions.forEach((s: any) => {
+            if (s.user_id === base.user_id && !s.ended_at) {
+              s.ended_at = base.started_at || new Date().toISOString();
+              s.updated_at = new Date().toISOString();
+            }
+          });
+        }
+        const prof = (db.profiles || []).find((p: any) => p.id === base.user_id);
+        if (prof) {
+          prof.badge_start_time = base.started_at;
         }
       }
 
@@ -1270,22 +1343,43 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
   }
 
   if (operation === "update") {
+    // Block duplicate citizens based on trimmed, case-insensitive full_name upon updating
+    if (table === "citizens" && updateData && updateData.full_name !== undefined) {
+      const newName = (updateData.full_name || "").trim();
+      const matches = (db.citizens || []).filter((item: any) => matchFilters(item, table, filters));
+      for (const m of matches) {
+        const duplicate = (db.citizens || []).find(
+          (c: any) => c.id !== m.id && c.full_name?.trim().toLowerCase() === newName.toLowerCase(),
+        );
+        if (duplicate) {
+          return {
+            data: null,
+            error: { message: `Un cittadino con il nome "${newName}" è già registrato.` },
+          };
+        }
+      }
+    }
+
     const updatedRows: any[] = [];
     db[table] = db[table].map((item) => {
-      let isMatch = true;
-      for (const filter of filters) {
-        const { column, value, op } = filter;
-        if (op === "eq" && item[column] !== value) isMatch = false;
-        if (op === "neq" && item[column] === value) isMatch = false;
-      }
-
-      if (isMatch) {
+      if (matchFilters(item, table, filters)) {
         const updated = { ...item, ...updateData, updated_at: new Date().toISOString() };
         updatedRows.push(updated);
         return updated;
       }
       return item;
     });
+
+    if (table === "badge_sessions") {
+      updatedRows.forEach((row) => {
+        if (row.ended_at) {
+          const prof = (db.profiles || []).find((p: any) => p.id === row.user_id);
+          if (prof) {
+            prof.badge_start_time = null;
+          }
+        }
+      });
+    }
 
     if (table === "night_items") {
       recalculateNightsTotals(db);
@@ -1301,14 +1395,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
   if (operation === "delete") {
     const deletedRows: any[] = [];
     db[table] = db[table].filter((item) => {
-      let isMatch = true;
-      for (const filter of filters) {
-        const { column, value, op } = filter;
-        if (op === "eq" && item[column] !== value) isMatch = false;
-        if (op === "neq" && item[column] === value) isMatch = false;
-      }
-
-      if (isMatch) {
+      if (matchFilters(item, table, filters)) {
         deletedRows.push(item);
         return false;
       }
@@ -1396,12 +1483,19 @@ export async function handleMockAuth(query: any): Promise<any> {
 
   if (action === "signInWithPassword") {
     const { email, password } = payload;
-    const rawUsername = email.split("@")[0].toLowerCase();
+    // Safe username extraction that handles emails properly by removing the @revenge.local suffix instead of just splitting
+    const rawUsername = email
+      .replace(/@revenge\.local$/i, "")
+      .trim()
+      .toLowerCase();
 
     // Map common admin/user aliases to the actual database admin username
     const username =
       rawUsername === "admin" || rawUsername === "beppemonti84" ? "giuse84pro" : rawUsername;
-    let profile = db.profiles.find((p) => p.username && p.username.toLowerCase() === username);
+    // Super robust trimming and case-insensitive check
+    let profile = db.profiles.find(
+      (p) => p.username && p.username.trim().toLowerCase() === username.trim().toLowerCase(),
+    );
 
     // Dynamic robust fallback: If we look for the main administrator and "giuse84pro" profile
     // doesn't exist yet, fallback to finding "admin" or the first profile in the database
@@ -1410,7 +1504,7 @@ export async function handleMockAuth(query: any): Promise<any> {
       (username === "giuse84pro" || rawUsername === "admin" || rawUsername === "beppemonti84")
     ) {
       profile =
-        db.profiles.find((p) => p.username && p.username.toLowerCase() === "admin") ||
+        db.profiles.find((p) => p.username && p.username.trim().toLowerCase() === "admin") ||
         db.profiles[0];
     }
 
@@ -1445,16 +1539,15 @@ export async function handleMockAuth(query: any): Promise<any> {
   return { data: null, error: { message: `Auth action ${action} not implemented` } };
 }
 
-async function getActiveSession(db: any) {
+function getActiveSessionSync(db: any) {
   try {
     let cookieHeader = "";
     if (typeof window !== "undefined") {
       cookieHeader = document.cookie || "";
     } else {
       try {
-        const getRequestFn = await getGetRequest();
-        if (getRequestFn) {
-          const req = getRequestFn();
+        if (getRequestModule) {
+          const req = getRequestModule();
           cookieHeader = req?.headers?.get("cookie") || "";
         }
       } catch (err) {
@@ -1499,9 +1592,17 @@ async function getActiveSession(db: any) {
       }
     }
   } catch (e) {
-    console.error("[Supabase Mock Server] Error reading session cookie:", e);
+    console.error("[Supabase Mock Server] Error reading session cookie synchronously:", e);
   }
   return null;
+}
+
+async function getActiveSession(db: any) {
+  if (typeof window !== "undefined") {
+    return getActiveSessionSync(db);
+  }
+  await getGetRequest();
+  return getActiveSessionSync(db);
 }
 
 function checkAndTerminateActiveSessionsForUser(db: any, userId: string) {
@@ -1530,6 +1631,12 @@ function checkAndTerminateActiveSessionsForUser(db: any, userId: string) {
         closedAny = true;
       }
     });
+    if (closedAny) {
+      const prof = (db.profiles || []).find((p: any) => p.id === userId);
+      if (prof) {
+        prof.badge_start_time = null;
+      }
+    }
     return closedAny;
   }
   return false;

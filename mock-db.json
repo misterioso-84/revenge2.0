@@ -76,6 +76,27 @@
       "created_at": "2026-07-18T12:15:13.219Z",
       "updated_at": "2026-07-18T12:15:13.219Z",
       "display_name": "malsana"
+    },
+    {
+      "id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T12:59:56.028Z",
+      "updated_at": "2026-07-18T12:59:56.028Z",
+      "display_name": "_HiTa_"
+    },
+    {
+      "id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-18T15:03:09.520Z",
+      "updated_at": "2026-07-18T15:03:09.520Z",
+      "display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "user-mxt100u1yfq",
+      "username": "yDigo__",
+      "created_at": "2026-07-18T15:06:21.938Z",
+      "updated_at": "2026-07-18T15:06:21.938Z",
+      "display_name": "yDigo__"
     }
   ],
   "user_roles": [
@@ -156,6 +177,16 @@
       "id": "role-6ejrkbocumb",
       "role": "staff",
       "user_id": "user-820cawfdbkl"
+    },
+    {
+      "id": "role-8r956qk5k8l",
+      "role": "staff",
+      "user_id": "user-jjwqy43hj8i"
+    },
+    {
+      "id": "role-x9uq8mqmz6f",
+      "role": "staff",
+      "user_id": "user-mxt100u1yfq"
     }
   ],
   "custom_roles": [
@@ -381,6 +412,48 @@
       "created_at": "2026-07-18T12:40:31.362Z",
       "updated_at": "2026-07-18T12:40:31.362Z",
       "custom_role_id": "qb8h239wnp"
+    },
+    {
+      "id": "07um1ykx9ika",
+      "user_id": "user-b9p6dwg58ru",
+      "created_at": "2026-07-18T13:00:52.043Z",
+      "updated_at": "2026-07-18T13:00:52.043Z",
+      "custom_role_id": "5d7eafafjmu"
+    },
+    {
+      "id": "ax3jk7gaqw6",
+      "user_id": "user-xoigsxonpgp",
+      "created_at": "2026-07-18T13:00:58.518Z",
+      "updated_at": "2026-07-18T13:00:58.518Z",
+      "custom_role_id": "5d7eafafjmu"
+    },
+    {
+      "id": "2vta4tkgdpg",
+      "user_id": "user-jjwqy43hj8i",
+      "created_at": "2026-07-18T15:03:27.332Z",
+      "updated_at": "2026-07-18T15:03:27.332Z",
+      "custom_role_id": "2vu11boct4i"
+    },
+    {
+      "id": "rlogyykenvq",
+      "user_id": "user-mxt100u1yfq",
+      "created_at": "2026-07-18T15:06:29.555Z",
+      "updated_at": "2026-07-18T15:06:29.555Z",
+      "custom_role_id": "w19dv9baafi"
+    },
+    {
+      "id": "xlxrry6kzu",
+      "user_id": "user-qvwd3bbq8in",
+      "created_at": "2026-07-18T15:10:24.696Z",
+      "updated_at": "2026-07-18T15:10:24.696Z",
+      "custom_role_id": "5d7eafafjmu"
+    },
+    {
+      "id": "4ihfkhaplpl",
+      "user_id": "user-pitafw9st1",
+      "created_at": "2026-07-18T15:10:31.019Z",
+      "updated_at": "2026-07-18T15:10:31.019Z",
+      "custom_role_id": "37e7i6z95k7"
     }
   ],
   "citizens": [
@@ -568,6 +641,46 @@
       "created_at": "2026-07-18T12:22:40.425Z",
       "membership": "standard",
       "updated_at": "2026-07-18T12:22:40.425Z"
+    },
+    {
+      "id": "r6y2jyir6og",
+      "notes": "",
+      "full_name": "Nevicooh",
+      "created_at": "2026-07-18T13:01:52.783Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T13:01:52.783Z"
+    },
+    {
+      "id": "vqnmhmwx9dl",
+      "notes": "",
+      "full_name": "Miaettoo",
+      "created_at": "2026-07-18T20:59:38.341Z",
+      "membership": "standard",
+      "updated_at": "2026-07-18T20:59:38.341Z"
+    },
+    {
+      "id": "ge7h9au4u9s",
+      "notes": "",
+      "full_name": "L0r3x_05",
+      "created_at": "2026-07-19T11:57:55.188Z",
+      "membership": "standard",
+      "updated_at": "2026-07-19T11:57:55.188Z"
+    },
+    {
+      "id": "9xbz2pg71cc",
+      "notes": "",
+      "full_name": "wadd",
+      "created_at": "2026-07-19T12:04:26.880Z",
+      "membership": "standard",
+      "updated_at": "2026-07-19T12:04:26.880Z"
+    },
+    {
+      "id": "8pvplsowxth",
+      "notes": "",
+      "full_name": "Vickysss",
+      "created_at": "2026-07-19T12:31:51.500Z",
+      "membership": "standard",
+      "updated_at": "2026-07-19T12:31:51.500Z"
     }
   ],
   "safe_boxes": [
@@ -795,10 +908,10 @@
       "id": "pofbzwh9imb",
       "user_id": "user-m96sy1nqsjj",
       "week_id": "week-u3oj16eds3",
-      "ended_at": null,
+      "ended_at": "2026-07-18T13:06:11.997Z",
       "created_at": "2026-07-18T11:18:02.741Z",
       "started_at": "2026-07-18T11:18:02.741Z",
-      "updated_at": "2026-07-18T11:18:02.741Z"
+      "updated_at": "2026-07-18T13:06:12.256Z"
     },
     {
       "id": "o8a734fkbsb",
@@ -835,6 +948,231 @@
       "created_at": "2026-07-18T12:56:32.963Z",
       "started_at": "2026-07-18T12:56:32.963Z",
       "updated_at": "2026-07-18T12:56:59.972Z"
+    },
+    {
+      "id": "cukxiy7amf",
+      "user_id": "user-o5yk1ko0qa",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:26:51.212Z",
+      "created_at": "2026-07-18T13:04:13.564Z",
+      "started_at": "2026-07-18T13:04:13.564Z",
+      "updated_at": "2026-07-18T13:26:51.510Z"
+    },
+    {
+      "id": "t2ikst5n69p",
+      "user_id": "user-t8qxbvwhrvm",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:04:54.161Z",
+      "created_at": "2026-07-18T13:04:43.193Z",
+      "started_at": "2026-07-18T13:04:43.193Z",
+      "updated_at": "2026-07-18T13:04:54.279Z"
+    },
+    {
+      "id": "oo52m5xgh8",
+      "user_id": "user-t8qxbvwhrvm",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:06:07.575Z",
+      "created_at": "2026-07-18T13:05:05.481Z",
+      "started_at": "2026-07-18T13:05:05.481Z",
+      "updated_at": "2026-07-18T13:06:07.637Z"
+    },
+    {
+      "id": "yal1qu614g",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:08:27.646Z",
+      "created_at": "2026-07-18T13:07:58.845Z",
+      "started_at": "2026-07-18T13:07:58.845Z",
+      "updated_at": "2026-07-18T13:08:27.899Z"
+    },
+    {
+      "id": "5tjd2qbnxkr",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:21:33.103Z",
+      "created_at": "2026-07-18T13:08:56.747Z",
+      "started_at": "2026-07-18T13:08:56.747Z",
+      "updated_at": "2026-07-18T13:21:33.895Z"
+    },
+    {
+      "id": "s4qhnm2fj8",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:21:54.955Z",
+      "created_at": "2026-07-18T13:21:48.671Z",
+      "started_at": "2026-07-18T13:21:48.671Z",
+      "updated_at": "2026-07-18T13:21:55.196Z"
+    },
+    {
+      "id": "nyl2nadmlp",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:22:32.649Z",
+      "created_at": "2026-07-18T13:22:11.347Z",
+      "started_at": "2026-07-18T13:22:11.347Z",
+      "updated_at": "2026-07-18T13:22:32.901Z"
+    },
+    {
+      "id": "c3i4pg6r499",
+      "user_id": "user-gzz24upzhb6",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T11:47:05.810Z",
+      "created_at": "2026-07-18T13:23:12.938Z",
+      "started_at": "2026-07-18T13:23:12.938Z",
+      "updated_at": "2026-07-19T11:47:27.430Z"
+    },
+    {
+      "id": "9q48ba12a57",
+      "user_id": "user-t8qxbvwhrvm",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:32:29.563Z",
+      "created_at": "2026-07-18T13:25:42.101Z",
+      "started_at": "2026-07-18T13:25:42.101Z",
+      "updated_at": "2026-07-18T13:25:42.101Z"
+    },
+    {
+      "id": "zrhje5un6q9",
+      "user_id": "user-o5yk1ko0qa",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T13:42:25.782Z",
+      "created_at": "2026-07-18T13:31:28.756Z",
+      "started_at": "2026-07-18T13:31:28.756Z",
+      "updated_at": "2026-07-18T13:42:26.031Z"
+    },
+    {
+      "id": "ibxeichr6hl",
+      "user_id": "user-mxt100u1yfq",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T15:20:48.735Z",
+      "created_at": "2026-07-18T15:20:47.730Z",
+      "started_at": "2026-07-18T15:20:47.730Z",
+      "updated_at": "2026-07-18T15:20:49.249Z"
+    },
+    {
+      "id": "2y1yupffe5j",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T15:43:30.342Z",
+      "created_at": "2026-07-18T15:41:36.502Z",
+      "started_at": "2026-07-18T15:41:36.502Z",
+      "updated_at": "2026-07-18T15:43:30.568Z"
+    },
+    {
+      "id": "ijt90gq5t9",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T18:44:00.530Z",
+      "created_at": "2026-07-18T18:08:50.231Z",
+      "started_at": "2026-07-18T18:08:50.231Z",
+      "updated_at": "2026-07-18T18:44:00.516Z"
+    },
+    {
+      "id": "5q1807uia9r",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T20:10:11.692Z",
+      "created_at": "2026-07-18T20:08:29.143Z",
+      "started_at": "2026-07-18T20:08:29.143Z",
+      "updated_at": "2026-07-18T20:10:11.657Z"
+    },
+    {
+      "id": "r8x36r0cpso",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T21:03:37.755Z",
+      "created_at": "2026-07-18T20:54:52.477Z",
+      "started_at": "2026-07-18T20:54:52.477Z",
+      "updated_at": "2026-07-18T21:03:37.712Z"
+    },
+    {
+      "id": "7b6kalhwks6",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-18T22:20:20.630Z",
+      "created_at": "2026-07-18T22:16:38.856Z",
+      "started_at": "2026-07-18T22:16:38.856Z",
+      "updated_at": "2026-07-18T22:20:20.577Z"
+    },
+    {
+      "id": "bnudlvlrs0f",
+      "user_id": "user-qp33j87j32",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T07:59:20.222Z",
+      "created_at": "2026-07-19T07:57:45.751Z",
+      "started_at": "2026-07-19T07:57:45.751Z",
+      "updated_at": "2026-07-19T07:59:18.972Z"
+    },
+    {
+      "id": "zbw3zu2x5mk",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T09:56:17.922Z",
+      "created_at": "2026-07-19T09:50:43.625Z",
+      "started_at": "2026-07-19T09:50:43.625Z",
+      "updated_at": "2026-07-19T09:56:17.996Z"
+    },
+    {
+      "id": "s2dmw8z7eqe",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T14:10:10.669Z",
+      "created_at": "2026-07-19T11:51:00.461Z",
+      "started_at": "2026-07-19T11:51:00.461Z",
+      "updated_at": "2026-07-19T14:10:11.815Z"
+    },
+    {
+      "id": "gwwoehf1xi",
+      "user_id": "user-jjwqy43hj8i",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T11:54:58.478Z",
+      "created_at": "2026-07-19T11:51:20.740Z",
+      "started_at": "2026-07-19T11:51:20.740Z",
+      "updated_at": "2026-07-19T11:54:58.633Z"
+    },
+    {
+      "id": "iyvpwynwmxo",
+      "user_id": "user-jjwqy43hj8i",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T14:10:19.755Z",
+      "created_at": "2026-07-19T11:55:00.874Z",
+      "started_at": "2026-07-19T11:55:00.874Z",
+      "updated_at": "2026-07-19T14:10:20.973Z"
+    },
+    {
+      "id": "r3ovugmtczp",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T11:56:21.021Z",
+      "created_at": "2026-07-19T11:56:20.009Z",
+      "started_at": "2026-07-19T11:56:20.009Z",
+      "updated_at": "2026-07-19T11:56:21.060Z"
+    },
+    {
+      "id": "55jvydswrzp",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T12:42:52.525Z",
+      "created_at": "2026-07-19T11:56:22.427Z",
+      "started_at": "2026-07-19T11:56:22.427Z",
+      "updated_at": "2026-07-19T12:42:52.534Z"
+    },
+    {
+      "id": "7hm4yokzure",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T13:52:39.703Z",
+      "created_at": "2026-07-19T13:34:10.313Z",
+      "started_at": "2026-07-19T13:34:10.313Z",
+      "updated_at": "2026-07-19T13:52:39.698Z"
+    },
+    {
+      "id": "cyn7jgvw1mk",
+      "user_id": "user-m96sy1nqsjj",
+      "week_id": "week-u3oj16eds3",
+      "ended_at": "2026-07-19T14:06:48.911Z",
+      "created_at": "2026-07-19T14:03:01.695Z",
+      "started_at": "2026-07-19T14:03:01.695Z",
+      "updated_at": "2026-07-19T14:06:48.893Z"
     }
   ],
   "nights": [
@@ -870,10 +1208,20 @@
       "notes": "Creata automaticamente dal sistema",
       "title": "Giornata del 18/07/2026",
       "total": 0,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-07-18T06:20:14.524Z",
       "night_date": "2026-07-18",
-      "updated_at": "2026-07-18T06:20:14.524Z"
+      "updated_at": "2026-07-19T07:57:42.718Z"
+    },
+    {
+      "id": "night-311phgac4n",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 19/07/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-07-19T07:57:42.718Z",
+      "night_date": "2026-07-19",
+      "updated_at": "2026-07-19T07:57:42.718Z"
     }
   ],
   "conversion_settings": [
@@ -1137,6 +1485,61 @@
       "eur_amount": 33,
       "input_amount": 440,
       "dobloni_amount": 440
+    },
+    {
+      "id": "conv-wl0mzlidwfb",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "r6y2jyir6og",
+      "created_at": "2026-07-18T13:02:01.831Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 100,
+      "input_amount": 100,
+      "dobloni_amount": 1000
+    },
+    {
+      "id": "conv-s9doxvgs71j",
+      "night_id": "night-20t60avmva",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "vqnmhmwx9dl",
+      "created_at": "2026-07-18T20:59:50.312Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 1900,
+      "input_amount": 1900,
+      "dobloni_amount": 19000
+    },
+    {
+      "id": "conv-t5negs9ex8",
+      "night_id": "night-311phgac4n",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "ge7h9au4u9s",
+      "created_at": "2026-07-19T11:58:47.180Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 2000,
+      "input_amount": 2000,
+      "dobloni_amount": 20000
+    },
+    {
+      "id": "conv-41td50fpe3f",
+      "night_id": "night-311phgac4n",
+      "direction": "cash_to_dobloni",
+      "citizen_id": "9xbz2pg71cc",
+      "created_at": "2026-07-19T12:04:37.415Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 100,
+      "input_amount": 100,
+      "dobloni_amount": 1000
+    },
+    {
+      "id": "conv-l5rdgnutxqo",
+      "night_id": "night-311phgac4n",
+      "direction": "dobloni_to_cash",
+      "citizen_id": "8pvplsowxth",
+      "created_at": "2026-07-19T12:32:02.478Z",
+      "created_by": "user-m96sy1nqsjj",
+      "eur_amount": 750,
+      "input_amount": 10000,
+      "dobloni_amount": 10000
     }
   ],
   "conversion_resets": [],
@@ -1294,9 +1697,36 @@
       "updated_at": "2026-07-18T12:50:58.132Z",
       "created_by_id": "mock-user-id-1234",
       "created_by_name": "Giuse84pro"
+    },
+    {
+      "id": "kewhxyzwttg",
+      "type": "espulsione",
+      "reason": "Espulsione dal Roleplay",
+      "user_id": "user-t8qxbvwhrvm",
+      "is_active": true,
+      "created_at": "2026-07-18T13:32:29.563Z",
+      "expires_at": null,
+      "updated_at": "2026-07-18T13:32:29.563Z",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro"
     }
   ],
-  "leave_requests": [],
+  "leave_requests": [
+    {
+      "id": "c5cd607a-da0e-468c-a91f-39166d7ff4f5",
+      "reason": "Vacanze",
+      "status": "approved",
+      "user_id": "user-mxt100u1yfq",
+      "end_date": "2026-07-28",
+      "username": "ydigo__",
+      "created_at": "2026-07-18T15:21:16.198Z",
+      "start_date": "2026-07-18",
+      "updated_at": "2026-07-18T22:28:23.597Z",
+      "approved_by": "mock-user-id-1234",
+      "display_name": "ydigo__",
+      "approved_by_name": "Giuse84pro"
+    }
+  ],
   "night_items": [
     {
       "id": "laqj56jq07l",
@@ -1352,6 +1782,816 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-opdoox0mjt",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-19T14:10:20.973Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-7g38y6gz87r",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-19T14:10:11.816Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-rjs3i6bz9j",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T14:06:48.893Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-wtswwhh2848",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T14:03:01.695Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-3squ7x14cs6",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T13:52:39.698Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-bwucr04u5n",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T13:34:10.313Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-sme3jmkkg7g",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T12:42:52.534Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-06wyo953syd",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Dobloni ➔ Euro) di 10000 Dobloni",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T12:32:02.478Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-xtiqnwacdle",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: Vickysss",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T12:31:51.500Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-d83kwy3azp",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 100 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T12:04:37.415Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-mrkw7vrxws",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: wadd",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T12:04:26.880Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-c0wpj5s1iur",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 2000 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T11:58:47.180Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-2as6b9yvp6x",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: L0r3x_05",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T11:57:55.188Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-pjem1vi4jmf",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T11:56:22.427Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-vm90azkwld",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T11:56:21.060Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-86flekpoole",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T11:56:20.009Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-gsfs6kb4gck",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-19T11:55:00.874Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-yzhdbu500ij",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-19T11:54:58.633Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-cdmw3zhig0g",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-19T11:51:20.740Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-cdn5n8iu8s5",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-19T11:51:00.461Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-n1c2dks4gfk",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-19T11:47:27.430Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-hwc8mdrlye",
+      "action": "delete",
+      "details": "Annullato congedo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-19T11:43:22.038Z",
+      "table_name": "leave_requests",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-cpi2caow0rs",
+      "action": "delete",
+      "details": "Eliminato provvedimento disciplinare",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-19T10:25:47.866Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-m7bm8izs7o",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Richiamo Verbale)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-19T10:25:28.610Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-m5pxhfud01",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T09:56:17.996Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-d3qe2f18eg",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-19T09:50:43.625Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-hpecgaogu8p",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-qp33j87j32",
+      "username": "hartigno",
+      "created_at": "2026-07-19T07:59:18.972Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "hartigno"
+    },
+    {
+      "id": "log-m3vq4sxpt2",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-qp33j87j32",
+      "username": "hartigno",
+      "created_at": "2026-07-19T07:57:45.751Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "hartigno"
+    },
+    {
+      "id": "log-t4xmzq3vjrj",
+      "action": "update",
+      "details": "Congedo APPROVATO per leonidadoggo_",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T22:28:30.419Z",
+      "table_name": "leave_requests",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-2yc5trd3wus",
+      "action": "update",
+      "details": "Congedo APPROVATO per ydigo__",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T22:28:23.597Z",
+      "table_name": "leave_requests",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-mihtnwipktd",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T22:20:20.577Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-vs8km1t2p4",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T22:16:38.856Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-ptiyt2jf5s",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T21:03:37.712Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-7zuwp0gc6sa",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 1900 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T20:59:50.312Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-o95jrnz1p9p",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: Miaettoo",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T20:59:38.341Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-faigvwt0jna",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T20:54:52.477Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-rfqt34roitd",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T20:10:11.657Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-r71air80weq",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T20:08:29.143Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-1dwwguctt01",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T18:44:00.516Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-97qwrflogzo",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T18:08:50.231Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-er4eynf9l67",
+      "action": "insert",
+      "details": "Inviata richiesta di congedo dal 2026-07-18 al 2026-08-16",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-18T16:38:55.332Z",
+      "table_name": "leave_requests",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-wc6000dz30a",
+      "action": "delete",
+      "details": "Annullato congedo",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-18T16:38:17.642Z",
+      "table_name": "leave_requests",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-mb2vjnc5ik",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T15:43:30.568Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-eyk4vb1dj9u",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T15:41:36.502Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-3awfxlwe0ja",
+      "action": "insert",
+      "details": "Inviata richiesta di congedo dal 2026-07-18 al 2027-08-16",
+      "user_id": "user-jjwqy43hj8i",
+      "username": "LeonidaDoggo_",
+      "created_at": "2026-07-18T15:40:02.522Z",
+      "table_name": "leave_requests",
+      "user_display_name": "LeonidaDoggo_"
+    },
+    {
+      "id": "log-1ad0jilcstx",
+      "action": "insert",
+      "details": "Inviata richiesta di congedo dal 2026-07-18 al 2026-07-28",
+      "user_id": "user-mxt100u1yfq",
+      "username": "yDigo__",
+      "created_at": "2026-07-18T15:21:16.710Z",
+      "table_name": "leave_requests",
+      "user_display_name": "yDigo__"
+    },
+    {
+      "id": "log-3zfulyziiqs",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-mxt100u1yfq",
+      "username": "yDigo__",
+      "created_at": "2026-07-18T15:20:49.249Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "yDigo__"
+    },
+    {
+      "id": "log-rwi3guja9h",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-mxt100u1yfq",
+      "username": "yDigo__",
+      "created_at": "2026-07-18T15:20:47.730Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "yDigo__"
+    },
+    {
+      "id": "log-id1gnt7aokc",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T15:10:31.019Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-os1p46ab5v8",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T15:10:24.696Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-cwd57d8d72f",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T15:06:29.555Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-s8lrewmjwcs",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T15:03:27.332Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-pozqkp0thqk",
+      "action": "delete",
+      "details": "Annullato congedo",
+      "user_id": "user-820cawfdbkl",
+      "username": "malsana",
+      "created_at": "2026-07-18T14:00:36.903Z",
+      "table_name": "leave_requests",
+      "user_display_name": "malsana"
+    },
+    {
+      "id": "log-4z5ac28njzm",
+      "action": "insert",
+      "details": "Inviata richiesta di congedo dal 2026-07-18 al 2026-07-18",
+      "user_id": "user-820cawfdbkl",
+      "username": "malsana",
+      "created_at": "2026-07-18T14:00:25.550Z",
+      "table_name": "leave_requests",
+      "user_display_name": "malsana"
+    },
+    {
+      "id": "log-kp9ipjt6yc8",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T13:42:26.031Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-2h66nak5xwb",
+      "action": "delete",
+      "details": "DELETE su tabella user_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:32:31.261Z",
+      "table_name": "user_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ymdbqn40y4k",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:32:30.588Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-x4hevmtmnhs",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Espulsione)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:32:29.563Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-fdjkh0ntgad",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T13:31:28.756Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-r0lwypau939",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T13:26:51.510Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-cmgjfopqxe",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T13:25:42.101Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "_HiTa_"
+    },
+    {
+      "id": "log-adt3pe2l9rr",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-gzz24upzhb6",
+      "username": "superficiale5",
+      "created_at": "2026-07-18T13:23:12.938Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "superficiale5"
+    },
+    {
+      "id": "log-5isdlimwcs5",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:22:32.901Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-wsw9p0u8i8c",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:22:11.347Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-12lxwaoo01b",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:21:55.196Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-m7u6hvm1nu9",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:21:48.671Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-jf87kqlsj7d",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:21:33.895Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-macuccwkk2",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:08:56.747Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-o8xshc7k77a",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:08:27.899Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-s1wiurx61em",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:07:58.845Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-vjeays63yd",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:06:12.256Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-71ohys7qb62",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T13:06:07.637Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "_HiTa_"
+    },
+    {
+      "id": "log-xe5p5aahsa8",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T13:05:05.481Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "_HiTa_"
+    },
+    {
+      "id": "log-fbokxzh96ru",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T13:04:54.279Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "_HiTa_"
+    },
+    {
+      "id": "log-vgy88minl8",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-t8qxbvwhrvm",
+      "username": "_HiTa_",
+      "created_at": "2026-07-18T13:04:43.193Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "_HiTa_"
+    },
+    {
+      "id": "log-qttug54j7m9",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "user-o5yk1ko0qa",
+      "username": "xsvinci",
+      "created_at": "2026-07-18T13:04:13.564Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "xsvinci"
+    },
+    {
+      "id": "log-gkrt5h0okmk",
+      "action": "rpc",
+      "details": "Eseguita conversione valuta (Euro ➔ Dobloni) di 100 €",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:02:01.831Z",
+      "table_name": "perform_conversion",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-1c7wm1eobff",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: Nevicooh",
+      "user_id": "user-m96sy1nqsjj",
+      "username": "COCKS",
+      "created_at": "2026-07-18T13:01:52.783Z",
+      "table_name": "citizens",
+      "user_display_name": "COCKS"
+    },
+    {
+      "id": "log-6brqm2i6vna",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:00:58.518Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8b0amet5rfc",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:00:52.043Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e5rid196uoh",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-18T13:00:10.688Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
     {
       "id": "log-hppat6hn9qd",
       "action": "update",

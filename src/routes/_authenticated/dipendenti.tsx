@@ -134,6 +134,18 @@ function DipendentiPage() {
     refetchInterval: 10000,
   });
 
+  const [localMySession] = useState<{ started_at: string; week_id: string } | null>(() => {
+    if (typeof window !== "undefined" && user) {
+      try {
+        const stored = localStorage.getItem(`badge_active_session_${user.id}`);
+        return stored ? JSON.parse(stored) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
   // 4. Fetch all employees profiles
   const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
@@ -250,8 +262,20 @@ function DipendentiPage() {
   const activeUserMap = useMemo(() => {
     const map = new Map<string, Session>();
     activeSessions.forEach((s) => map.set(s.user_id, s));
+    profiles.forEach((p) => {
+      if (p.badge_start_time && !map.has(p.id)) {
+        map.set(p.id, {
+          id: `profile-temp-${p.id}`,
+          user_id: p.id,
+          week_id: weekId || "current",
+          started_at: p.badge_start_time,
+          created_at: p.badge_start_time,
+          ended_at: null,
+        } as any);
+      }
+    });
     return map;
-  }, [activeSessions]);
+  }, [activeSessions, profiles, weekId]);
 
   // Filter profiles based on search term and exclude permanently expelled ones
   const filteredProfiles = useMemo(() => {
@@ -356,8 +380,13 @@ function DipendentiPage() {
                 </TableRow>
               ) : (
                 filteredProfiles.map((p) => {
-                  const startStr = activeUserMap.get(p.id)?.started_at || p.badge_start_time;
-                  const isActive = activeUserMap.has(p.id) || !!p.badge_start_time;
+                  let startStr = activeUserMap.get(p.id)?.started_at || p.badge_start_time;
+                  let isActive = activeUserMap.has(p.id) || !!p.badge_start_time;
+
+                  if (p.id === user?.id && !isActive && localMySession) {
+                    startStr = localMySession.started_at;
+                    isActive = true;
+                  }
                   const isLeave = leaveUserIds.has(p.id);
                   const activeSanc = activeSanctionsMap.get(p.id);
                   const totalSec = totals.get(p.id) ?? 0;

@@ -14,6 +14,13 @@ export const formatDobloni = (n: number | string | null | undefined) => {
 
 export const formatDate = (d: string | Date | null | undefined) => {
   if (!d) return "-";
+  if (typeof d === "string") {
+    const match = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      return `${day}/${month}/${year}`;
+    }
+  }
   return new Date(d).toLocaleDateString("it-IT");
 };
 

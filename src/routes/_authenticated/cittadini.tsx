@@ -311,6 +311,24 @@ function CitizenDialog({
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
             const v = Object.fromEntries(fd) as any;
+
+            const trimmedName = v.full_name?.trim() || "";
+            if (!trimmedName) {
+              toast.error("Il nome completo è obbligatorio");
+              return;
+            }
+
+            const existingCitizens = qc.getQueryData<Citizen[]>(["citizens"]) || [];
+            const isDuplicate = existingCitizens.some((c) => {
+              if (citizen && c.id === citizen.id) return false;
+              return c.full_name?.trim().toLowerCase() === trimmedName.toLowerCase();
+            });
+
+            if (isDuplicate) {
+              toast.error(`Esiste già un cittadino registrato con il nome "${trimmedName}"!`);
+              return;
+            }
+
             save.mutate(v);
           }}
           className="space-y-3"
