@@ -3,7 +3,7 @@ import initialDbStatic from "../../../mock-db.json";
 let getRequestModule: any = null;
 async function getGetRequest() {
   if (getRequestModule) return getRequestModule;
-  if (typeof window === "undefined" && typeof process !== "undefined" && process.versions?.node) {
+  if (typeof window === "undefined") {
     try {
       const mod = await import(/* @vite-ignore */ "@tanstack/react-start/server");
       getRequestModule = mod.getRequest;
@@ -231,11 +231,14 @@ function getInitialDb() {
 }
 
 let cachedDb: Record<string, any[]> | null = null;
+let lastLoadedTime = 0;
+const CACHE_TTL_MS = 2000; // 2 seconds Cache TTL to prevent serving stale data in serverless environments
 let isInitializing = false;
 let initPromise: Promise<Record<string, any[]>> | null = null;
 
 async function loadDb(): Promise<Record<string, any[]>> {
-  if (cachedDb) {
+  const now = Date.now();
+  if (cachedDb && now - lastLoadedTime < CACHE_TTL_MS) {
     return cachedDb;
   }
 
@@ -248,6 +251,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === "object") {
           cachedDb = parsed;
+          lastLoadedTime = Date.now();
           return cachedDb;
         }
       }
@@ -276,6 +280,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
           const mergedDb = { ...initialDb, ...pgData };
           mergedDb.audit_logs = mergedDb.audit_logs || [];
           cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
           try {
             const { fs, path } = await getFsAndPath();
             if (fs && path) {
@@ -306,6 +311,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
           const mergedDb = { ...initialDb, ...firestoreData };
           mergedDb.audit_logs = mergedDb.audit_logs || [];
           cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
           try {
             const { fs, path } = await getFsAndPath();
             if (fs && path) {
@@ -357,6 +363,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
 
     localDb.audit_logs = localDb.audit_logs || [];
     cachedDb = localDb;
+    lastLoadedTime = Date.now();
 
     // Seed backends with initial/local state if we had to fall back to files/static
     console.log("[Sync Fallback] Seeding backends with database state...");
@@ -390,6 +397,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
 async function saveDb(db: Record<string, any[]>) {
   db.audit_logs = db.audit_logs || [];
   cachedDb = db;
+  lastLoadedTime = Date.now();
 
   // 0. If in browser, save to localStorage (for zero-loss static hosting like Cloudflare Pages!)
   if (typeof window !== "undefined") {
@@ -846,10 +854,7 @@ function matchFilters(item: any, table: string, filters: any[]): boolean {
 export async function queryMockDb(query: any): Promise<{ data: any; error: any }> {
   const db = await loadDb();
 
-  let modified = runAutoCreateJobs(db);
-  if (runAutoCloseActiveSessions(db)) {
-    modified = true;
-  }
+  const modified = runAutoCreateJobs(db);
   if (modified) {
     await saveDb(db);
   }

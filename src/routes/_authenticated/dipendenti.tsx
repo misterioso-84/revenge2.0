@@ -262,20 +262,8 @@ function DipendentiPage() {
   const activeUserMap = useMemo(() => {
     const map = new Map<string, Session>();
     activeSessions.forEach((s) => map.set(s.user_id, s));
-    profiles.forEach((p) => {
-      if (p.badge_start_time && !map.has(p.id)) {
-        map.set(p.id, {
-          id: `profile-temp-${p.id}`,
-          user_id: p.id,
-          week_id: weekId || "current",
-          started_at: p.badge_start_time,
-          created_at: p.badge_start_time,
-          ended_at: null,
-        } as any);
-      }
-    });
     return map;
-  }, [activeSessions, profiles, weekId]);
+  }, [activeSessions]);
 
   // Filter profiles based on search term and exclude permanently expelled ones
   const filteredProfiles = useMemo(() => {
