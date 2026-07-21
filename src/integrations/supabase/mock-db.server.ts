@@ -1,4 +1,6 @@
 import initialDbStatic from "../../../mock-db.json";
+import * as neonModuleStatic from "../../lib/neon.server";
+import * as firestoreModuleStatic from "../../lib/firebase.server";
 
 let getRequestModule: any = null;
 async function getGetRequest() {
@@ -15,32 +17,12 @@ async function getGetRequest() {
   return null;
 }
 
-let neonModule: any = null;
 async function getNeon() {
-  if (neonModule) return neonModule;
-  if (typeof window === "undefined") {
-    try {
-      neonModule = await import(/* @vite-ignore */ "../../lib/neon.server");
-      return neonModule;
-    } catch (e) {
-      // Ignore
-    }
-  }
-  return null;
+  return neonModuleStatic;
 }
 
-let firestoreModule: any = null;
 async function getFirestore() {
-  if (firestoreModule) return firestoreModule;
-  if (typeof window === "undefined") {
-    try {
-      firestoreModule = await import(/* @vite-ignore */ "../../lib/firebase.server");
-      return firestoreModule;
-    } catch (e) {
-      // Ignore
-    }
-  }
-  return null;
+  return firestoreModuleStatic;
 }
 
 let fsModule: any = null;
@@ -264,6 +246,9 @@ async function loadDb(): Promise<Record<string, any[]>> {
     return initPromise;
   }
 
+  let neonFailed = false;
+  let firestoreFailed = false;
+
   isInitializing = true;
   initPromise = (async () => {
     // 1. Attempt Neon Postgres
@@ -294,6 +279,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
         }
       } catch (err) {
         console.error("[Neon Sync] Failed to load from Neon Postgres:", err);
+        neonFailed = true;
       }
     }
 
@@ -325,6 +311,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
         }
       } catch (err) {
         console.error("[Firestore Sync] Failed to load from Firestore:", err);
+        firestoreFailed = true;
       }
     }
 
@@ -365,9 +352,9 @@ async function loadDb(): Promise<Record<string, any[]>> {
     cachedDb = localDb;
     lastLoadedTime = Date.now();
 
-    // Seed backends with initial/local state if we had to fall back to files/static
+    // Seed backends with initial/local state if we had to fall back to files/static and we are absolutely sure the load didn't just fail!
     console.log("[Sync Fallback] Seeding backends with database state...");
-    if (neonMod && neonMod.saveDbToNeon) {
+    if (!neonFailed && neonMod && neonMod.saveDbToNeon) {
       try {
         await neonMod.saveDbToNeon(localDb);
         console.log("[Neon Sync] Database state successfully seeded to Neon Postgres.");
@@ -376,7 +363,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       }
     }
 
-    if (firestoreMod && firestoreMod.saveDbToFirestore) {
+    if (!firestoreFailed && firestoreMod && firestoreMod.saveDbToFirestore) {
       try {
         await firestoreMod.saveDbToFirestore(localDb);
         console.log("[Firestore Sync] Database state successfully seeded to Firestore.");

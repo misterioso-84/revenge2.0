@@ -40,7 +40,7 @@ const NAV: NavItem[] = [
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },
   { to: "/corse-cavalli", label: "Corse dei Cavalli", icon: Trophy },
   { to: "/cassette", label: "Cassette di Sicurezza", icon: Lock },
-  { to: "/badge", label: "Badge & Timbrature", icon: Clock },
+  // { to: "/badge", label: "Badge & Timbrature", icon: Clock },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
   { to: "/attivita", label: "Registro Attività", icon: History, adminOnly: true },

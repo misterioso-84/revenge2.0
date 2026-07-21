@@ -84,14 +84,14 @@ const FEATURES: FeatureItem[] = [
     icon: Lock,
     permissions: ["cassette.read", "cassette.write"],
   },
-  {
+  /* {
     title: "Badge & Timbrature",
     description:
       "Rilevazione presenze, storico orari di lavoro e gestione dei turni del personale.",
     to: "/badge",
     icon: Clock,
     permissions: ["badge.timbra", "badge.visualizza", "badge.settimane", "badge.gestisci"],
-  },
+  }, */
   {
     title: "Richiesta & Gestione Congedi",
     description: "Invia richieste di congedo o approva i periodi di ferie approvati del personale.",

@@ -79,7 +79,14 @@ function fmtDur(sec: number) {
 }
 
 function BadgePage() {
-  const { user, isAdmin, permissions = [], activeSuspension, activeLeave } = useAuth();
+  const {
+    user,
+    isAdmin,
+    permissions = [],
+    activeSuspension,
+    activeLeave,
+    loading: authLoading,
+  } = useAuth();
   const qc = useQueryClient();
   const can = (p: string) => isAdmin || permissions.includes(p);
   const canTimbra = can("badge.timbra");
@@ -93,6 +100,11 @@ function BadgePage() {
     const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
+
+  const [isOperating, setIsOperating] = useState(false);
+  const [frozenSessionElapsed, setFrozenSessionElapsed] = useState<number | null>(null);
+  const [localClockedOut, setLocalClockedOut] = useState(false);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
 
   const { data: weeks = [] } = useQuery<Week[]>({
     queryKey: ["badge-weeks"],
@@ -164,16 +176,32 @@ function BadgePage() {
     [profiles],
   );
 
+  // Computed state for loading
+  const isLoadingData =
+    authLoading || (canRead && (isLoadingActive || isLoadingProfiles || weeks.length === 0));
+
   // Load initial state from localStorage if available safely
   const [localSession, setLocalSession] = useState<{ started_at: string; week_id: string } | null>(
-    () => {
-      if (typeof window !== "undefined" && user) {
-        const stored = safeLocalStorage.getItem(`badge_active_session_${user.id}`);
-        return stored ? JSON.parse(stored) : null;
-      }
-      return null;
-    },
+    null,
   );
+
+  // Load from localStorage as soon as user is loaded
+  useEffect(() => {
+    if (user) {
+      try {
+        const stored = safeLocalStorage.getItem(`badge_active_session_${user.id}`);
+        if (stored) {
+          setLocalSession(JSON.parse(stored));
+        } else {
+          setLocalSession(null);
+        }
+      } catch (e) {
+        console.warn("Error parsing local session from localStorage", e);
+      }
+    } else {
+      setLocalSession(null);
+    }
+  }, [user]);
 
   const myProfile = useMemo(() => profiles.find((p) => p.id === user?.id), [profiles, user]);
 
@@ -229,6 +257,7 @@ function BadgePage() {
   // Resolved active session using local state or server state
   const resolvedMySession = useMemo(() => {
     if (!user) return null;
+    if (localClockedOut) return null;
 
     // 1. Live active session from query
     const serverSession = activeSessions.find((s) => s.user_id === user.id);
@@ -259,7 +288,37 @@ function BadgePage() {
     }
 
     return null;
-  }, [user, activeSessions, localSession, myProfile, active, weekId]);
+  }, [user, activeSessions, localSession, myProfile, active, weekId, localClockedOut]);
+
+  // Reset frozen elapsed time once the active session has been fully cleared on the server and queries are not fetching
+  useEffect(() => {
+    if (
+      (frozenSessionElapsed !== null || localClockedOut || closingSessionId !== null) &&
+      !isOperating
+    ) {
+      const serverSession = activeSessions.find((s) => s.user_id === user?.id);
+      const isFetching =
+        isFetchingActive || isFetchingProfiles || isLoadingActive || isLoadingProfiles;
+
+      if (!serverSession && !myProfile?.badge_start_time && !isFetching) {
+        setFrozenSessionElapsed(null);
+        setLocalClockedOut(false);
+        setClosingSessionId(null);
+      }
+    }
+  }, [
+    frozenSessionElapsed,
+    localClockedOut,
+    closingSessionId,
+    isOperating,
+    activeSessions,
+    isFetchingActive,
+    isFetchingProfiles,
+    isLoadingActive,
+    isLoadingProfiles,
+    myProfile,
+    user,
+  ]);
 
   const resolvedActiveSessions = useMemo(() => {
     const list = [...activeSessions];
@@ -291,9 +350,22 @@ function BadgePage() {
       const endStr = s.ended_at;
 
       const start = startStr ? new Date(startStr).getTime() : NaN;
-      const end = endStr ? new Date(endStr).getTime() : now;
+      if (isNaN(start)) {
+        continue;
+      }
 
-      if (isNaN(start) || isNaN(end)) {
+      let end: number;
+      if (endStr) {
+        end = new Date(endStr).getTime();
+      } else {
+        if (user && s.user_id === user.id && frozenSessionElapsed !== null) {
+          end = start + frozenSessionElapsed * 1000;
+        } else {
+          end = now;
+        }
+      }
+
+      if (isNaN(end)) {
         continue;
       }
 
@@ -301,7 +373,7 @@ function BadgePage() {
       map.set(s.user_id, (map.get(s.user_id) ?? 0) + diffSec);
     }
     return map;
-  }, [sessions, now]);
+  }, [sessions, now, user, frozenSessionElapsed]);
 
   const employeeIds = useMemo(() => {
     const s = new Set<string>();
@@ -318,6 +390,7 @@ function BadgePage() {
   };
 
   const clockIn = async () => {
+    if (isOperating) return;
     if (!active) return toast.error("Nessuna settimana attiva");
     if (!user) return;
     if (resolvedMySession) {
@@ -331,86 +404,130 @@ function BadgePage() {
       return toast.error("Non puoi timbrare: sei attualmente in congedo.");
     }
 
-    const nowIso = new Date().toISOString();
+    setLocalClockedOut(false);
+    setFrozenSessionElapsed(null);
+    setClosingSessionId(null);
+    setIsOperating(true);
+    try {
+      const nowIso = new Date().toISOString();
 
-    // Set local state immediately for instant feedback & resilience
-    const sessionData = { started_at: nowIso, week_id: active.id };
-    safeLocalStorage.setItem(`badge_active_session_${user.id}`, JSON.stringify(sessionData));
-    setLocalSession(sessionData);
+      // Set local state immediately for instant feedback & resilience
+      const sessionData = { started_at: nowIso, week_id: active.id };
+      safeLocalStorage.setItem(`badge_active_session_${user.id}`, JSON.stringify(sessionData));
+      setLocalSession(sessionData);
 
-    const { error } = await (supabase as any).from("badge_sessions").insert({
-      user_id: user.id,
-      week_id: active.id,
-      started_at: nowIso,
-    });
+      const { error } = await (supabase as any).from("badge_sessions").insert({
+        user_id: user.id,
+        week_id: active.id,
+        started_at: nowIso,
+      });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      // Also update profile badge_start_time in parallel/sequence
-      await supabase.from("profiles").update({ badge_start_time: nowIso }).eq("id", user.id);
+      if (error) {
+        toast.error(error.message);
+        // Clear local state if insertion failed
+        safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+        setLocalSession(null);
+      } else {
+        // Also update profile badge_start_time in parallel/sequence
+        await supabase.from("profiles").update({ badge_start_time: nowIso }).eq("id", user.id);
 
-      toast.success("Badge attivato");
-      invalidate();
+        toast.success("Badge attivato");
+        invalidate();
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Errore sconosciuto");
+    } finally {
+      setIsOperating(false);
     }
   };
 
   const clockOut = async (id: string) => {
-    let targetSessionId = id;
+    if (isOperating) return;
 
-    // Resolve temporary IDs to real active session
-    if (id === "profile-temp-id" || id === "local-temp-id") {
-      // First, query the server directly to find if there's any active session for this user
-      const { data: serverSessions, error: queryErr } = await (supabase as any)
-        .from("badge_sessions")
-        .select("*")
-        .eq("user_id", user?.id)
-        .is("ended_at", null);
+    // Freeze elapsed timer immediately for current user if they are clocking out themselves
+    if (
+      resolvedMySession &&
+      (id === resolvedMySession.id ||
+        id === "profile-temp-id" ||
+        id === "local-temp-id" ||
+        (user && id === `profile-temp-${user.id}`))
+    ) {
+      const start = new Date(resolvedMySession.started_at).getTime();
+      const elapsed = isNaN(start) ? 0 : Math.max(0, (Date.now() - start) / 1000);
+      setFrozenSessionElapsed(elapsed);
+    }
 
-      if (!queryErr && serverSessions && serverSessions.length > 0) {
-        targetSessionId = serverSessions[0].id;
-      } else {
-        const memorySess = activeSessions.find((s) => s.user_id === user?.id);
-        if (memorySess) {
-          targetSessionId = memorySess.id;
+    setIsOperating(true);
+    try {
+      let targetSessionId = id;
+
+      // Resolve temporary IDs to real active session
+      if (id === "profile-temp-id" || id === "local-temp-id") {
+        // First, query the server directly to find if there's any active session for this user
+        const { data: serverSessions, error: queryErr } = await (supabase as any)
+          .from("badge_sessions")
+          .select("*")
+          .eq("user_id", user?.id)
+          .is("ended_at", null);
+
+        if (!queryErr && serverSessions && serverSessions.length > 0) {
+          targetSessionId = serverSessions[0].id;
         } else {
-          // If there's really no server active session, we should just reset local/profile active state
-          if (user) {
-            safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
-            setLocalSession(null);
-            await supabase.from("profiles").update({ badge_start_time: null }).eq("id", user.id);
-            toast.success("Stato badge locale ripristinato");
-            invalidate();
+          const memorySess = activeSessions.find((s) => s.user_id === user?.id);
+          if (memorySess) {
+            targetSessionId = memorySess.id;
+          } else {
+            // If there's really no server active session, we should just reset local/profile active state
+            if (user) {
+              safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+              setLocalSession(null);
+              await supabase.from("profiles").update({ badge_start_time: null }).eq("id", user.id);
+              toast.success("Stato badge locale ripristinato");
+              setFrozenSessionElapsed(null);
+              invalidate();
+            }
+            return;
           }
-          return;
         }
       }
-    }
 
-    const sess =
-      resolvedActiveSessions.find((s) => s.id === targetSessionId) ||
-      sessions.find((s) => s.id === targetSessionId);
-    const targetUserId = sess ? sess.user_id : user?.id;
+      const sess =
+        resolvedActiveSessions.find((s) => s.id === targetSessionId) ||
+        sessions.find((s) => s.id === targetSessionId);
+      const targetUserId = sess ? sess.user_id : user?.id;
 
-    if (targetUserId === user?.id) {
-      // Clear local state immediately
-      safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
-      setLocalSession(null);
-    }
-
-    const { error } = await (supabase as any)
-      .from("badge_sessions")
-      .update({ ended_at: new Date().toISOString() })
-      .eq("id", targetSessionId);
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      if (targetUserId) {
-        await supabase.from("profiles").update({ badge_start_time: null }).eq("id", targetUserId);
+      if (targetUserId === user?.id) {
+        // Clear local state immediately
+        safeLocalStorage.removeItem(`badge_active_session_${user.id}`);
+        setLocalSession(null);
+        setClosingSessionId(targetSessionId);
       }
-      toast.success("Badge chiuso");
-      invalidate();
+
+      const { error } = await (supabase as any)
+        .from("badge_sessions")
+        .update({ ended_at: new Date().toISOString() })
+        .eq("id", targetSessionId);
+
+      if (error) {
+        toast.error(error.message);
+        setFrozenSessionElapsed(null);
+        setClosingSessionId(null);
+      } else {
+        if (targetUserId === user?.id) {
+          setLocalClockedOut(true);
+        }
+        if (targetUserId) {
+          await supabase.from("profiles").update({ badge_start_time: null }).eq("id", targetUserId);
+        }
+        toast.success("Badge chiuso");
+        invalidate();
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Errore sconosciuto");
+      setFrozenSessionElapsed(null);
+      setClosingSessionId(null);
+    } finally {
+      setIsOperating(false);
     }
   };
 
@@ -477,17 +594,54 @@ function BadgePage() {
   };
 
   const mySessionElapsed = useMemo(() => {
+    if (localClockedOut) return 0;
+    if (frozenSessionElapsed !== null) return frozenSessionElapsed;
     if (!resolvedMySession) return 0;
     const startStr = resolvedMySession.started_at;
     const start = startStr ? new Date(startStr).getTime() : NaN;
     if (isNaN(start)) return 0;
     return Math.max(0, (now - start) / 1000);
-  }, [resolvedMySession, now]);
+  }, [resolvedMySession, now, frozenSessionElapsed, localClockedOut]);
 
   const myTotalSeconds = useMemo(() => {
     if (!user) return 0;
-    return totals.get(user.id) ?? 0;
-  }, [totals, user]);
+
+    // Sum all closed sessions for the user
+    let closedTotal = 0;
+    let isClosingSessionClosedInList = false;
+
+    for (const s of sessions) {
+      if (s.user_id !== user.id) continue;
+      if (s.ended_at) {
+        const start =
+          s.started_at || s.created_at ? new Date(s.started_at || s.created_at).getTime() : NaN;
+        const end = new Date(s.ended_at).getTime();
+        if (!isNaN(start) && !isNaN(end)) {
+          closedTotal += Math.max(0, (end - start) / 1000);
+        }
+        if (closingSessionId && s.id === closingSessionId) {
+          isClosingSessionClosedInList = true;
+        }
+      }
+    }
+
+    // Add current active session duration
+    let activeDuration = 0;
+    if (isClosingSessionClosedInList) {
+      // The session we clocked out is already present in the closed sessions array
+      activeDuration = 0;
+    } else if (frozenSessionElapsed !== null) {
+      activeDuration = frozenSessionElapsed;
+    } else if (resolvedMySession) {
+      const startStr = resolvedMySession.started_at;
+      const start = startStr ? new Date(startStr).getTime() : NaN;
+      if (!isNaN(start)) {
+        activeDuration = Math.max(0, (now - start) / 1000);
+      }
+    }
+
+    return closedTotal + activeDuration;
+  }, [sessions, user, frozenSessionElapsed, resolvedMySession, now, closingSessionId]);
 
   if (!canRead) {
     return (
@@ -520,79 +674,115 @@ function BadgePage() {
       {canTimbra && (
         <Card className="border-primary/30">
           <CardContent className="p-8 md:p-10">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-3">
-                <div className="text-sm uppercase tracking-widest text-muted-foreground">
-                  Il tuo badge
+            {isLoadingData ? (
+              <div className="grid md:grid-cols-2 gap-8 items-center animate-pulse">
+                <div className="space-y-4">
+                  <div className="h-4 bg-muted rounded w-24" />
+                  <div className="space-y-2">
+                    <div className="h-6 bg-muted rounded w-32" />
+                    <div className="h-16 bg-muted rounded w-64" />
+                  </div>
+                  <div className="h-4 bg-muted rounded w-48" />
+                  <div className="pt-4 border-t border-border/40 mt-4 h-12 bg-muted/40 rounded w-full" />
                 </div>
-                {resolvedMySession ? (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-2xl font-semibold text-green-500">Attivo</span>
-                    </div>
-                    <div className="font-mono text-6xl md:text-7xl font-bold text-primary tracking-tight">
-                      {fmtDur(mySessionElapsed)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Iniziato alle{" "}
-                      {new Date(resolvedMySession.started_at).toLocaleTimeString("it-IT")}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <span className="h-3 w-3 rounded-full bg-muted-foreground" />
-                      <span className="text-2xl font-semibold text-muted-foreground">
-                        Non attivo
-                      </span>
-                    </div>
-                    <div className="font-mono text-6xl md:text-7xl font-bold text-muted tracking-tight">
-                      00:00:00
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {active ? "Pronto a timbrare" : "Nessuna settimana attiva"}
-                    </div>
-                  </>
-                )}
+                <div className="flex md:justify-end">
+                  <div className="h-16 bg-muted rounded w-48" />
+                </div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-3">
+                  <div className="text-sm uppercase tracking-widest text-muted-foreground">
+                    Il tuo badge
+                  </div>
+                  {resolvedMySession ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-2xl font-semibold text-green-500">Attivo</span>
+                      </div>
+                      <div className="font-mono text-6xl md:text-7xl font-bold text-primary tracking-tight">
+                        {fmtDur(mySessionElapsed)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Iniziato alle{" "}
+                        {new Date(resolvedMySession.started_at).toLocaleTimeString("it-IT")}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="h-3 w-3 rounded-full bg-muted-foreground" />
+                        <span className="text-2xl font-semibold text-muted-foreground">
+                          Non attivo
+                        </span>
+                      </div>
+                      <div className="font-mono text-6xl md:text-7xl font-bold text-muted tracking-tight">
+                        00:00:00
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {active ? "Pronto a timbrare" : "Nessuna settimana attiva"}
+                      </div>
+                    </>
+                  )}
 
-                <div className="pt-4 border-t border-border/40 mt-4 flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-primary" />
-                  <div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                      Ore accumulate questa settimana
-                    </div>
-                    <div className="text-lg font-bold font-mono text-primary flex items-baseline gap-1.5">
-                      {fmtDur(myTotalSeconds)}
-                      <span className="text-xs text-muted-foreground font-sans font-normal">
-                        ({weeks.find((w) => w.id === weekId)?.label ?? "Settimana corrente"})
-                      </span>
+                  <div className="pt-4 border-t border-border/40 mt-4 flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                        Ore accumulate questa settimana
+                      </div>
+                      <div className="text-lg font-bold font-mono text-primary flex items-baseline gap-1.5">
+                        {fmtDur(myTotalSeconds)}
+                        <span className="text-xs text-muted-foreground font-sans font-normal">
+                          ({weeks.find((w) => w.id === weekId)?.label ?? "Settimana corrente"})
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="flex md:justify-end">
+                  {resolvedMySession ? (
+                    <Button
+                      size="lg"
+                      variant="destructive"
+                      className="h-16 px-10 text-lg flex items-center gap-2"
+                      onClick={() => clockOut(resolvedMySession.id)}
+                      disabled={isOperating}
+                    >
+                      {isOperating ? (
+                        <>
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          <span>Salvataggio...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Square className="h-6 w-6" /> Timbra uscita
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      className="h-16 px-10 text-lg flex items-center gap-2"
+                      onClick={clockIn}
+                      disabled={!active || isOperating}
+                    >
+                      {isOperating ? (
+                        <>
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          <span>Salvataggio...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-6 w-6" /> Timbra entrata
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex md:justify-end">
-                {resolvedMySession ? (
-                  <Button
-                    size="lg"
-                    variant="destructive"
-                    className="h-16 px-10 text-lg"
-                    onClick={() => clockOut(resolvedMySession.id)}
-                  >
-                    <Square className="h-6 w-6" /> Timbra uscita
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    className="h-16 px-10 text-lg"
-                    onClick={clockIn}
-                    disabled={!active}
-                  >
-                    <Play className="h-6 w-6" /> Timbra entrata
-                  </Button>
-                )}
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
