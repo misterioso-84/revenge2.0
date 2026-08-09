@@ -158,16 +158,8 @@ const TICKET_TYPES = [
 function EventiPage() {
   const qc = useQueryClient();
   const { user, profile, isAdmin, permissions = [] } = useAuth();
-  const canRead =
-    isAdmin ||
-    permissions.includes("eventi.gestisci") ||
-    permissions.includes("eventi.read") ||
-    permissions.includes("corse.read");
-  const canWrite =
-    isAdmin ||
-    permissions.includes("eventi.gestisci") ||
-    permissions.includes("eventi.write") ||
-    permissions.includes("corse.write");
+  const canRead = isAdmin || permissions.includes("eventi.gestisci");
+  const canWrite = isAdmin || permissions.includes("eventi.gestisci");
 
   const staffName = profile?.display_name || user?.email?.split("@")[0] || "Operatore Staff";
 

@@ -82,7 +82,7 @@ const FEATURES: FeatureItem[] = [
       "Corsa dei Cavalli, Qualificazioni, Gran Finale, Biglietteria Spectator/Fantino e Banco Scommesse Casinò.",
     to: "/eventi",
     icon: Sparkles,
-    permissions: ["eventi.read", "eventi.write", "corse.read", "corse.write"],
+    permissions: ["eventi.gestisci"],
   },
   /* {
     title: "Badge & Timbrature",
@@ -310,9 +310,9 @@ function DashboardPage() {
               Manutenzione
             </CardTitle>
             <CardDescription>
-              Attivando la modalità manutenzione, tutti gli operatori verranno reindirizzati a una
-              pagina di cortesia di manutenzione attiva. Solo gli amministratori manterranno
-              l'accesso completo al pannello.
+              Attivando la modalità manutenzione, tutti gli operatori non amministratori verranno
+              reindirizzati alla pagina di cortesia. Solo gli amministratori manterranno l'accesso
+              completo e l'autorizzazione alle operazioni di scrittura.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between flex-wrap gap-4">

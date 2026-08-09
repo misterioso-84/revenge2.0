@@ -137,11 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return permissions.includes("servizi.read");
     }
     if (n.to === "/eventi") {
-      return (
-        permissions.includes("eventi.gestisci") ||
-        permissions.includes("corse.read") ||
-        permissions.includes("corse.write")
-      );
+      return permissions.includes("eventi.gestisci");
     }
     if (n.to === "/corse-cavalli") {
       return permissions.includes("corse.read");

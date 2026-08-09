@@ -936,7 +936,11 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (session && session.user) {
       const userId = session.user.id;
       const userRoles = db.user_roles || [];
-      isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
+      const profiles = db.profiles || [];
+      const profile = profiles.find((p: any) => p.id === userId);
+      isAdmin =
+        profile?.role === "admin" ||
+        userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
     }
 
     // Block write operations for non-admins
