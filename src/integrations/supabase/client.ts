@@ -91,20 +91,29 @@ class MockPostgrestBuilder {
   }
 
   async execute() {
-    return await mockDbProxy({
-      data: {
-        table: this.table,
-        operation: this.operation,
-        selectColumns: this.selectColumns,
-        filters: this.filters,
-        orderBy: this.orderBy,
-        limitCount: this.limitCount,
-        insertData: this.insertData,
-        updateData: this.updateData,
-        isMaybeSingle: this.isMaybeSingle,
-        isSingle: this.isSingle,
-      },
-    });
+    try {
+      const res = await mockDbProxy({
+        data: {
+          table: this.table,
+          operation: this.operation,
+          selectColumns: this.selectColumns,
+          filters: this.filters,
+          orderBy: this.orderBy,
+          limitCount: this.limitCount,
+          insertData: this.insertData,
+          updateData: this.updateData,
+          isMaybeSingle: this.isMaybeSingle,
+          isSingle: this.isSingle,
+        },
+      });
+      return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+    } catch (e: any) {
+      console.error("[Supabase Client] Errore di rete o server non raggiungibile:", e);
+      return {
+        data: null,
+        error: { message: e?.message || "Impossibile contattare il server API" },
+      };
+    }
   }
 
   then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
@@ -203,47 +212,72 @@ class MockSupabaseClient {
       return { data: { user: data.session?.user ?? null }, error: null };
     },
     signUp: async (data: any) => {
-      const res = await mockAuthProxy({ data: { action: "signUp", payload: data } });
-      if (res.data?.session) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "casinorevenge_session",
-            JSON.stringify({
-              session: res.data.session,
-              createdAt: Date.now(),
-            }),
-          );
-          setCookie("casino_userId", res.data.session.user.id, 1);
+      try {
+        const res = await mockAuthProxy({ data: { action: "signUp", payload: data } });
+        if (res?.data?.session) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "casinorevenge_session",
+              JSON.stringify({
+                session: res.data.session,
+                createdAt: Date.now(),
+              }),
+            );
+            setCookie("casino_userId", res.data.session.user.id, 1);
+          }
+          this.notify("SIGNED_IN", res.data.session);
         }
-        this.notify("SIGNED_IN", res.data.session);
+        return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+      } catch (err: any) {
+        console.error("[Supabase Auth] Errore di rete durante il sign up:", err);
+        return {
+          data: null,
+          error: { message: err?.message || "Errore di connessione al server" },
+        };
       }
-      return res;
     },
     signInWithPassword: async (data: any) => {
-      const res = await mockAuthProxy({ data: { action: "signInWithPassword", payload: data } });
-      if (res.data?.session) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "casinorevenge_session",
-            JSON.stringify({
-              session: res.data.session,
-              createdAt: Date.now(),
-            }),
-          );
-          setCookie("casino_userId", res.data.session.user.id, 1);
+      try {
+        const res = await mockAuthProxy({ data: { action: "signInWithPassword", payload: data } });
+        if (res?.data?.session) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "casinorevenge_session",
+              JSON.stringify({
+                session: res.data.session,
+                createdAt: Date.now(),
+              }),
+            );
+            setCookie("casino_userId", res.data.session.user.id, 1);
+          }
+          this.notify("SIGNED_IN", res.data.session);
         }
-        this.notify("SIGNED_IN", res.data.session);
+        return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+      } catch (err: any) {
+        console.error("[Supabase Auth] Errore di rete durante il login:", err);
+        return {
+          data: null,
+          error: { message: err?.message || "Errore di connessione al server" },
+        };
       }
-      return res;
     },
     signOut: async () => {
-      const res = await mockAuthProxy({ data: { action: "signOut" } });
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("casinorevenge_session");
-        eraseCookie("casino_userId");
+      try {
+        const res = await mockAuthProxy({ data: { action: "signOut" } });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("casinorevenge_session");
+          eraseCookie("casino_userId");
+        }
+        this.notify("SIGNED_OUT", null);
+        return res || { error: null };
+      } catch (err: any) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("casinorevenge_session");
+          eraseCookie("casino_userId");
+        }
+        this.notify("SIGNED_OUT", null);
+        return { error: null };
       }
-      this.notify("SIGNED_OUT", null);
-      return res;
     },
   };
 
@@ -252,7 +286,12 @@ class MockSupabaseClient {
   }
 
   async rpc(name: string, args: any) {
-    return await mockDbProxy({ data: { operation: "rpc", name, args } });
+    try {
+      return await mockDbProxy({ data: { operation: "rpc", name, args } });
+    } catch (e: any) {
+      console.error("[Supabase Client] Errore RPC:", e);
+      return { data: null, error: { message: e?.message || "Errore di rete" } };
+    }
   }
 }
 
