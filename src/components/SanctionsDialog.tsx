@@ -26,6 +26,7 @@ import {
   Check,
   X,
   Trash2,
+  CheckCircle2,
 } from "lucide-react";
 
 export function getSanctionStatusInfo(s: any) {
@@ -329,8 +330,14 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
             {isLoading ? (
               <p className="text-sm text-slate-400 italic">Caricamento...</p>
             ) : sanctions.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 border border-dashed border-slate-700 rounded-lg">
-                Nessuna sanzione presente per questo utente.
+              <div className="flex flex-col items-center justify-center py-8 px-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-center space-y-2">
+                <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+                <span className="text-sm font-semibold text-white">
+                  Nessun provvedimento o sanzione registrata
+                </span>
+                <p className="text-xs text-slate-200">
+                  L'utente non ha mai ricevuto avvertimenti o sanzioni disciplinari.
+                </p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">

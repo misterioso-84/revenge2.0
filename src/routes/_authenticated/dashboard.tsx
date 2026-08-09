@@ -28,6 +28,7 @@ import {
   UserCheck,
   Gavel,
   FileText,
+  CheckCircle2,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 
@@ -353,6 +354,44 @@ function DashboardPage() {
 }
 
 function PersonalDisciplinaryStatus({ userSanctions }: { userSanctions: any[] }) {
+  if (userSanctions.length === 0) {
+    return (
+      <Card className="border-emerald-500/30 bg-emerald-500/10 shadow-sm rounded-xl overflow-hidden">
+        <CardHeader className="pb-3 border-b border-emerald-500/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-bold text-white">
+                  Situazione Disciplinare Impeccabile
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-200 font-medium">
+                  Nessun provvedimento o avvertimento presente nel tuo storico.
+                </CardDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Badge className="text-xs px-2.5 py-1 border bg-emerald-500/20 text-white border-emerald-500/40 font-semibold">
+                In Regola
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-3 p-3.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-white text-sm font-medium">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+            <span>
+              Condotta eccellente! Non hai mai ricevuto avvertimenti o sanzioni disciplinari.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const now = new Date();
   const activeVerbali = userSanctions.filter((s) => s.type === "richiamo_verbale" && s.is_active);
   const activeWarns = userSanctions.filter(
