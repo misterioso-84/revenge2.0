@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,13 +21,18 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
-    if (!roles?.some((r) => r.role === "admin")) throw redirect({ to: "/cittadini" });
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (!data?.user) throw redirect({ to: "/auth" });
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      if (!roles?.some((r) => r.role === "admin")) throw redirect({ to: "/cittadini" });
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      throw redirect({ to: "/auth" });
+    }
   },
   component: RolesPage,
 });

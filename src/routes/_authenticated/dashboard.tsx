@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +23,11 @@ import {
   Check,
   ShieldAlert,
   Palmtree,
+  Sparkles,
+  Banknote,
+  UserCheck,
+  Gavel,
+  FileText,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 
@@ -71,18 +77,12 @@ const FEATURES: FeatureItem[] = [
     permissions: ["servizi.read", "servizi.write"],
   },
   {
-    title: "Corse dei Cavalli",
-    description: "Monitoraggio delle competizioni ippiche ed inserimento dei risultati di gara.",
-    to: "/corse-cavalli",
-    icon: Trophy,
-    permissions: ["corse.read", "corse.write"],
-  },
-  {
-    title: "Cassette di Sicurezza",
-    description: "Assegnazione, stato e controllo dei caveau privati dei clienti del casinò.",
-    to: "/cassette",
-    icon: Lock,
-    permissions: ["cassette.read", "cassette.write"],
+    title: "Gestione Eventi (Gran Galà)",
+    description:
+      "Corsa dei Cavalli, Qualificazioni, Gran Finale, Biglietteria Spectator/Fantino e Banco Scommesse Casinò.",
+    to: "/eventi",
+    icon: Sparkles,
+    permissions: ["eventi.read", "eventi.write", "corse.read", "corse.write"],
   },
   /* {
     title: "Badge & Timbrature",
@@ -92,6 +92,20 @@ const FEATURES: FeatureItem[] = [
     icon: Clock,
     permissions: ["badge.timbra", "badge.visualizza", "badge.settimane", "badge.gestisci"],
   }, */
+  {
+    title: "Gestione Dipendenti",
+    description: "Monitoraggio presenze, status operativo, congedi e gestione sanzioni aziendali.",
+    to: "/dipendenti",
+    icon: UserCheck,
+    permissions: ["badge.visualizza", "dipendenti.sanzioni"],
+  },
+  {
+    title: "Stipendi & Payroll",
+    description: "Elaborazione prospetti paga settimanali, calcolo quota e comandi di pagamento.",
+    to: "/stipendi",
+    icon: Banknote,
+    permissions: ["stipendi.visualizza", "stipendi.gestisci"],
+  },
   {
     title: "Richiesta & Gestione Congedi",
     description: "Invia richieste di congedo o approva i periodi di ferie approvati del personale.",
@@ -199,138 +213,7 @@ function DashboardPage() {
       </div>
 
       {/* Fascicolo Sanzioni / Situazione Disciplinare */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <ShieldAlert className="h-6 w-6 text-red-500" /> Situazione Disciplinare
-        </h2>
-
-        {userSanctions.length === 0 ? (
-          <Card className="border-emerald-500/20 bg-emerald-500/5">
-            <CardContent className="p-6 flex items-start gap-4">
-              <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                <Check className="h-5 w-5" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-semibold text-emerald-400">Nessuna sanzione attiva</h4>
-                <p className="text-sm text-emerald-100/70">
-                  Il tuo stato di servizio è impeccabile! Non sono presenti richiami verbali, warn o
-                  sospensioni a tuo carico nel fascicolo del personale. Continua così!
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-accent/20 bg-accent/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Riepilogo Fascicolo
-                </CardTitle>
-                <CardDescription>
-                  Panoramica dei provvedimenti registrati a tuo nome
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4 pt-2">
-                <div className="p-3 bg-slate-950/40 rounded-xl border border-border/60 text-center">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {
-                      userSanctions.filter((s) => s.type === "richiamo_verbale" && s.is_active)
-                        .length
-                    }
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-semibold mt-1">
-                    Richiami Verbali
-                  </div>
-                </div>
-                <div className="p-3 bg-slate-950/40 rounded-xl border border-border/60 text-center">
-                  <div className="text-2xl font-bold text-orange-500">
-                    {userSanctions.filter((s) => s.type === "warn" && s.is_active).length}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase font-semibold mt-1">
-                    Warn Attivi
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Cronologia Provvedimenti
-                </CardTitle>
-                <CardDescription>Storico completo dei richiami e delle notifiche</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border/40 max-h-[220px] overflow-y-auto px-6 pb-4">
-                  {userSanctions.map((s) => {
-                    const now = new Date();
-                    const isExpired = s.expires_at && new Date(s.expires_at) <= now;
-                    const statusText = isExpired ? "Scaduta" : !s.is_active ? "Rimossa" : "Attuale";
-                    const statusColor = isExpired
-                      ? "text-green-500 bg-green-500/10 border-green-500/20"
-                      : !s.is_active
-                        ? "text-slate-400 bg-slate-500/10 border-slate-500/20"
-                        : "text-red-400 bg-red-500/10 border-red-500/20";
-
-                    return (
-                      <div
-                        key={s.id}
-                        className="py-2.5 flex items-start justify-between gap-2 text-xs"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase ${
-                                s.type === "richiamo_verbale"
-                                  ? "bg-yellow-500/10 text-yellow-500"
-                                  : s.type === "warn"
-                                    ? "bg-orange-500/10 text-orange-500"
-                                    : s.type === "sospensione"
-                                      ? "bg-red-500/10 text-red-500"
-                                      : "bg-purple-500/10 text-purple-400"
-                              }`}
-                            >
-                              {s.type.replace("_", " ")}
-                            </span>
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border ${statusColor}`}
-                            >
-                              {statusText}
-                            </span>
-                          </div>
-                          <p
-                            className={
-                              s.is_active && !isExpired
-                                ? "text-slate-200"
-                                : "text-slate-500 line-through"
-                            }
-                          >
-                            {s.reason}
-                          </p>
-                          {s.type === "sospensione" && s.expires_at && (
-                            <p className="text-[10px] text-red-400/80">
-                              {isExpired ? "Scaduta il: " : "Scade il: "}
-                              {new Date(s.expires_at).toLocaleString("it-IT", {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0 pt-0.5 font-mono">
-                          {new Date(s.created_at).toLocaleDateString("it-IT")}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+      <PersonalDisciplinaryStatus userSanctions={userSanctions} />
 
       {/* Features Section */}
       <div className="space-y-6">
@@ -466,5 +349,185 @@ function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PersonalDisciplinaryStatus({ userSanctions }: { userSanctions: any[] }) {
+  const now = new Date();
+  const activeVerbali = userSanctions.filter((s) => s.type === "richiamo_verbale" && s.is_active);
+  const activeWarns = userSanctions.filter(
+    (s) => s.type === "warn" && s.is_active && (!s.expires_at || new Date(s.expires_at) > now),
+  );
+  const activeSuspension = userSanctions.find(
+    (s) =>
+      s.type === "sospensione" && s.is_active && (!s.expires_at || new Date(s.expires_at) > now),
+  );
+
+  let statusBadge = {
+    label: "In Regola",
+    class: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+  };
+  let adviceMessage = "Nessun provvedimento attivo. Condotta regolare.";
+
+  if (activeSuspension) {
+    statusBadge = {
+      label: "Servizio Sospeso",
+      class: "bg-red-500/10 text-red-500 border-red-500/30 font-bold animate-pulse",
+    };
+    adviceMessage = "Sospensione in corso. Contatta la direzione per chiarimenti.";
+  } else if (activeWarns.length >= 2) {
+    statusBadge = {
+      label: "Rischio Sospensione",
+      class: "bg-red-500/10 text-red-400 border-red-500/30 font-semibold",
+    };
+    adviceMessage = "Molteplici Warn attivi. Rischio di sospensione imminente.";
+  } else if (activeWarns.length === 1 || activeVerbali.length >= 2) {
+    statusBadge = {
+      label: "Attenzione Disciplinare",
+      class: "bg-amber-500/10 text-amber-500 border-amber-500/30",
+    };
+    adviceMessage = "Nota o Warn registrato. Rispetta rigorosamente il regolamento.";
+  } else if (activeVerbali.length === 1) {
+    statusBadge = {
+      label: "Richiamo Verbale",
+      class: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30",
+    };
+    adviceMessage = "1 Richiamo verbale registrato. Nessun blocco operativo attivo.";
+  }
+
+  return (
+    <Card className="border-border bg-card/90 shadow-sm rounded-xl overflow-hidden">
+      <CardHeader className="pb-3 border-b border-border/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              <Gavel className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-bold">Situazione Disciplinare</CardTitle>
+              <CardDescription className="text-xs">{adviceMessage}</CardDescription>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge className={`text-xs px-2.5 py-1 border ${statusBadge.class}`}>
+              {statusBadge.label}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-4 space-y-4">
+        {/* Stat counter pills */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-center">
+            <div className="text-sm font-bold text-yellow-500">{activeVerbali.length}</div>
+            <div className="text-[10px] text-muted-foreground uppercase font-medium">
+              Verbali Attivi
+            </div>
+          </div>
+          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-center">
+            <div className="text-sm font-bold text-amber-500">{activeWarns.length}</div>
+            <div className="text-[10px] text-muted-foreground uppercase font-medium">
+              Warn Attivi
+            </div>
+          </div>
+          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-center">
+            <div className="text-sm font-bold text-red-500">{activeSuspension ? 1 : 0}</div>
+            <div className="text-[10px] text-muted-foreground uppercase font-medium">
+              Sospensioni
+            </div>
+          </div>
+        </div>
+
+        {/* History list */}
+        {userSanctions.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic text-center py-2">
+            Nessun provvedimento o sanzione registrata nel tuo storico.
+          </p>
+        ) : (
+          <div className="space-y-3 pt-1">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-amber-500" /> Storico Provvedimenti Disciplinari
+            </div>
+
+            <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+              {userSanctions.map((s) => {
+                const isExpired = s.expires_at && new Date(s.expires_at) <= now;
+                const isRemoved = !s.is_active;
+                const isActive = s.is_active && !isExpired;
+
+                const typeLabel = s.type.replace("_", " ").toUpperCase();
+                const typeBadgeColor =
+                  s.type === "richiamo_verbale"
+                    ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30"
+                    : s.type === "warn"
+                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                      : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30";
+
+                return (
+                  <div
+                    key={s.id}
+                    className={`p-3 rounded-lg border transition-all ${
+                      isActive
+                        ? "border-red-500/40 bg-red-500/5 shadow-sm"
+                        : isRemoved
+                          ? "border-border/40 bg-muted/20 opacity-75"
+                          : "border-emerald-500/30 bg-emerald-500/5"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className={`text-[10px] px-2 py-0.5 border ${typeBadgeColor}`}>
+                          {typeLabel}
+                        </Badge>
+
+                        {/* Status highlight */}
+                        {isActive && (
+                          <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/40 font-bold text-[10px] uppercase">
+                            🔴 ATTIVA
+                          </Badge>
+                        )}
+                        {isRemoved && (
+                          <Badge className="bg-slate-500/20 text-slate-500 dark:text-slate-400 border-slate-500/30 text-[10px] font-semibold uppercase">
+                            ⚪ RIMOSSA / ANNULLATA
+                          </Badge>
+                        )}
+                        {!isActive && !isRemoved && isExpired && (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-semibold uppercase">
+                            🟢 SCADUTA
+                          </Badge>
+                        )}
+                      </div>
+
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Assegnata: {new Date(s.created_at).toLocaleDateString("it-IT")}
+                      </span>
+                    </div>
+
+                    <p
+                      className={`text-xs mt-2 font-medium ${
+                        isRemoved ? "line-through text-muted-foreground" : "text-foreground"
+                      }`}
+                    >
+                      {s.reason}
+                    </p>
+
+                    {/* Metadata if removed or expired */}
+                    {isRemoved && s.removed_by_name && (
+                      <div className="mt-1.5 text-[11px] text-muted-foreground bg-muted/40 px-2 py-1 rounded border border-border/40">
+                        Annullata / Rimossa da <strong>{s.removed_by_name}</strong>
+                        {s.removed_at &&
+                          ` il ${new Date(s.removed_at).toLocaleDateString("it-IT")}`}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

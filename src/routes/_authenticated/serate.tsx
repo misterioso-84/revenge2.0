@@ -258,7 +258,7 @@ function useCitizens() {
     queryFn: async () => {
       const { data } = await supabase
         .from("citizens")
-        .select("id, full_name, membership")
+        .select("id, full_name, membership, created_at")
         .order("full_name");
       return (data ?? []) as Citizen[];
     },
@@ -297,7 +297,7 @@ function CitizenPicker({
       const { data, error } = await supabase
         .from("citizens")
         .insert({ full_name: name.trim(), membership: "standard" })
-        .select("id, full_name, membership")
+        .select("id, full_name, membership, created_at")
         .single();
       if (error) throw error;
       return data as Citizen;
@@ -308,7 +308,20 @@ function CitizenPicker({
       onChange(data);
       setQ("");
       setFocused(false);
-      toast.success("Cittadino creato");
+      toast.success(`Cittadino "${data.full_name}" creato`);
+
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const createdTodayCount =
+        citizens.filter((c: any) => c.created_at && new Date(c.created_at) >= startOfDay).length +
+        1;
+
+      if (createdTodayCount >= 5) {
+        toast.warning(
+          `⚠️ Attenzione: stai creando un numero elevato di cittadini oggi (${createdTodayCount} creati oggi).`,
+          { duration: 5000 },
+        );
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });

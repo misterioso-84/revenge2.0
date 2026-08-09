@@ -132,15 +132,16 @@ function ConvertPanel() {
   const { data: citizens = [] } = useQuery({
     queryKey: ["citizens-mini"],
     queryFn: async () =>
-      ((await supabase.from("citizens").select("id, full_name").order("full_name"))
+      ((await supabase.from("citizens").select("id, full_name, created_at").order("full_name"))
         .data as Citizen[]) ?? [],
   });
   const { data: nights = [] } = useQuery({
-    queryKey: ["nights-mini"],
+    queryKey: ["nights-mini-open"],
     queryFn: async () => {
       const { data } = await supabase
         .from("nights")
         .select("id, night_date, title, is_closed")
+        .eq("is_closed", false)
         .order("night_date", { ascending: false })
         .limit(50);
       return (data ?? []) as Night[];
@@ -175,17 +176,31 @@ function ConvertPanel() {
       const { data, error } = await supabase
         .from("citizens")
         .insert({ full_name: name.trim(), membership: "standard" })
-        .select("id, full_name")
+        .select("id, full_name, created_at")
         .single();
       if (error) throw error;
       return data as Citizen;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["citizens-mini"] });
+      qc.invalidateQueries({ queryKey: ["citizens"] });
       setCitizenId(data.id);
       setCitizenSearch(data.full_name);
       setIsOpen(false);
-      toast.success("Cittadino creato");
+      toast.success(`Cittadino "${data.full_name}" creato`);
+
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const createdTodayCount =
+        citizens.filter((c: any) => c.created_at && new Date(c.created_at) >= startOfDay).length +
+        1;
+
+      if (createdTodayCount >= 5) {
+        toast.warning(
+          `⚠️ Attenzione: stai creando un numero elevato di cittadini oggi (${createdTodayCount} creati oggi).`,
+          { duration: 5000 },
+        );
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -428,21 +443,28 @@ function ConvertPanel() {
               )}
             </div>
             <div>
-              <Label>Serata (giornata)</Label>
-              <Select value={currentNightId} onValueChange={setNightId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nights.map((n) => (
-                    <SelectItem key={n.id} value={n.id}>
-                      {formatDate(n.night_date)}
-                      {n.title ? ` · ${n.title}` : ""}
-                      {n.is_closed ? " (Chiusa)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Serata APERTA (giornata)</Label>
+              {nights.length === 0 ? (
+                <div className="p-2.5 border border-amber-500/30 rounded-md text-xs text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 mt-1 flex items-center gap-1.5">
+                  <span>
+                    ⚠️ Nessuna serata APERTA al momento. Apri una serata per poter convertire.
+                  </span>
+                </div>
+              ) : (
+                <Select value={currentNightId} onValueChange={setNightId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleziona serata aperta…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nights.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {formatDate(n.night_date)}
+                        {n.title ? ` · ${n.title}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 

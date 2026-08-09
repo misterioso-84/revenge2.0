@@ -207,8 +207,74 @@ function getInitialDb() {
     leave_requests: [],
     night_items: [],
     audit_logs: [],
+    eventi_tickets: [
+      {
+        id: "ticket-1",
+        citizen_id: "citizen-1",
+        citizen_name: "Mario Rossi",
+        category: "Ticket Fantino - Qualificazioni",
+        price: 2500,
+        event_phase: "Qualificazioni",
+        issued_by: "Amministratore",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "ticket-2",
+        citizen_id: "citizen-2",
+        citizen_name: "Giuseppe Bianchi",
+        category: "Spettatore VIP - Qualificazioni",
+        price: 750,
+        event_phase: "Qualificazioni",
+        issued_by: "Amministratore",
+        created_at: new Date().toISOString(),
+      },
+    ],
+    eventi_qualificazioni: [
+      {
+        id: "qual-1",
+        citizen_id: "citizen-1",
+        citizen_name: "Mario Rossi",
+        minutes: 1,
+        seconds: 21,
+        milliseconds: 340,
+        time_formatted: "01:21.340",
+        time_ms: 81340,
+        laps: 10,
+        attempt_number: 1,
+        notes: "Batteria #1 - Pista asciutta",
+        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+      },
+      {
+        id: "qual-2",
+        citizen_id: "citizen-2",
+        citizen_name: "Giuseppe Bianchi",
+        minutes: 1,
+        seconds: 23,
+        milliseconds: 110,
+        time_formatted: "01:23.110",
+        time_ms: 83110,
+        laps: 10,
+        attempt_number: 1,
+        notes: "Batteria #1",
+        created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
+      },
+    ],
+    eventi_scommesse: [],
+    eventi_finalisti: [],
   };
 
+  return db;
+}
+
+function ensureDbTables(db: Record<string, any[]>) {
+  if (!db || typeof db !== "object") return db;
+  const initial = getInitialDb();
+  for (const table of Object.keys(initial)) {
+    if (!db[table] || !Array.isArray(db[table])) {
+      db[table] = initial[table];
+    }
+  }
+  db.audit_logs = db.audit_logs || [];
   return db;
 }
 
@@ -221,7 +287,7 @@ let initPromise: Promise<Record<string, any[]>> | null = null;
 async function loadDb(): Promise<Record<string, any[]>> {
   const now = Date.now();
   if (cachedDb && now - lastLoadedTime < CACHE_TTL_MS) {
-    return cachedDb;
+    return ensureDbTables(cachedDb);
   }
 
   // 0. If in browser, load from localStorage first (for zero-loss static hosting like Cloudflare Pages!)
@@ -232,7 +298,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
         console.log("[Local Storage Sync] Loaded database from localStorage.");
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === "object") {
-          cachedDb = parsed;
+          cachedDb = ensureDbTables(parsed);
           lastLoadedTime = Date.now();
           return cachedDb;
         }
@@ -348,7 +414,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       localDb = getInitialDb();
     }
 
-    localDb.audit_logs = localDb.audit_logs || [];
+    ensureDbTables(localDb);
     cachedDb = localDb;
     lastLoadedTime = Date.now();
 

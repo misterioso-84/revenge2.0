@@ -98,6 +98,15 @@ function CitizensPage() {
     return fn.includes(s) || nn.includes(s);
   });
 
+  const createdTodayCount = useMemo(() => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    return citizens.filter((c) => {
+      if (!c.created_at) return false;
+      return new Date(c.created_at) >= startOfDay;
+    }).length;
+  }, [citizens]);
+
   if (!canRead) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -129,6 +138,13 @@ function CitizensPage() {
         {canWrite && (
           <Button
             onClick={() => {
+              if (createdTodayCount >= 5) {
+                toast.error(
+                  "Limite giornaliero raggiunto: non puoi creare più di 5 cittadini al giorno nella sezione Cittadini!",
+                  { duration: 5000 },
+                );
+                return;
+              }
               setEditing(null);
               setOpen(true);
             }}
@@ -223,7 +239,14 @@ function CitizensPage() {
         </CardContent>
       </Card>
 
-      {open && <CitizenDialog open={open} onOpenChange={setOpen} citizen={editing} />}
+      {open && (
+        <CitizenDialog
+          open={open}
+          onOpenChange={setOpen}
+          citizen={editing}
+          createdTodayCount={createdTodayCount}
+        />
+      )}
 
       {historyOpen && historyCitizen && (
         <CitizenHistoryDialog
@@ -260,10 +283,12 @@ function CitizenDialog({
   open,
   onOpenChange,
   citizen,
+  createdTodayCount,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   citizen: Citizen | null;
+  createdTodayCount: number;
 }) {
   const qc = useQueryClient();
   const isEdit = !!citizen;
@@ -285,6 +310,11 @@ function CitizenDialog({
         const { error } = await supabase.from("citizens").update(values).eq("id", citizen.id);
         if (error) throw error;
       } else {
+        if (createdTodayCount >= 5) {
+          throw new Error(
+            "Limite giornaliero raggiunto: non puoi creare più di 5 cittadini al giorno nella sezione Cittadini!",
+          );
+        }
         const { error } = await supabase.from("citizens").insert(values);
         if (error) throw error;
       }
@@ -304,11 +334,25 @@ function CitizenDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifica cittadino" : "Nuovo cittadino"}</DialogTitle>
         </DialogHeader>
+        {!isEdit && createdTodayCount >= 5 && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-md text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+            <span>
+              ⚠️ Limite giornaliero raggiunto: sono già stati creati {createdTodayCount} cittadini
+              oggi. Impossibile crearne altri nella sezione Cittadini.
+            </span>
+          </div>
+        )}
         <form
           key={citizen?.id ?? "new"}
           id="citizen-form"
           onSubmit={(e) => {
             e.preventDefault();
+            if (!isEdit && createdTodayCount >= 5) {
+              toast.error(
+                "Limite giornaliero raggiunto: non puoi creare più di 5 cittadini al giorno nella sezione Cittadini!",
+              );
+              return;
+            }
             const fd = new FormData(e.currentTarget);
             const v = Object.fromEntries(fd) as any;
 

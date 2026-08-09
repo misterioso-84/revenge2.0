@@ -60,6 +60,9 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "badge.gestisci", label: "Forzare apertura/chiusura badge altrui" },
   { key: "conversioni.esegui", label: "Eseguire conversioni Soldi/Dobloni" },
   { key: "conversioni.storico", label: "Vedere lo storico delle conversioni" },
+  { key: "eventi.gestisci", label: "Accedere e Gestire l'Eventi / Corsa Cavalli" },
   { key: "dipendenti.sanzioni", label: "Gestire sanzioni dei dipendenti" },
+  { key: "stipendi.visualizza", label: "Vedere gli stipendi e calcolo payroll" },
+  { key: "stipendi.gestisci", label: "Gestire ed elaborare gli stipendi" },
   { key: "congedi.gestisci", label: "Approvare o rifiutare richieste di congedo" },
 ];

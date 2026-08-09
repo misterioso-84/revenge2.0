@@ -34,8 +34,9 @@ export function getSanctionStatusInfo(s: any) {
   // 1. Has expiry date, and it's in the past
   if (s.expires_at && new Date(s.expires_at) <= now) {
     return {
-      label: "Scaduta",
-      colorClass: "bg-green-500/15 text-green-500 border border-green-500/30",
+      label: "🟢 SCADUTA",
+      colorClass:
+        "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-semibold uppercase",
       status: "scaduta",
     };
   }
@@ -43,17 +44,18 @@ export function getSanctionStatusInfo(s: any) {
   // 2. Archived or deactivated
   if (!s.is_active) {
     return {
-      label: "Rimossa",
-      colorClass: "bg-slate-500/15 text-slate-400 border border-slate-500/30",
+      label: "⚪ RIMOSSA / ANNULLATA",
+      colorClass:
+        "bg-slate-500/20 text-slate-400 border border-slate-500/40 font-semibold uppercase",
       status: "rimossa",
     };
   }
 
-  // 3. Otherwise, it is active (either no expiration, or expiration is in the future)
+  // 3. Otherwise, it is active
   return {
-    label: "Attuale",
+    label: "🔴 ATTIVA",
     colorClass:
-      "bg-red-500/15 text-red-400 border border-red-500/30 font-bold uppercase animate-pulse",
+      "bg-red-500/20 text-red-400 border border-red-500/50 font-bold uppercase animate-pulse",
     status: "attuale",
   };
 }
@@ -341,10 +343,10 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
                       key={s.id}
                       className={`p-4 rounded-lg border transition-colors ${
                         statusInfo.status === "attuale"
-                          ? "bg-red-500/5 border-red-500/20"
+                          ? "bg-red-500/10 border-red-500/40 shadow-sm"
                           : statusInfo.status === "scaduta"
-                            ? "bg-green-500/5 border-green-500/20"
-                            : "bg-slate-800/40 border-slate-700"
+                            ? "bg-emerald-500/5 border-emerald-500/30"
+                            : "bg-slate-900/40 border-slate-800 opacity-75"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -459,7 +461,13 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
                           </div>
                         ) : (
                           <>
-                            <p className="text-sm text-slate-200 font-medium italic">
+                            <p
+                              className={`text-sm font-medium italic ${
+                                statusInfo.status === "rimossa"
+                                  ? "line-through text-slate-500"
+                                  : "text-slate-200"
+                              }`}
+                            >
                               "{s.reason}"
                             </p>
                             <div className="flex flex-col gap-y-1 text-xs text-slate-400 pt-2 border-t border-slate-800">
@@ -494,9 +502,9 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
 
                               {/* Display manual deactivation metadata if applicable */}
                               {statusInfo.status === "rimossa" && s.removed_by_name && (
-                                <div className="text-xs text-green-400 font-semibold mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
-                                  Rimossa manualmente da:{" "}
-                                  <strong className="text-white">{s.removed_by_name}</strong>
+                                <div className="text-xs text-slate-400 font-semibold mt-1 bg-slate-800/80 p-2 rounded border border-slate-700">
+                                  Annullata / Rimossa manualmente da:{" "}
+                                  <strong className="text-slate-200">{s.removed_by_name}</strong>
                                   {s.removed_at &&
                                     ` il ${new Date(s.removed_at).toLocaleString("it-IT")}`}
                                 </div>

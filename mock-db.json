@@ -4,9 +4,9 @@
       "id": "mock-user-id-1234",
       "username": "Giuse84pro",
       "created_at": "2026-07-12T13:12:44.187Z",
-      "updated_at": "2026-07-20T10:21:39.673Z",
+      "updated_at": "2026-07-21T08:50:45.738Z",
       "display_name": "Giuse84pro",
-      "badge_start_time": "2026-07-19T18:00:32.348Z"
+      "badge_start_time": null
     },
     {
       "id": "user-b9p6dwg58ru",
@@ -122,13 +122,6 @@
       "id": "role-m92xe3e4nyk",
       "role": "staff",
       "user_id": "user-xoigsxonpgp"
-    },
-    {
-      "id": "95pfl7i38pr",
-      "role": "admin",
-      "user_id": "user-xoigsxonpgp",
-      "created_at": "2026-07-14T20:28:09.725Z",
-      "updated_at": "2026-07-14T20:28:09.725Z"
     },
     {
       "id": "role-fobmgqtkbdf",
@@ -422,13 +415,6 @@
       "custom_role_id": "5d7eafafjmu"
     },
     {
-      "id": "ax3jk7gaqw6",
-      "user_id": "user-xoigsxonpgp",
-      "created_at": "2026-07-18T13:00:58.518Z",
-      "updated_at": "2026-07-18T13:00:58.518Z",
-      "custom_role_id": "5d7eafafjmu"
-    },
-    {
       "id": "2vta4tkgdpg",
       "user_id": "user-jjwqy43hj8i",
       "created_at": "2026-07-18T15:03:27.332Z",
@@ -455,6 +441,13 @@
       "created_at": "2026-07-18T15:10:31.019Z",
       "updated_at": "2026-07-18T15:10:31.019Z",
       "custom_role_id": "37e7i6z95k7"
+    },
+    {
+      "id": "52xnhwg50on",
+      "user_id": "user-xoigsxonpgp",
+      "created_at": "2026-08-08T17:53:23.971Z",
+      "updated_at": "2026-08-08T17:53:23.971Z",
+      "custom_role_id": "qb8h239wnp"
     }
   ],
   "citizens": [
@@ -799,12 +792,32 @@
     {
       "id": "week-8fsv5vkodu",
       "label": "Settimana dal 20/07/26 - 26/07/26",
-      "active": true,
-      "ended_at": null,
+      "active": false,
+      "ended_at": "2026-07-27T08:47:03.440Z",
       "created_at": "2026-07-20T09:31:48.500Z",
       "created_by": "system",
       "started_at": "2026-07-20",
-      "updated_at": "2026-07-20T09:31:48.500Z"
+      "updated_at": "2026-07-27T08:47:03.440Z"
+    },
+    {
+      "id": "week-w3io8da8qc",
+      "label": "Settimana dal 27/07/26 - 02/08/26",
+      "active": false,
+      "ended_at": "2026-08-03T19:31:47.443Z",
+      "created_at": "2026-07-27T08:47:03.440Z",
+      "created_by": "system",
+      "started_at": "2026-07-27",
+      "updated_at": "2026-08-03T19:31:47.443Z"
+    },
+    {
+      "id": "week-93jpe15c16",
+      "label": "Settimana dal 03/08/26 - 09/08/26",
+      "active": true,
+      "ended_at": null,
+      "created_at": "2026-08-03T19:31:47.443Z",
+      "created_by": "system",
+      "started_at": "2026-08-03",
+      "updated_at": "2026-08-03T19:31:47.443Z"
     }
   ],
   "badge_sessions": [
@@ -1189,10 +1202,100 @@
       "id": "o86832a1fm8",
       "user_id": "mock-user-id-1234",
       "week_id": "week-u3oj16eds3",
-      "ended_at": null,
+      "ended_at": "2026-07-20T09:31:48.500Z",
       "created_at": "2026-07-19T18:00:33.557Z",
       "started_at": "2026-07-19T18:00:32.348Z",
-      "updated_at": "2026-07-20T10:21:39.673Z"
+      "updated_at": "2026-07-20T09:31:48.500Z"
+    },
+    {
+      "id": "xpzgwevlyx9",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T07:56:37.028Z",
+      "created_at": "2026-07-21T07:56:15.479Z",
+      "started_at": "2026-07-21T07:56:14.696Z",
+      "updated_at": "2026-07-21T07:56:37.789Z"
+    },
+    {
+      "id": "goe2wsx1xcs",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:26:04.864Z",
+      "created_at": "2026-07-21T08:25:53.173Z",
+      "started_at": "2026-07-21T08:25:52.364Z",
+      "updated_at": "2026-07-21T08:26:05.697Z"
+    },
+    {
+      "id": "sacqolihd8",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:26:14.105Z",
+      "created_at": "2026-07-21T08:26:11.872Z",
+      "started_at": "2026-07-21T08:26:11.206Z",
+      "updated_at": "2026-07-21T08:26:15.009Z"
+    },
+    {
+      "id": "xyl8nzlix2d",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:27:04.948Z",
+      "created_at": "2026-07-21T08:26:21.105Z",
+      "started_at": "2026-07-21T08:26:20.264Z",
+      "updated_at": "2026-07-21T08:27:05.747Z"
+    },
+    {
+      "id": "8ts87bjfuo",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:35:17.749Z",
+      "created_at": "2026-07-21T08:35:07.783Z",
+      "started_at": "2026-07-21T08:35:06.992Z",
+      "updated_at": "2026-07-21T08:35:18.540Z"
+    },
+    {
+      "id": "p2nyic7sxp",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:37:01.069Z",
+      "created_at": "2026-07-21T08:36:50.089Z",
+      "started_at": "2026-07-21T08:36:49.289Z",
+      "updated_at": "2026-07-21T08:37:01.714Z"
+    },
+    {
+      "id": "hbqqbchreg4",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:37:14.477Z",
+      "created_at": "2026-07-21T08:37:11.382Z",
+      "started_at": "2026-07-21T08:37:10.600Z",
+      "updated_at": "2026-07-21T08:37:15.286Z"
+    },
+    {
+      "id": "9ov1ytfccmg",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:37:29.140Z",
+      "created_at": "2026-07-21T08:37:17.416Z",
+      "started_at": "2026-07-21T08:37:16.640Z",
+      "updated_at": "2026-07-21T08:37:29.929Z"
+    },
+    {
+      "id": "nd7iqejaub",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:42:59.364Z",
+      "created_at": "2026-07-21T08:42:49.909Z",
+      "started_at": "2026-07-21T08:42:49.085Z",
+      "updated_at": "2026-07-21T08:43:00.156Z"
+    },
+    {
+      "id": "u7a14xevk79",
+      "user_id": "mock-user-id-1234",
+      "week_id": "week-8fsv5vkodu",
+      "ended_at": "2026-07-21T08:50:44.490Z",
+      "created_at": "2026-07-21T08:50:39.664Z",
+      "started_at": "2026-07-21T08:50:38.825Z",
+      "updated_at": "2026-07-21T08:50:45.360Z"
     }
   ],
   "nights": [
@@ -1248,10 +1351,160 @@
       "notes": "Creata automaticamente dal sistema",
       "title": "Giornata del 20/07/2026",
       "total": 0,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-07-20T09:31:48.500Z",
       "night_date": "2026-07-20",
-      "updated_at": "2026-07-20T09:31:48.500Z"
+      "updated_at": "2026-07-21T07:54:07.947Z"
+    },
+    {
+      "id": "night-33uyb0gy0k",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 21/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-21T07:54:07.947Z",
+      "night_date": "2026-07-21",
+      "updated_at": "2026-07-22T07:57:56.296Z"
+    },
+    {
+      "id": "night-o285ara4oo",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 22/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-22T07:57:56.296Z",
+      "night_date": "2026-07-22",
+      "updated_at": "2026-07-23T07:43:22.617Z"
+    },
+    {
+      "id": "night-2km3m47qw7",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 23/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-23T07:43:22.617Z",
+      "night_date": "2026-07-23",
+      "updated_at": "2026-07-24T10:53:35.498Z"
+    },
+    {
+      "id": "night-rg22p9ytsk",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 24/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-24T10:53:35.498Z",
+      "night_date": "2026-07-24",
+      "updated_at": "2026-07-25T15:01:21.767Z"
+    },
+    {
+      "id": "night-cd87yfpr3k",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 25/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-25T15:01:21.767Z",
+      "night_date": "2026-07-25",
+      "updated_at": "2026-07-26T17:15:47.737Z"
+    },
+    {
+      "id": "night-wnq7m8eg13",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 26/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-26T17:15:47.737Z",
+      "night_date": "2026-07-26",
+      "updated_at": "2026-07-27T08:47:03.440Z"
+    },
+    {
+      "id": "night-yd6vg41v1m",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 27/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-27T08:47:03.440Z",
+      "night_date": "2026-07-27",
+      "updated_at": "2026-07-28T08:03:54.704Z"
+    },
+    {
+      "id": "night-xwg8mmicuc",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 28/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-28T08:03:54.704Z",
+      "night_date": "2026-07-28",
+      "updated_at": "2026-07-31T21:03:06.696Z"
+    },
+    {
+      "id": "night-5cs61qp773",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 31/07/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-07-31T21:03:06.696Z",
+      "night_date": "2026-07-31",
+      "updated_at": "2026-08-03T19:31:47.443Z"
+    },
+    {
+      "id": "night-5cf5uqrgrl",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 03/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-03T19:31:47.443Z",
+      "night_date": "2026-08-03",
+      "updated_at": "2026-08-04T06:53:02.260Z"
+    },
+    {
+      "id": "night-23mcwaksee",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 04/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-04T06:53:02.260Z",
+      "night_date": "2026-08-04",
+      "updated_at": "2026-08-05T05:36:16.324Z"
+    },
+    {
+      "id": "night-1r12gs9s3r",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 05/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-05T05:36:16.324Z",
+      "night_date": "2026-08-05",
+      "updated_at": "2026-08-07T19:33:38.499Z"
+    },
+    {
+      "id": "night-qvpspqoyiv",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 07/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-07T19:33:38.499Z",
+      "night_date": "2026-08-07",
+      "updated_at": "2026-08-08T11:56:17.988Z"
+    },
+    {
+      "id": "night-dhp28ptjsv",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 08/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-08T11:56:17.988Z",
+      "night_date": "2026-08-08",
+      "updated_at": "2026-08-09T09:02:43.515Z"
+    },
+    {
+      "id": "night-rw2vhuugwu",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 09/08/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-08-09T09:02:43.515Z",
+      "night_date": "2026-08-09",
+      "updated_at": "2026-08-09T09:02:43.515Z"
     }
   ],
   "conversion_settings": [
@@ -1739,6 +1992,63 @@
       "updated_at": "2026-07-18T13:32:29.563Z",
       "created_by_id": "mock-user-id-1234",
       "created_by_name": "Giuse84pro"
+    },
+    {
+      "id": "rzn7jbmcwy",
+      "type": "richiamo_verbale",
+      "reason": "Test",
+      "user_id": "mock-user-id-1234",
+      "is_active": false,
+      "created_at": "2026-08-08T12:13:38.506Z",
+      "expires_at": null,
+      "updated_at": "2026-08-09T09:05:04.989Z",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro"
+    },
+    {
+      "id": "uq63eut0s1a",
+      "type": "richiamo_verbale",
+      "reason": "Prova",
+      "user_id": "mock-user-id-1234",
+      "is_active": false,
+      "created_at": "2026-08-09T09:04:22.782Z",
+      "expires_at": null,
+      "updated_at": "2026-08-09T09:05:05.169Z",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro"
+    },
+    {
+      "id": "1up5eneyewf",
+      "type": "richiamo_verbale",
+      "reason": "Prova",
+      "user_id": "mock-user-id-1234",
+      "is_active": false,
+      "created_at": "2026-08-09T09:05:04.704Z",
+      "expires_at": null,
+      "updated_at": "2026-08-09T09:05:05.342Z",
+      "created_by_id": "mock-user-id-1234",
+      "created_by_name": "Giuse84pro"
+    },
+    {
+      "id": "7t50zzip6ut",
+      "type": "warn",
+      "reason": "Conversione automatica: accumulo di 3 richiami verbali nel mese.",
+      "user_id": "mock-user-id-1234",
+      "is_active": true,
+      "created_at": "2026-08-09T09:05:05.507Z",
+      "expires_at": null,
+      "updated_at": "2026-08-09T09:09:59.741Z",
+      "created_by_id": "system",
+      "created_by_name": "Sistema",
+      "responses": [
+        {
+          "id": "bq65k2r",
+          "author_name": "Giuse84pro",
+          "author_role": "Amministrazione",
+          "text": "Preso atto del provvedimento disciplinare.",
+          "created_at": "2026-08-09T09:09:58.567Z"
+        }
+      ]
     }
   ],
   "leave_requests": [
@@ -1812,6 +2122,786 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-547s3zxnhtw",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "update",
+      "table_name": "sanctions",
+      "details": "Aggiornato provvedimento disciplinare",
+      "created_at": "2026-08-09T09:09:59.742Z"
+    },
+    {
+      "id": "log-ci7mluhx4j",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Warn)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:05:05.508Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-unnw26al2te",
+      "action": "update",
+      "details": "Aggiornato provvedimento disciplinare",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:05:05.342Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1oanf31u85rg",
+      "action": "update",
+      "details": "Aggiornato provvedimento disciplinare",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:05:05.169Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3frniil4wt",
+      "action": "update",
+      "details": "Aggiornato provvedimento disciplinare",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:05:04.989Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-v6ld2fzdhhl",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Richiamo Verbale)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:05:04.704Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e3nvjazuuz",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Richiamo Verbale)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-09T09:04:22.784Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b6mwkjmrowu",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:23.971Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-x9p6so1aoif",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:23.913Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-fui5ypewu9t",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:22.049Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ky1ka0rjsz",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:17.306Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-enzpfig3ez",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:15.934Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-60eixjh5pgf",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:14.488Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-r5f4ee051im",
+      "action": "delete",
+      "details": "DELETE su tabella user_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T17:53:00.433Z",
+      "table_name": "user_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-v0sp4zjtmye",
+      "action": "insert",
+      "details": "Assegnato provvedimento disciplinare (Richiamo Verbale)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:13:38.507Z",
+      "table_name": "sanctions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-h0f8rxqjx4s",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_scommesse",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:11:29.169Z",
+      "table_name": "eventi_scommesse",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-g10kdgkqg15",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_scommesse",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:11:24.014Z",
+      "table_name": "eventi_scommesse",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-nspacwxt5g",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_scommesse",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:24.817Z",
+      "table_name": "eventi_scommesse",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-osw3ukoz2hc",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:22.645Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-d5d169gtgf4",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:20.619Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gwo51vdb2bh",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:18.348Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-i4yd2zbuvan",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:08.920Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-4uwh94eh06v",
+      "action": "update",
+      "details": "UPDATE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:10:03.313Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-mi12fk0gpho",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:09:21.674Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-g4cjh863mmh",
+      "action": "delete",
+      "details": "DELETE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:09:21.324Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-sknz5o38oxb",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_qualificazioni",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-08T12:09:18.193Z",
+      "table_name": "eventi_qualificazioni",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-10tm400dlvgc",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_qualificazioni",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:12:20.659Z",
+      "table_name": "eventi_qualificazioni",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-uzk6vyo1j1g",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:12:00.520Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-a9mne4fg7wb",
+      "action": "delete",
+      "details": "DELETE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:11:59.914Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ovgdloxpok",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:09:06.370Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-y0cmivyhznj",
+      "action": "delete",
+      "details": "DELETE su tabella eventi_finalisti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:09:05.643Z",
+      "table_name": "eventi_finalisti",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-fm3vhrf21xw",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_scommesse",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:08:54.569Z",
+      "table_name": "eventi_scommesse",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-u3dxt5yfita",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_qualificazioni",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T14:08:10.146Z",
+      "table_name": "eventi_qualificazioni",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-rsh7hkux3hh",
+      "action": "insert",
+      "details": "INSERT su tabella eventi_tickets",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-22T13:56:27.989Z",
+      "table_name": "eventi_tickets",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ikt5krjqute",
+      "action": "update",
+      "details": "UPDATE su tabella maintenance_settings",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T21:40:01.451Z",
+      "table_name": "maintenance_settings",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-zbqbwc48qln",
+      "action": "update",
+      "details": "UPDATE su tabella maintenance_settings",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T21:39:55.405Z",
+      "table_name": "maintenance_settings",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-kki0yfzov2f",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:50:45.738Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-fppe9t1b1h",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:50:45.360Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-g8xksxxyma",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:50:40.359Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-jwblq9u2m6",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:50:39.665Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-pqx9ms5cu6",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:43:00.494Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gbnkau2rhj",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:43:00.156Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3ck6hq79dms",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:42:50.390Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e8vg7d65p1l",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:42:49.910Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-69w8fij99vn",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:30.292Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-s9v06323hxq",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:29.930Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-blhldn8n5x",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:17.664Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-6ia3zl75udf",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:17.416Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-hx2m874nrp6",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:15.559Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-p78v054pmmd",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:15.287Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-45ewqk5imtm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:11.795Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-pximieypo5k",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:11.382Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-t4vrp4rc6gk",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:02.067Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-mzk9ps9bqg",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:37:01.714Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-yq2muduhky",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:36:50.394Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b9ermk790dp",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:36:50.090Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-zno04fgv4f",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:35:18.817Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-05q28nx1gpti",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:35:18.541Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ddlnk90c4xq",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:35:08.252Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-te2y2qc0b9",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:35:07.783Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-kypo3jfyix",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:27:06.180Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-518hd4oew2f",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:27:05.747Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e2n8v7dri7q",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:21.460Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-qhzjgtg6gz",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:21.105Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-j4rh7v6swvi",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:15.299Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8ghhdrpljgx",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:15.010Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-qarh0e35re",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:12.198Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xiocw76t8bc",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:11.873Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-eo4spuvqykg",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:06.095Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1kkaeqjlwsih",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:26:05.697Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-7avfnmmuqwk",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:25:53.699Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ubyew9tifk",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-07-21T08:25:53.173Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-bhvoytxx8m5",
+      "action": "update",
+      "details": "UPDATE su tabella maintenance_settings",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:58:42.767Z",
+      "table_name": "maintenance_settings",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-s6oajmikt9o",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:56:42.124Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-xzmczl478rg",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:56:38.115Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-gq6hys1u0h",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:56:37.790Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-sbsmkbvupzl",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:56:15.863Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-n7it2tf2k4g",
+      "action": "insert",
+      "details": "Iniziata sessione di lavoro (timbratura ingresso)",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-07-21T07:56:15.479Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Sistema"
+    },
     {
       "id": "log-279v76dhyjw",
       "action": "update",
@@ -3463,12 +4553,188 @@
       "user_display_name": "Giuse84pro"
     }
   ],
+  "eventi_tickets": [
+    {
+      "id": "ticket-1",
+      "price": 2500,
+      "category": "Ticket Fantino - Qualificazioni",
+      "issued_by": "Amministratore",
+      "citizen_id": "citizen-1",
+      "created_at": "2026-07-22T13:56:27.986Z",
+      "event_phase": "Qualificazioni",
+      "citizen_name": "Mario Rossi"
+    },
+    {
+      "id": "ticket-2",
+      "price": 750,
+      "category": "Spettatore VIP - Qualificazioni",
+      "issued_by": "Amministratore",
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T13:56:27.986Z",
+      "event_phase": "Qualificazioni",
+      "citizen_name": "Giuseppe Bianchi"
+    },
+    {
+      "id": "ticket-1784728586953",
+      "price": 2500,
+      "category": "Ticket Fantino - Qualificazioni",
+      "issued_by": "Giuse84pro",
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T13:56:26.953Z",
+      "updated_at": "2026-07-22T13:56:27.989Z",
+      "event_phase": "Qualificazioni",
+      "citizen_name": "Giuse84pro"
+    }
+  ],
+  "eventi_qualificazioni": [
+    {
+      "id": "qual-1",
+      "laps": 10,
+      "notes": "Batteria #1 - Pista asciutta",
+      "minutes": 1,
+      "seconds": 21,
+      "time_ms": 81340,
+      "citizen_id": "citizen-1",
+      "created_at": "2026-07-22T08:56:27.986Z",
+      "citizen_name": "Mario Rossi",
+      "milliseconds": 340,
+      "attempt_number": 1,
+      "time_formatted": "01:21.340"
+    },
+    {
+      "id": "qual-2",
+      "laps": 10,
+      "notes": "Batteria #1",
+      "minutes": 1,
+      "seconds": 23,
+      "time_ms": 83110,
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T09:56:27.986Z",
+      "citizen_name": "Giuseppe Bianchi",
+      "milliseconds": 110,
+      "attempt_number": 1,
+      "time_formatted": "01:23.110"
+    },
+    {
+      "id": "qual-1784729288764",
+      "laps": 10,
+      "notes": "Batteria",
+      "minutes": 0,
+      "seconds": 70,
+      "time_ms": 70000,
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T14:08:08.764Z",
+      "updated_at": "2026-07-22T14:08:10.145Z",
+      "citizen_name": "Giuse84pro",
+      "milliseconds": 0,
+      "time_formatted": "00:70.000"
+    },
+    {
+      "id": "qual-1784729539477",
+      "laps": 10,
+      "notes": null,
+      "minutes": 1,
+      "seconds": 20,
+      "time_ms": 80000,
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T14:12:19.478Z",
+      "updated_at": "2026-07-22T14:12:20.659Z",
+      "citizen_name": "Giuse84pro",
+      "milliseconds": 0,
+      "time_formatted": "01:20.000"
+    },
+    {
+      "id": "qual-1786190933296",
+      "laps": 10,
+      "notes": null,
+      "minutes": 0,
+      "seconds": 10,
+      "time_ms": 10400,
+      "citizen_id": "j323w5ywwgt",
+      "created_at": "2026-08-08T12:08:53.296Z",
+      "updated_at": "2026-08-08T12:09:18.193Z",
+      "citizen_name": "COCKS",
+      "milliseconds": 400,
+      "time_formatted": "00:10.400"
+    }
+  ],
+  "eventi_scommesse": [
+    {
+      "id": "bet-1784729333659",
+      "odd": 4.5,
+      "amount": 2000,
+      "status": "persa",
+      "bet_type": "vincente",
+      "issued_by": "Giuse84pro",
+      "citizen_id": "citizen-2",
+      "created_at": "2026-07-22T14:08:53.659Z",
+      "updated_at": "2026-08-08T12:10:24.816Z",
+      "citizen_name": "Giuse84pro",
+      "fantino_1_id": "citizen-2",
+      "fantino_2_id": null,
+      "fantino_1_name": "Giuse84pro",
+      "fantino_2_name": null,
+      "potential_payout": 9000
+    },
+    {
+      "id": "bet-1786191059104",
+      "odd": 4.5,
+      "amount": 2000,
+      "status": "vinta",
+      "bet_type": "vincente",
+      "issued_by": "Giuse84pro",
+      "citizen_id": "j323w5ywwgt",
+      "created_at": "2026-08-08T12:10:59.104Z",
+      "updated_at": "2026-08-08T12:11:29.169Z",
+      "citizen_name": "COCKS",
+      "fantino_1_id": "j323w5ywwgt",
+      "fantino_2_id": null,
+      "fantino_1_name": "COCKS",
+      "fantino_2_name": null,
+      "potential_payout": 9000
+    }
+  ],
+  "eventi_finalisti": [
+    {
+      "id": "finalist-1",
+      "citizen_id": "j323w5ywwgt",
+      "created_at": "2026-08-08T12:09:21.674Z",
+      "updated_at": "2026-08-08T12:10:18.348Z",
+      "ticket_paid": false,
+      "citizen_name": "COCKS",
+      "final_position": 1,
+      "qualifying_rank": 1,
+      "qualifying_time": "00:10.400"
+    },
+    {
+      "id": "finalist-2",
+      "citizen_id": "citizen-2",
+      "created_at": "2026-08-08T12:09:21.674Z",
+      "updated_at": "2026-08-08T12:10:20.619Z",
+      "ticket_paid": false,
+      "citizen_name": "Giuse84pro",
+      "final_position": 2,
+      "qualifying_rank": 2,
+      "qualifying_time": "00:70.000"
+    },
+    {
+      "id": "finalist-3",
+      "citizen_id": "citizen-1",
+      "created_at": "2026-08-08T12:09:21.674Z",
+      "updated_at": "2026-08-08T12:10:22.645Z",
+      "ticket_paid": false,
+      "citizen_name": "Mario Rossi",
+      "final_position": 3,
+      "qualifying_rank": 3,
+      "qualifying_time": "01:21.340"
+    }
+  ],
   "maintenance_settings": [
     {
       "id": "global",
       "created_at": "2026-07-15T13:02:46.203Z",
-      "updated_at": "2026-07-15T13:37:25.377Z",
-      "is_maintenance": false
+      "updated_at": "2026-07-21T21:40:01.451Z",
+      "is_maintenance": true
     }
   ]
 }

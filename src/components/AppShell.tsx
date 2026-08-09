@@ -22,6 +22,8 @@ import {
   UserCheck,
   Palmtree,
   History,
+  Sparkles,
+  Banknote,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -38,10 +40,10 @@ const NAV: NavItem[] = [
   { to: "/serate", label: "Serate", icon: CalendarDays },
   { to: "/conversioni", label: "Conversioni", icon: ArrowLeftRight },
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },
-  { to: "/corse-cavalli", label: "Corse dei Cavalli", icon: Trophy },
-  { to: "/cassette", label: "Cassette di Sicurezza", icon: Lock },
+  { to: "/eventi", label: "Gestione Eventi", icon: Sparkles },
   // { to: "/badge", label: "Badge & Timbrature", icon: Clock },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
+  { to: "/stipendi", label: "Stipendi & Payroll", icon: Banknote },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
   { to: "/attivita", label: "Registro Attività", icon: History, adminOnly: true },
   { to: "/utenti", label: "Utenti", icon: UserCog, adminOnly: true },
@@ -134,11 +136,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (n.to === "/servizi") {
       return permissions.includes("servizi.read");
     }
+    if (n.to === "/eventi") {
+      return (
+        permissions.includes("eventi.gestisci") ||
+        permissions.includes("corse.read") ||
+        permissions.includes("corse.write")
+      );
+    }
     if (n.to === "/corse-cavalli") {
       return permissions.includes("corse.read");
-    }
-    if (n.to === "/cassette") {
-      return permissions.includes("cassette.read");
     }
     if (n.to === "/badge") {
       return (
@@ -149,7 +155,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       );
     }
     if (n.to === "/dipendenti") {
-      return permissions.includes("badge.visualizza");
+      return (
+        permissions.includes("badge.visualizza") || permissions.includes("dipendenti.sanzioni")
+      );
+    }
+    if (n.to === "/stipendi") {
+      return (
+        permissions.includes("stipendi.visualizza") || permissions.includes("stipendi.gestisci")
+      );
     }
     if (n.to === "/congedi") {
       return true; // accessible to any logged in employee
