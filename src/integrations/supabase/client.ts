@@ -91,24 +91,24 @@ class MockPostgrestBuilder {
   }
 
   async execute() {
+    const payload = {
+      table: this.table,
+      operation: this.operation,
+      selectColumns: this.selectColumns,
+      filters: this.filters,
+      orderBy: this.orderBy,
+      limitCount: this.limitCount,
+      insertData: this.insertData,
+      updateData: this.updateData,
+      isMaybeSingle: this.isMaybeSingle,
+      isSingle: this.isSingle,
+    };
+
     try {
-      const res = await mockDbProxy({
-        data: {
-          table: this.table,
-          operation: this.operation,
-          selectColumns: this.selectColumns,
-          filters: this.filters,
-          orderBy: this.orderBy,
-          limitCount: this.limitCount,
-          insertData: this.insertData,
-          updateData: this.updateData,
-          isMaybeSingle: this.isMaybeSingle,
-          isSingle: this.isSingle,
-        },
-      });
-      return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+      const res = await mockDbProxy({ data: payload });
+      return res || { data: null, error: null };
     } catch (e: any) {
-      console.error("[Supabase Client] Errore di rete o server non raggiungibile:", e);
+      console.warn("[Supabase Client] Errore di rete o server non raggiungibile:", e);
       return {
         data: null,
         error: { message: e?.message || "Impossibile contattare il server API" },
@@ -227,12 +227,12 @@ class MockSupabaseClient {
           }
           this.notify("SIGNED_IN", res.data.session);
         }
-        return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+        return res || { data: null, error: { message: "Errore di connessione al server" } };
       } catch (err: any) {
-        console.error("[Supabase Auth] Errore di rete durante il sign up:", err);
+        console.error("[Supabase Auth] Sign up error:", err);
         return {
           data: null,
-          error: { message: err?.message || "Errore di connessione al server" },
+          error: { message: err?.message || "Errore durante la registrazione" },
         };
       }
     },
@@ -252,32 +252,27 @@ class MockSupabaseClient {
           }
           this.notify("SIGNED_IN", res.data.session);
         }
-        return res || { data: null, error: { message: "Nessuna risposta dal server" } };
+        return res || { data: null, error: { message: "Errore di connessione al server" } };
       } catch (err: any) {
-        console.error("[Supabase Auth] Errore di rete durante il login:", err);
+        console.error("[Supabase Auth] Login error:", err);
         return {
           data: null,
-          error: { message: err?.message || "Errore di connessione al server" },
+          error: { message: err?.message || "Errore durante il login" },
         };
       }
     },
     signOut: async () => {
       try {
-        const res = await mockAuthProxy({ data: { action: "signOut" } });
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("casinorevenge_session");
-          eraseCookie("casino_userId");
-        }
-        this.notify("SIGNED_OUT", null);
-        return res || { error: null };
+        await mockAuthProxy({ data: { action: "signOut" } });
       } catch (err: any) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("casinorevenge_session");
-          eraseCookie("casino_userId");
-        }
-        this.notify("SIGNED_OUT", null);
-        return { error: null };
+        // Ignore network errors on signout
       }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("casinorevenge_session");
+        eraseCookie("casino_userId");
+      }
+      this.notify("SIGNED_OUT", null);
+      return { error: null };
     },
   };
 
@@ -286,11 +281,13 @@ class MockSupabaseClient {
   }
 
   async rpc(name: string, args: any) {
+    const payload = { operation: "rpc", name, args };
     try {
-      return await mockDbProxy({ data: { operation: "rpc", name, args } });
+      const res = await mockDbProxy({ data: payload });
+      return res || { data: null, error: null };
     } catch (e: any) {
-      console.error("[Supabase Client] Errore RPC:", e);
-      return { data: null, error: { message: e?.message || "Errore di rete" } };
+      console.error("[Supabase Client] RPC error:", e);
+      return { data: null, error: { message: e?.message || "Errore RPC" } };
     }
   }
 }
