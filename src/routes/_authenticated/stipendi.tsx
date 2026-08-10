@@ -518,26 +518,33 @@ export function StipendiPage() {
     const isOverCap = rawTotalPayroll > maxAllowedPayroll && maxAllowedPayroll > 0;
 
     let variableScale = 1;
-    let globalScale = 1;
     let totalGuaranteedBase = 0;
     let rawVariablePool = 0;
 
     if (isOverCap) {
-      totalGuaranteedBase = rawRows.reduce(
-        (acc, r) => acc + (r.isEligible ? Math.min(r.baseSalary, 750) : 0),
-        0,
-      );
-      rawVariablePool = rawTotalPayroll - totalGuaranteedBase;
+      // Paga base protetta al 100% per tutti i dipendenti idonei
+      totalGuaranteedBase = rawRows.reduce((acc, r) => acc + (r.isEligible ? r.baseSalary : 0), 0);
+      rawVariablePool = Math.max(0, rawTotalPayroll - totalGuaranteedBase);
 
-      if (rawVariablePool > 0 && maxAllowedPayroll >= totalGuaranteedBase) {
-        variableScale = (maxAllowedPayroll - totalGuaranteedBase) / rawVariablePool;
+      if (rawVariablePool > 0) {
+        // Riduzione applicata ESCLUSIVAMENTE alle componenti variabili sopra la paga base
+        const availableForVariable = Math.max(0, maxAllowedPayroll - totalGuaranteedBase);
+        variableScale = Math.min(1, availableForVariable / rawVariablePool);
       } else {
-        globalScale = maxAllowedPayroll / rawTotalPayroll;
+        variableScale = 0;
       }
     }
 
     return rawRows.map((r) => {
-      if (!r.isEligible || !isOverCap) {
+      if (!r.isEligible) {
+        return {
+          ...r,
+          reductionApplied: 0,
+          totalSalary: 0,
+        };
+      }
+
+      if (!isOverCap) {
         return {
           ...r,
           reductionApplied: 0,
@@ -545,15 +552,11 @@ export function StipendiPage() {
         };
       }
 
-      let totalSalary = r.rawTotalSalary;
-      if (rawVariablePool > 0 && maxAllowedPayroll >= totalGuaranteedBase) {
-        const guaranteedBase = Math.min(r.baseSalary, 750);
-        const variablePart = r.rawTotalSalary - guaranteedBase;
-        const adjustedVariable = variablePart * variableScale;
-        totalSalary = Math.round((guaranteedBase + adjustedVariable) * 100) / 100;
-      } else {
-        totalSalary = Math.round(r.rawTotalSalary * globalScale * 100) / 100;
-      }
+      // La paga base rimane intatta al 100%
+      const guaranteedBase = r.baseSalary;
+      const variablePart = Math.max(0, r.rawTotalSalary - guaranteedBase);
+      const adjustedVariable = variablePart * variableScale;
+      const totalSalary = Math.round((guaranteedBase + adjustedVariable) * 100) / 100;
 
       const reductionApplied = Math.max(
         0,
