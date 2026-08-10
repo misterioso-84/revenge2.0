@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Upload,
   FileSpreadsheet,
@@ -14,6 +16,11 @@ import {
   CheckCircle2,
   Eye,
   Sparkles,
+  ArrowDownRight,
+  ArrowUpRight,
+  RefreshCw,
+  Sliders,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +43,9 @@ import {
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
+
+const STORAGE_KEY_CSV_TEXT = "stipendi_cached_csv_text";
+const STORAGE_KEY_CSV_FILENAME = "stipendi_cached_csv_filename";
 
 export const Route = createFileRoute("/_authenticated/stipendi")({
   component: StipendiPage,
@@ -168,7 +178,78 @@ export function StipendiPage() {
   const [csvText, setCsvText] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
   const [parsedRows, setParsedRows] = useState<ParsedEmployeeCSV[]>([]);
-  const [netMarginInput, setNetMarginInput] = useState<number>(35000); // Default net margin estimate
+
+  // Income, Expenses & Conversion Parameters for Payroll Calculation
+  const [manualEntrateInput, setManualEntrateInput] = useState<number | null>(null);
+  const [manualUsciteInput, setManualUsciteInput] = useState<number | null>(null);
+  const [commissionCalcMode, setCommissionCalcMode] = useState<"gross" | "net" | "volume">(
+    "volume",
+  );
+
+  // Fetch conversions from DB to auto-sync uscite/conversioni
+  const {
+    data: dbConversions = [],
+    isLoading: isLoadingConversions,
+    refetch: refetchConversions,
+  } = useQuery({
+    queryKey: ["all-conversions-stipendi"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("conversions").select("*");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  // Calculate CSV total turnover (Entrate da fatturato)
+  const csvFatturatoTotal = useMemo(() => {
+    return parsedRows.reduce((acc, r) => acc + (r.fatturatoPassato || 0), 0);
+  }, [parsedRows]);
+
+  // Calculate DB conversions cash-in (Entrate da conversioni Cash->Dobloni)
+  const dbConversionEntrateTotal = useMemo(() => {
+    return dbConversions.reduce((acc, curr: any) => {
+      if (curr.direction === "cash_to_dobloni") {
+        return (
+          acc +
+          (Number(curr.eur_amount) || Number(curr.input_amount) || Number(curr.amount_cash) || 0)
+        );
+      }
+      return acc;
+    }, 0);
+  }, [dbConversions]);
+
+  // Calculate Uscite/Conversioni totals from DB records (direction: dobloni_to_cash)
+  const dbUsciteTotal = useMemo(() => {
+    return dbConversions.reduce((acc, curr: any) => {
+      if (curr.direction === "dobloni_to_cash") {
+        return (
+          acc +
+          (Number(curr.eur_amount) || Number(curr.amount_cash) || Number(curr.input_amount) || 0)
+        );
+      }
+      return acc;
+    }, 0);
+  }, [dbConversions]);
+
+  // Automatic Entrate & Uscite
+  const autoEntrate = useMemo(() => {
+    const total = csvFatturatoTotal + dbConversionEntrateTotal;
+    return total > 0 ? total : 50000;
+  }, [csvFatturatoTotal, dbConversionEntrateTotal]);
+
+  const autoUscite = useMemo(() => {
+    return dbUsciteTotal;
+  }, [dbUsciteTotal]);
+
+  // Active Entrate & Uscite (Auto or Manual Override)
+  const totalEntrateInput = manualEntrateInput !== null ? manualEntrateInput : autoEntrate;
+  const totalUsciteInput = manualUsciteInput !== null ? manualUsciteInput : autoUscite;
+
+  // Net Margin = Entrate Totali - Uscite Totali & Conversioni
+  const netMarginInput = useMemo(() => {
+    return Math.max(0, totalEntrateInput - totalUsciteInput);
+  }, [totalEntrateInput, totalUsciteInput]);
+
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterEligible, setFilterEligible] = useState<string>("all");
   const [selectedJokerUser, setSelectedJokerUser] = useState<string | null>(null);
@@ -176,7 +257,30 @@ export function StipendiPage() {
   const [selectedEmpDetail, setSelectedEmpDetail] = useState<CalculatedSalaryRow | null>(null);
   const [showCalculationInfo, setShowCalculationInfo] = useState<boolean>(false);
 
-  // Handle local file upload
+  // Restore cached CSV from client memory on mount
+  useEffect(() => {
+    try {
+      const savedText = localStorage.getItem(STORAGE_KEY_CSV_TEXT);
+      const savedName = localStorage.getItem(STORAGE_KEY_CSV_FILENAME);
+      if (savedText) {
+        setCsvText(savedText);
+        setFileName(savedName || "dipendenti_salvato.csv");
+        processCSV(savedText, true);
+      }
+    } catch (e) {
+      console.error("Errore durante il caricamento del CSV dalla memoria locale:", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleResetAutoCalculations = () => {
+    refetchConversions();
+    setManualEntrateInput(null);
+    setManualUsciteInput(null);
+    toast.success("Ripristinato il calcolo automatico basato su Fatturato e Conversioni!");
+  };
+
+  // Handle local file upload & save to client cache (localStorage)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -186,17 +290,40 @@ export function StipendiPage() {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       setCsvText(text);
-      processCSV(text);
-      toast.success(`File "${file.name}" caricato correttamente!`);
+      try {
+        localStorage.setItem(STORAGE_KEY_CSV_TEXT, text);
+        localStorage.setItem(STORAGE_KEY_CSV_FILENAME, file.name);
+      } catch (err) {
+        console.warn("Impossibile salvare il CSV in localStorage:", err);
+      }
+      processCSV(text, false);
+      toast.success(`File "${file.name}" caricato e salvato nella memoria locale!`);
     };
     reader.readAsText(file);
   };
 
+  // Remove CSV from client cache & reset state
+  const handleRemoveCSV = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY_CSV_TEXT);
+      localStorage.removeItem(STORAGE_KEY_CSV_FILENAME);
+    } catch (err) {
+      console.warn("Impossibile rimuovere il CSV da localStorage:", err);
+    }
+    setCsvText("");
+    setFileName("");
+    setParsedRows([]);
+    setSelectedJokerUser(null);
+    setManualLevelOverrides({});
+    setSelectedEmpDetail(null);
+    toast.success("File CSV e dati in memoria locale rimossi con successo.");
+  };
+
   // Parse raw CSV text
-  const processCSV = (rawText: string) => {
+  const processCSV = (rawText: string, isFromCache = false) => {
     const lines = rawText.split(/\r?\n/).filter((line) => line.trim().length > 0);
     if (lines.length <= 1) {
-      toast.error("Il file CSV sembra vuoto o privo di righe dati.");
+      if (!isFromCache) toast.error("Il file CSV sembra vuoto o privo di righe dati.");
       return;
     }
 
@@ -231,8 +358,13 @@ export function StipendiPage() {
     }
 
     setParsedRows(rows);
+    setManualEntrateInput(null);
+    setManualUsciteInput(null);
     // Auto-detect top candidate for Joker
     autoSelectJokerCandidate(rows);
+    if (isFromCache) {
+      toast.info("Caricato il file CSV precedentemente salvato in memoria locale.");
+    }
   };
 
   const autoSelectJokerCandidate = (rows: ParsedEmployeeCSV[]) => {
@@ -318,7 +450,19 @@ export function StipendiPage() {
       // Provvigione (2% capped at 800€, 0 for Direzione/Sottodirezione)
       let provvigione = 0;
       if (!isDirezioneOrSottodirezione && isEligible) {
-        provvigione = Math.min(800, r.fatturatoPassato * 0.02);
+        let baseAmount = r.fatturatoPassato;
+        if (commissionCalcMode === "net") {
+          // Deduct proportional share of total uscite/conversions
+          const ratio = totalEntrateInput > 0 ? r.fatturatoPassato / totalEntrateInput : 0;
+          const userUsciteShare = totalUsciteInput * ratio;
+          baseAmount = Math.max(0, r.fatturatoPassato - userUsciteShare);
+        } else if (commissionCalcMode === "volume") {
+          // Add proportional share of total uscite/conversions handled
+          const ratio = totalEntrateInput > 0 ? r.fatturatoPassato / totalEntrateInput : 0;
+          const userUsciteShare = totalUsciteInput * ratio;
+          baseAmount = r.fatturatoPassato + userUsciteShare;
+        }
+        provvigione = Math.min(800, baseAmount * 0.02);
       }
 
       // Pex Extra Bonuses
@@ -422,7 +566,15 @@ export function StipendiPage() {
         totalSalary,
       };
     });
-  }, [parsedRows, manualLevelOverrides, selectedJokerUser, netMarginInput]);
+  }, [
+    parsedRows,
+    manualLevelOverrides,
+    selectedJokerUser,
+    netMarginInput,
+    totalEntrateInput,
+    totalUsciteInput,
+    commissionCalcMode,
+  ]);
 
   // Overall Metrics
   const metrics = useMemo(() => {
@@ -564,11 +716,30 @@ export function StipendiPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {parsedRows.length > 0 && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-mono text-amber-300">
+              <FileSpreadsheet className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="truncate max-w-[180px] sm:max-w-[240px]">
+                {fileName || "CSV memorizzato in cache"}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRemoveCSV}
+                title="Rimuovi CSV dalla memoria locale"
+                className="h-7 px-2 text-xs text-amber-300 hover:text-red-400 hover:bg-red-500/20 gap-1 border border-amber-500/20"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                <span>Rimuovi</span>
+              </Button>
+            </div>
+          )}
           <label htmlFor="csv-upload-input">
             <Button asChild className="gap-2 cursor-pointer bg-amber-600 hover:bg-amber-700">
               <span>
-                <Upload className="h-4 w-4" /> Carica CSV
+                <Upload className="h-4 w-4" />{" "}
+                {parsedRows.length > 0 ? "Sostituisci CSV" : "Carica CSV"}
               </span>
             </Button>
             <input
@@ -695,67 +866,133 @@ export function StipendiPage() {
             </Card>
           </div>
 
-          {/* Net Margin Limit & Rule Check Card (Art. 6.5) */}
+          {/* Net Margin Limit, Expense & Conversion Control Card (Art. 6.5) */}
           <Card
             className={`border-border/60 ${metrics.isOverCap ? "bg-amber-950/20 border-amber-500/40" : "bg-slate-900/40"}`}
           >
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardContent className="p-4 space-y-4 text-xs">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <div
                     className={`p-2 rounded-lg shrink-0 mt-0.5 ${metrics.isOverCap ? "bg-amber-500/20 text-amber-400" : "bg-cyan-500/10 text-cyan-400"}`}
                   >
-                    <Info className="h-5 w-5" />
+                    <Sliders className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
                     <div className="font-semibold text-white flex items-center gap-2">
-                      VERIFICA REGOLE AZIENDALI (ART. 6.5 - TETTO MARGINE NETTO 60%)
+                      REGOLAZIONE ENTRATE, USCITE & CONVERSIONI (ART. 6.5)
                     </div>
                     <p className="text-muted-foreground">
-                      Il monte salari lordo non può eccedere il 60% del margine netto della
-                      settimana precedente. Inserendo il margine netto stimato, il sistema applica
-                      automaticamente una riduzione per far rientrare esattamente il totale.
+                      Il margine netto aziendale viene calcolato sottraendo le{" "}
+                      <strong>Uscite Totali e Conversioni</strong> (inclusi i cambi da Dobloni a
+                      Contanti e i pagamenti in sala) dalle <strong>Entrate Lorde</strong>. Il monte
+                      salari totale è automaticamente vincolato al{" "}
+                      <strong>60% del Margine Netto Calcolato</strong>.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 bg-slate-950 p-3 rounded-xl border border-border/80">
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-mono text-muted-foreground block">
-                      Margine Netto Settimana (€)
+                <div className="flex items-center gap-2 shrink-0">
+                  {(manualEntrateInput !== null || manualUsciteInput !== null) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetAutoCalculations}
+                      className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs h-9 font-mono"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Ripristina Calcoli Automatici
+                    </Button>
+                  )}
+                  {manualEntrateInput === null && manualUsciteInput === null && (
+                    <Badge
+                      variant="outline"
+                      className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 font-mono text-[10px] py-1"
+                    >
+                      ⚡ Auto-Calcolato da Fatturato + DB
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Financial Inputs & Mode Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-950 p-3 rounded-xl border border-border/80">
+                {/* Entrate */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase font-mono text-emerald-400 flex items-center gap-1 font-semibold">
+                      <ArrowUpRight className="h-3 w-3" /> Incassi / Entrate Lorde (€)
                     </label>
-                    <Input
-                      type="number"
-                      value={netMarginInput}
-                      onChange={(e) => setNetMarginInput(Number(e.target.value) || 0)}
-                      className="w-32 h-8 font-mono text-xs"
-                    />
+                    {manualEntrateInput !== null && (
+                      <span className="text-[9px] text-amber-400 font-mono">(Manuale)</span>
+                    )}
                   </div>
-                  <div className="text-right font-mono">
-                    <div className="text-[10px] uppercase text-muted-foreground">
-                      Tetto Max 60%:
-                    </div>
-                    <div className="font-bold text-slate-200">
-                      {formatMoney(metrics.maxAllowedPayroll)}
-                    </div>
-                    <div className="mt-0.5">
-                      {metrics.isOverCap ? (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] bg-amber-500/10 text-amber-400 border-amber-500/40"
-                        >
-                          ⚠️ Riduzione Applicata (-{metrics.reductionPercent}%)
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                        >
-                          ✓ Conforme Sotto Tetto
-                        </Badge>
-                      )}
-                    </div>
+                  <Input
+                    type="number"
+                    value={totalEntrateInput}
+                    onChange={(e) => setManualEntrateInput(Number(e.target.value) || 0)}
+                    className="h-8 font-mono text-xs bg-slate-900 border-slate-700"
+                  />
+                  <div className="text-[9px] text-muted-foreground font-mono">
+                    CSV: {formatMoney(csvFatturatoTotal)} | DB:{" "}
+                    {formatMoney(dbConversionEntrateTotal)}
                   </div>
+                </div>
+
+                {/* Uscite & Conversioni */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase font-mono text-red-400 flex items-center gap-1 font-semibold">
+                      <ArrowDownRight className="h-3 w-3" /> Uscite & Conversioni (€)
+                    </label>
+                    {manualUsciteInput !== null && (
+                      <span className="text-[9px] text-amber-400 font-mono">(Manuale)</span>
+                    )}
+                  </div>
+                  <Input
+                    type="number"
+                    value={totalUsciteInput}
+                    onChange={(e) => setManualUsciteInput(Number(e.target.value) || 0)}
+                    className="h-8 font-mono text-xs bg-slate-900 border-slate-700"
+                  />
+                  <div className="text-[9px] text-muted-foreground font-mono">
+                    Conversioni Dobloni→Cash DB: {formatMoney(dbUsciteTotal)}
+                  </div>
+                </div>
+
+                {/* Margine Netto Calcolato & Tetto 60% */}
+                <div className="space-y-1 font-mono">
+                  <label className="text-[10px] uppercase text-cyan-400 font-semibold block">
+                    Margine Netto → Tetto 60%
+                  </label>
+                  <div className="text-xs font-bold text-white leading-tight">
+                    Netto: {formatMoney(netMarginInput)}
+                  </div>
+                  <div className="text-[11px] text-amber-300 font-bold">
+                    Tetto Salari: {formatMoney(metrics.maxAllowedPayroll)}
+                  </div>
+                </div>
+
+                {/* Modalità Provvigioni */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-muted-foreground block font-semibold">
+                    Calcolo Provvigioni (2%)
+                  </label>
+                  <Select
+                    value={commissionCalcMode}
+                    onValueChange={(v: "gross" | "net" | "volume") => setCommissionCalcMode(v)}
+                  >
+                    <SelectTrigger className="h-8 text-xs font-mono bg-slate-900 border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent font-mono>
+                      <SelectItem value="gross">Fatturato Lordo (2% su Incassi)</SelectItem>
+                      <SelectItem value="net">Fatturato Netto (2% su Incassi - Uscite)</SelectItem>
+                      <SelectItem value="volume">
+                        ⭐ Volume Operativo (2% su Incassi + Uscite - Opzione Più Conveniente)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

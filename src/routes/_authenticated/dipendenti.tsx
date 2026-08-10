@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/table";
 import { SanctionsDialog } from "@/components/SanctionsDialog";
 import { ForceLeaveDialog } from "@/components/ForceLeaveDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { deletePanelUser } from "@/lib/admin.functions";
 import {
   Clock,
   Calendar,
@@ -28,6 +31,7 @@ import {
   X,
   Palmtree,
   Ban,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -52,9 +56,20 @@ type Prof = {
 
 function DipendentiPage() {
   const { user, isAdmin, permissions = [] } = useAuth();
+  const qc = useQueryClient();
+  const delFn = useServerFn(deletePanelUser);
   const [sanctionsTarget, setSanctionsTarget] = useState<Prof | null>(null);
   const [forceLeaveTarget, setForceLeaveTarget] = useState<Prof | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    title?: string;
+    description?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    onConfirm: () => {},
+  });
 
   const canVedere = isAdmin || permissions.includes("badge.visualizza");
   const canSanzioni = isAdmin || permissions.includes("dipendenti.sanzioni");
@@ -312,14 +327,16 @@ function DipendentiPage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-amber-800/40 bg-amber-950/25 hover:bg-amber-900/40 text-amber-200 font-semibold"
-                              onClick={() => setForceLeaveTarget(p)}
-                            >
-                              <Palmtree className="h-3.5 w-3.5 mr-1.5" /> Forza Congedo
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-amber-800/40 bg-amber-950/25 hover:bg-amber-900/40 text-amber-200 font-semibold"
+                                onClick={() => setForceLeaveTarget(p)}
+                              >
+                                <Palmtree className="h-3.5 w-3.5 mr-1.5" /> Forza Congedo
+                              </Button>
+                            </>
                           )}
                           {canSanzioni && (
                             <Button
@@ -329,6 +346,54 @@ function DipendentiPage() {
                               onClick={() => setSanctionsTarget(p)}
                             >
                               <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> Sanzioni
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30"
+                              title="Elimina utente"
+                              onClick={() =>
+                                setDeleteConfirm({
+                                  isOpen: true,
+                                  title: "Elimina dipendente",
+                                  description: `Sei sicuro di voler eliminare DEFINITIVAMENTE l'utente "${p.display_name || p.username}"? Questa azione non può essere annullata.`,
+                                  onConfirm: async () => {
+                                    try {
+                                      await delFn({ data: { userId: p.id } });
+                                      qc.invalidateQueries({ queryKey: ["profiles"] });
+                                      qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                      toast.success("Utente eliminato");
+                                    } catch (e: any) {
+                                      try {
+                                        await supabase.from("profiles").delete().eq("id", p.id);
+                                        await supabase
+                                          .from("user_roles")
+                                          .delete()
+                                          .eq("user_id", p.id);
+                                        await supabase
+                                          .from("user_custom_roles")
+                                          .delete()
+                                          .eq("user_id", p.id);
+                                        await supabase
+                                          .from("sanctions")
+                                          .delete()
+                                          .eq("user_id", p.id);
+                                        qc.invalidateQueries({ queryKey: ["profiles"] });
+                                        qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                        toast.success("Utente eliminato definitivamente");
+                                      } catch (err: any) {
+                                        toast.error(
+                                          err?.message || "Impossibile eliminare l'utente",
+                                        );
+                                      }
+                                    }
+                                  },
+                                })
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
                         </div>
@@ -351,6 +416,15 @@ function DipendentiPage() {
       {forceLeaveTarget && (
         <ForceLeaveDialog user={forceLeaveTarget} onClose={() => setForceLeaveTarget(null)} />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onClose={() => setDeleteConfirm({ isOpen: false, onConfirm: () => {} })}
+        onConfirm={deleteConfirm.onConfirm}
+      />
     </div>
   );
 }

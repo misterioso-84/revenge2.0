@@ -330,12 +330,14 @@ export function SanctionsDialog({ user, onClose }: { user: any; onClose: () => v
             {isLoading ? (
               <p className="text-sm text-slate-400 italic">Caricamento...</p>
             ) : sanctions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 px-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-center space-y-2">
-                <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+              <div className="flex flex-col items-center justify-center py-8 px-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center space-y-2">
+                <div className="p-2.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                  <CheckCircle2 className="h-7 w-7" />
+                </div>
                 <span className="text-sm font-semibold text-white">
                   Nessun provvedimento o sanzione registrata
                 </span>
-                <p className="text-xs text-slate-200">
+                <p className="text-xs text-slate-300">
                   L'utente non ha mai ricevuto avvertimenti o sanzioni disciplinari.
                 </p>
               </div>

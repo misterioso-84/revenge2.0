@@ -356,35 +356,37 @@ function DashboardPage() {
 function PersonalDisciplinaryStatus({ userSanctions }: { userSanctions: any[] }) {
   if (userSanctions.length === 0) {
     return (
-      <Card className="border-emerald-500/30 bg-emerald-500/10 shadow-sm rounded-xl overflow-hidden">
-        <CardHeader className="pb-3 border-b border-emerald-500/20">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+      <Card className="border-emerald-500/30 bg-card/90 shadow-sm rounded-xl overflow-hidden relative">
+        <div className="absolute right-0 top-0 -translate-y-6 translate-x-6 h-32 w-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <CardHeader className="pb-3 border-b border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
                 <CardTitle className="text-lg font-bold text-white">
                   Situazione Disciplinare Impeccabile
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-200 font-medium">
+                <CardDescription className="text-xs text-slate-300">
                   Nessun provvedimento o avvertimento presente nel tuo storico.
                 </CardDescription>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge className="text-xs px-2.5 py-1 border bg-emerald-500/20 text-white border-emerald-500/40 font-semibold">
+              <Badge className="text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold rounded-full">
                 In Regola
               </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4 pb-4">
-          <div className="flex items-center gap-3 p-3.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-white text-sm font-medium">
+        <CardContent className="pt-4 pb-4 relative z-10">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm">
             <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-            <span>
-              Condotta eccellente! Non hai mai ricevuto avvertimenti o sanzioni disciplinari.
+            <span className="text-slate-200">
+              <strong className="text-emerald-400 font-semibold">Condotta eccellente!</strong> Non
+              hai mai ricevuto avvertimenti o sanzioni disciplinari.
             </span>
           </div>
         </CardContent>

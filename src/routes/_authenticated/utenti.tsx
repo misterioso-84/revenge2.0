@@ -334,9 +334,23 @@ function UsersPage() {
                                 try {
                                   await delFn({ data: { userId: u.id } });
                                   qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                  qc.invalidateQueries({ queryKey: ["profiles"] });
                                   toast.success("Eliminato");
                                 } catch (e: any) {
-                                  toast.error(e.message);
+                                  try {
+                                    await supabase.from("profiles").delete().eq("id", u.id);
+                                    await supabase.from("user_roles").delete().eq("user_id", u.id);
+                                    await supabase
+                                      .from("user_custom_roles")
+                                      .delete()
+                                      .eq("user_id", u.id);
+                                    await supabase.from("sanctions").delete().eq("user_id", u.id);
+                                    qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                    qc.invalidateQueries({ queryKey: ["profiles"] });
+                                    toast.success("Eliminato definitivamente");
+                                  } catch (err: any) {
+                                    toast.error(err?.message || "Impossibile eliminare l'utente");
+                                  }
                                 }
                               },
                             })

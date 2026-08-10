@@ -108,7 +108,7 @@ class MockPostgrestBuilder {
       const res = await mockDbProxy({ data: payload });
       return res || { data: null, error: null };
     } catch (e: any) {
-      console.warn("[Supabase Client] Errore di rete o server non raggiungibile:", e);
+      console.warn("[Supabase Client] Errore di rete o server:", e);
       return {
         data: null,
         error: { message: e?.message || "Impossibile contattare il server API" },
