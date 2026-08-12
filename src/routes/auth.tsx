@@ -131,6 +131,15 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={busy || bootstrapMode === null}>
               {bootstrapMode ? "Crea amministratore" : "Accedi"}
             </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+              onClick={() => navigate({ to: "/" })}
+            >
+              ← Torna alla Guida del Casinò
+            </Button>
           </form>
         </CardContent>
       </Card>

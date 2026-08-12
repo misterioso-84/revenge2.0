@@ -23,23 +23,36 @@ export const listPanelUsers = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const ids = list.users.map((u) => u.id);
     const [{ data: profiles }, { data: roles }, { data: customs }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, username, display_name").in("id", ids),
+      supabaseAdmin
+        .from("profiles")
+        .select(
+          "id, username, display_name, has_employee_access, telegram_handle, show_in_staff_list, staff_weight, staff_color",
+        )
+        .in("id", ids),
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
       supabaseAdmin
         .from("user_custom_roles")
         .select("user_id, custom_role_id, custom_roles(name)")
         .in("user_id", ids),
     ]);
-    return list.users.map((u) => ({
-      id: u.id,
-      username: profiles?.find((p) => p.id === u.id)?.username ?? (u.email ?? "").split("@")[0],
-      display_name: profiles?.find((p) => p.id === u.id)?.display_name ?? null,
-      created_at: u.created_at,
-      roles: (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role),
-      custom_roles: (customs ?? [])
-        .filter((c) => c.user_id === u.id)
-        .map((c: any) => ({ id: c.custom_role_id, name: c.custom_roles?.name })),
-    }));
+    return list.users.map((u) => {
+      const p = profiles?.find((prof) => prof.id === u.id);
+      return {
+        id: u.id,
+        username: p?.username ?? (u.email ?? "").split("@")[0],
+        display_name: p?.display_name ?? null,
+        has_employee_access: p?.has_employee_access ?? false,
+        telegram_handle: p?.telegram_handle ?? null,
+        show_in_staff_list: p?.show_in_staff_list ?? true,
+        staff_weight: p?.staff_weight ?? 50,
+        staff_color: p?.staff_color ?? "#3b82f6",
+        created_at: u.created_at,
+        roles: (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role),
+        custom_roles: (customs ?? [])
+          .filter((c) => c.user_id === u.id)
+          .map((c: any) => ({ id: c.custom_role_id, name: c.custom_roles?.name })),
+      };
+    });
   });
 
 export const createPanelUser = createServerFn({ method: "POST" })
@@ -54,6 +67,9 @@ export const createPanelUser = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = `${data.username.toLowerCase()}@revenge.local`;
+    let handle = (data.telegramHandle || "").trim();
+    if (handle && !handle.startsWith("@")) handle = `@${handle}`;
+
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: data.password,
@@ -61,11 +77,30 @@ export const createPanelUser = createServerFn({ method: "POST" })
       user_metadata: {
         username: data.username,
         display_name: data.displayName ?? data.username,
+        has_employee_access: data.hasEmployeeAccess ?? true,
+        telegram_handle: handle,
+        show_in_staff_list: data.showInStaffList ?? true,
+        staff_weight: data.staffWeight ?? 50,
+        staff_color: data.staffColor ?? "#3b82f6",
       },
     });
     if (error) throw new Error(error.message);
-    if (data.isAdmin && created.user) {
-      await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: "admin" });
+    if (created?.user) {
+      if (data.isAdmin) {
+        await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: "admin" });
+      }
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          username: data.username,
+          display_name: data.displayName ?? data.username,
+          has_employee_access: data.hasEmployeeAccess ?? true,
+          telegram_handle: handle,
+          show_in_staff_list: data.showInStaffList ?? true,
+          staff_weight: data.staffWeight ?? 50,
+          staff_color: data.staffColor ?? "#3b82f6",
+        })
+        .eq("id", created.user.id);
     }
     return { id: created.user?.id };
   });
@@ -94,12 +129,27 @@ export const updatePanelUser = createServerFn({ method: "POST" })
       throw new Error("Questo username è già in uso da un altro utente.");
     }
 
+    const updateFields: any = {
+      username: data.username,
+      display_name: data.displayName || null,
+    };
+
+    if (data.telegramHandle !== undefined) {
+      let handle = (data.telegramHandle || "").trim();
+      if (handle && !handle.startsWith("@")) handle = `@${handle}`;
+      updateFields.telegram_handle = handle || null;
+      updateFields.telegram_connected = !!handle;
+    }
+    if (data.hasEmployeeAccess !== undefined)
+      updateFields.has_employee_access = !!data.hasEmployeeAccess;
+    if (data.showInStaffList !== undefined)
+      updateFields.show_in_staff_list = !!data.showInStaffList;
+    if (data.staffWeight !== undefined) updateFields.staff_weight = Number(data.staffWeight) || 50;
+    if (data.staffColor !== undefined) updateFields.staff_color = data.staffColor;
+
     const { error } = await supabaseAdmin
       .from("profiles")
-      .update({
-        username: data.username,
-        display_name: data.displayName || null,
-      })
+      .update(updateFields)
       .eq("id", data.userId);
 
     if (error) throw new Error(error.message);

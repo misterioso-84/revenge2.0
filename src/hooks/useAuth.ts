@@ -6,6 +6,13 @@ export type Profile = {
   id: string;
   username: string;
   display_name: string | null;
+  has_employee_access?: boolean;
+  telegram_connected?: boolean;
+  telegram_handle?: string | null;
+  show_in_staff_list?: boolean;
+  staff_weight?: number;
+  staff_color?: string;
+  ip_address?: string;
 };
 
 export function useAuth() {
@@ -55,7 +62,9 @@ export function useAuth() {
       ] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, username, display_name")
+          .select(
+            "id, username, display_name, has_employee_access, telegram_connected, telegram_handle, show_in_staff_list, staff_weight, staff_color, ip_address",
+          )
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),

@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  requestTelegramVerificationCode,
+  verifyTelegramCode,
+} from "@/lib/registration.functions";
+import { toast } from "sonner";
 import {
   Users,
   CalendarDays,
@@ -24,6 +32,13 @@ import {
   History,
   Sparkles,
   Banknote,
+  Send,
+  MessageCircle,
+  ExternalLink,
+  Globe,
+  Anchor,
+  Check,
+  Copy,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -175,6 +190,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  // Telegram Verification Enforcer: forces user to link & verify Telegram before accessing panel
+  if (profile && (!profile.telegram_connected || !profile.telegram_handle)) {
+    return <TelegramVerificationGuard profile={profile} signOut={signOut} />;
   }
 
   if (isMaintenanceActive && !isAdmin) {
@@ -372,6 +392,138 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (profile?.has_employee_access === false && !isAdmin && customRoleNames.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+          <div className="flex flex-col items-center text-center space-y-3">
+            <img
+              src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/80`}
+              alt="Avatar Minecraft"
+              className="h-20 w-20 rounded-xl border-2 border-amber-500/50 shadow-lg object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/80.png";
+              }}
+            />
+            <h1 className="text-2xl font-bold tracking-tight text-white uppercase mt-2">
+              Accesso Non Autorizzato
+            </h1>
+            <p className="text-sm text-slate-400">
+              Benvenuto,{" "}
+              <strong className="text-amber-400">
+                {profile?.display_name || profile?.username}
+              </strong>
+              !
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 space-y-2 leading-relaxed">
+            <p>
+              Il tuo account è stato creato correttamente, ma{" "}
+              <strong>
+                non disponi ancora dei permessi per accedere al Pannello Dipendenti Interno
+              </strong>
+              .
+            </p>
+            <p className="text-slate-400">
+              Un Amministratore o la Direzione del Casinò potrà abilitare la tua posizione e
+              assegnarti i permessi necessari se fai parte della ciurma.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+              onClick={() => navigate({ to: "/" })}
+            >
+              Torna alla Guida del Casinò
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full border-slate-700 text-slate-300"
+              onClick={signOut}
+            >
+              Scollegati
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Enforce Telegram Handle if missing for employee
+  if (profile && (!profile.telegram_handle || profile.telegram_handle.trim() === "")) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-primary/40 rounded-2xl p-8 space-y-6 shadow-2xl relative">
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="h-16 w-16 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-3xl text-primary">
+              ✈️
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Imposta Username Telegram
+            </h1>
+            <p className="text-sm text-slate-300">
+              Per accedere ed operare nel <strong>Pannello Dipendenti</strong>, è obbligatorio
+              specificare il tuo username Telegram (@username).
+            </p>
+          </div>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const input = form.elements.namedItem("tg") as HTMLInputElement;
+              if (!input?.value.trim()) return;
+              let handle = input.value.trim();
+              if (!handle.startsWith("@")) handle = `@${handle}`;
+              try {
+                const { error } = await supabase
+                  .from("profiles")
+                  .update({ telegram_handle: handle, telegram_connected: true })
+                  .eq("id", profile.id);
+                if (error) throw error;
+                window.location.reload();
+              } catch (err: any) {
+                alert("Errore nel salvataggio: " + err.message);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Username Telegram (@)
+              </label>
+              <input
+                id="tg"
+                name="tg"
+                type="text"
+                required
+                placeholder="@tuo_username"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-primary"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-primary text-black font-semibold hover:bg-primary/90"
+            >
+              Salva e Continua
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-slate-400 hover:text-white"
+              onClick={signOut}
+            >
+              Scollegati
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex">
       <aside
@@ -411,6 +563,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Button>
         </div>
         <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
+          {/* Quick link back to public homepage & guide */}
+          <Link
+            to="/"
+            title={collapsed ? "Torna alla Guida / Sito" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-md text-sm font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors mb-3",
+              collapsed ? "justify-center h-10 w-full" : "px-3 py-2",
+            )}
+          >
+            <Globe className="h-4 w-4 shrink-0 text-amber-500" />
+            {!collapsed && <span className="truncate">🌐 Torna alla Guida</span>}
+          </Link>
+
+          <Link
+            to="/ciurma"
+            title={collapsed ? "La nostra Ciurma" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-md text-sm font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors mb-3",
+              collapsed ? "justify-center h-10 w-full" : "px-3 py-2",
+            )}
+          >
+            <Anchor className="h-4 w-4 shrink-0 text-sky-400" />
+            {!collapsed && <span className="truncate">⚓ La nostra Ciurma</span>}
+          </Link>
+
+          <div className="pt-1 pb-1 border-t border-sidebar-border/50" />
+
           {items.map((n) => {
             const active = path === n.to || path.startsWith(n.to + "/");
             const Icon = n.icon;
@@ -423,7 +602,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   "flex items-center gap-3 rounded-md text-sm transition-colors",
                   collapsed ? "justify-center h-10 w-full" : "px-3 py-2",
                   active
-                    ? "bg-primary/15 text-primary border border-primary/30"
+                    ? "bg-primary/15 text-primary border border-primary/30 font-medium"
                     : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                 )}
               >
@@ -435,22 +614,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-4")}>
           {!collapsed ? (
-            <div className="space-y-2">
-              <div className="text-sm">
-                <div className="font-medium truncate">
-                  {profile?.display_name ?? profile?.username}
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-1">
-                  {isAdmin && (
-                    <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
-                      Amministratore
-                    </Badge>
-                  )}
-                  {customRoleNames.map((n) => (
-                    <Badge key={n} variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {n}
-                    </Badge>
-                  ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/40`}
+                  alt="Skin Minecraft"
+                  className="h-10 w-10 rounded-lg border border-amber-500/40 object-cover shrink-0 shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/40.png";
+                  }}
+                />
+                <div className="text-sm min-w-0 flex-1">
+                  <div className="font-semibold truncate text-slate-100">
+                    {profile?.display_name ?? profile?.username}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                    {isAdmin && (
+                      <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
+                        Admin
+                      </Badge>
+                    )}
+                    {customRoleNames.map((n) => (
+                      <Badge key={n} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {n}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
               <Button variant="outline" size="sm" className="w-full" onClick={signOut}>
@@ -466,10 +655,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
       <main className="flex-1 min-w-0">
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar/60 backdrop-blur">
-          <div className="font-semibold text-primary">Revenge</div>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="font-semibold text-primary flex items-center gap-2">
+            <span>Revenge</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">Pannello</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link to="/">
+              <Button size="sm" variant="outline" className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2.5">
+                <Globe className="h-3.5 w-3.5 mr-1" /> Guida
+              </Button>
+            </Link>
+            <Link to="/ciurma">
+              <Button size="sm" variant="outline" className="text-xs bg-sky-500/10 border-sky-500/30 text-sky-300 h-8 px-2.5">
+                <Anchor className="h-3.5 w-3.5 mr-1" /> Ciurma
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={signOut} className="h-8 px-2">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="md:hidden overflow-x-auto border-b border-border">
           <div className="flex gap-1 px-2 py-2">
@@ -492,6 +696,207 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="p-4 md:p-8 max-w-7xl mx-auto">{children}</div>
       </main>
+    </div>
+  );
+}
+
+function TelegramVerificationGuard({ profile, signOut }: { profile: any; signOut: () => void }) {
+  const reqCodeFn = useServerFn(requestTelegramVerificationCode);
+  const verifyCodeFn = useServerFn(verifyTelegramCode);
+
+  const [pinCode, setPinCode] = useState("");
+  const [commandText, setCommandText] = useState("");
+  const [botUrl, setBotUrl] = useState("https://t.me/CasinoRevengeBot");
+  const [busy, setBusy] = useState(false);
+  const [detectedHandle, setDetectedHandle] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Restore code on mount or auto-generate if missing
+  useEffect(() => {
+    const savedPin = profile?.telegram_code || localStorage.getItem(`casino_pin_${profile?.id}`);
+    if (savedPin) {
+      setPinCode(savedPin);
+      setCommandText(`/associa ${savedPin}`);
+    } else {
+      // Auto-generate code if missing so user is immediately presented with command
+      handleGenerateCode();
+    }
+  }, [profile?.id]);
+
+  const handleGenerateCode = async () => {
+    setBusy(true);
+    try {
+      const res = await reqCodeFn({
+        data: {
+          userId: profile.id,
+        },
+      });
+      if (res.code) {
+        setPinCode(res.code);
+        setCommandText(`/associa ${res.code}`);
+        localStorage.setItem(`casino_pin_${profile?.id}`, res.code);
+      }
+      if (res.botUrl) {
+        setBotUrl(res.botUrl);
+      }
+      toast.success("Comando /associa generato con successo!");
+    } catch (err: any) {
+      toast.error(err.message || "Errore nella generazione del codice Telegram.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (!commandText) return;
+    navigator.clipboard.writeText(commandText);
+    setCopied(true);
+    toast.success("Comando copiato negli appunti! Incollalo su Telegram.");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleVerifyFromBot = async (silent = false) => {
+    if (!pinCode.trim()) return;
+    if (!silent) setBusy(true);
+    try {
+      const res = await verifyCodeFn({
+        data: {
+          code: pinCode,
+          userId: profile.id,
+        },
+      });
+
+      if (res.handle) {
+        setDetectedHandle(res.handle);
+        toast.success(`✅ Account collegato con successo! (@${res.handle.replace(/^@/, '')})`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      }
+    } catch (err: any) {
+      if (!silent) {
+        toast.error(err.message || "Invia prima il comando al Bot Telegram, poi riprova.");
+      }
+    } finally {
+      if (!silent) setBusy(false);
+    }
+  };
+
+  // Auto-check every 3 seconds if pinCode exists
+  useEffect(() => {
+    if (!pinCode) return;
+    const interval = setInterval(() => {
+      handleVerifyFromBot(true);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pinCode]);
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="max-w-lg w-full bg-slate-900 border border-sky-500/30 rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl shadow-sky-500/10 relative overflow-hidden text-white">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 via-amber-500 to-sky-500" />
+
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="h-14 w-14 rounded-full bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/30">
+            <Send className="h-7 w-7 animate-pulse" />
+          </div>
+          <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/30 font-semibold px-3 py-1">
+            🤖 Collegamento Telegram Ufficiale
+          </Badge>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white pt-1">
+            Verifica Account Telegram
+          </h1>
+          <p className="text-xs text-slate-300 leading-relaxed max-w-md">
+            Collega il tuo profilo inviando il comando speciale <span className="text-amber-300 font-mono font-bold">/associa</span> al Bot Telegram Ufficiale (<span className="text-sky-400 font-mono font-semibold">@CasinoRevengeBot</span>).
+          </p>
+        </div>
+
+        <div className="space-y-5 pt-2">
+          {!commandText ? (
+            <div className="text-center space-y-4">
+              <p className="text-xs text-slate-400">
+                Clicca per generare il comando unico di associazione per il Bot.
+              </p>
+              <Button
+                type="button"
+                onClick={handleGenerateCode}
+                disabled={busy}
+                className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold h-12 text-sm shadow-lg shadow-sky-500/20"
+              >
+                {busy ? "Generazione in corso..." : "⚡ Genera Comando /associa"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 bg-slate-950/80 border border-slate-800 rounded-xl p-5">
+              <div className="space-y-2 text-center">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">
+                  1. Invia questo comando al Bot Telegram:
+                </span>
+                <div className="flex items-center gap-2 bg-slate-900 border border-amber-500/40 rounded-lg p-2.5">
+                  <div className="text-xl font-black font-mono text-amber-400 tracking-wider flex-1 text-center select-all">
+                    {commandText}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={copyToClipboard}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? "Copiato" : "Copia"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <a
+                  href={`${botUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-bold h-11 rounded-lg text-xs shadow-md transition-all"
+                >
+                  <Send className="h-4 w-4" /> 2. APRI @CasinoRevengeBot & INCOLLA
+                  <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                </a>
+
+                <p className="text-[11px] text-slate-400 leading-relaxed text-center">
+                  Una volta inviato <span className="font-mono text-amber-300 font-bold">{commandText}</span> in chat, il Bot risponderà <span className="text-emerald-400 font-bold">"✅ Account collegato con successo!"</span> ed il sito si aggiornerà automaticamente.
+                </p>
+
+                <Button
+                  type="button"
+                  onClick={() => handleVerifyFromBot(false)}
+                  disabled={busy}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black h-11 text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
+                >
+                  {busy ? "Verifica in corso..." : "🔍 VERIFICA STATO COLLEGAMENTO"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {detectedHandle && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center text-xs font-semibold text-emerald-400">
+              ✅ Account Collegato con Successo: {detectedHandle}
+            </div>
+          )}
+        </div>
+
+        <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+          <Link to="/" className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-semibold">
+            🌐 Torna alla Guida / Home
+          </Link>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOut}
+            className="text-xs text-slate-400 hover:text-white"
+          >
+            Scollegati
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

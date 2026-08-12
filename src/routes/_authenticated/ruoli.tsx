@@ -88,11 +88,26 @@ function RolesPage() {
           </Card>
         )}
         {roles.map((r: any) => (
-          <Card key={r.id}>
-            <CardContent className="pt-6 space-y-3">
+          <Card key={r.id} className="relative overflow-hidden border border-slate-800">
+            <div
+              className="h-1.5 w-full"
+              style={{ backgroundColor: r.staff_color || "#3b82f6" }}
+            />
+            <CardContent className="pt-5 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold text-lg">{r.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-lg">{r.name}</h3>
+                    {r.show_in_staff_list ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
+                        ⚓ In Ciurma (Peso: {r.staff_weight ?? 50})
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-slate-500 text-[10px]">
+                        Nascosto in Ciurma
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{r.description ?? "—"}</p>
                 </div>
                 <div className="flex gap-1">
@@ -138,9 +153,20 @@ function RolesPage() {
 function RoleDialog({ role, onClose }: any) {
   const qc = useQueryClient();
   const [perms, setPerms] = useState<string[]>(role?.permissions ?? []);
+  const [showInStaff, setShowInStaff] = useState<boolean>(role?.show_in_staff_list ?? true);
+  const [staffWeight, setStaffWeight] = useState<number>(role?.staff_weight ?? 50);
+  const [staffColor, setStaffColor] = useState<string>(role?.staff_color ?? "#3b82f6");
+
   const save = useMutation({
     mutationFn: async (v: any) => {
-      const payload = { name: v.name, description: v.description || null, permissions: perms };
+      const payload = {
+        name: v.name,
+        description: v.description || null,
+        permissions: perms,
+        show_in_staff_list: showInStaff,
+        staff_weight: Number(staffWeight) || 50,
+        staff_color: staffColor || "#3b82f6",
+      };
       if (role) {
         const { error } = await supabase.from("custom_roles").update(payload).eq("id", role.id);
         if (error) throw error;
@@ -165,23 +191,75 @@ function RoleDialog({ role, onClose }: any) {
         </DialogHeader>
         <form
           id="role-form"
-          className="space-y-3"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate(Object.fromEntries(new FormData(e.currentTarget)));
           }}
         >
           <div>
-            <Label>Nome *</Label>
+            <Label>Nome Ruolo *</Label>
             <Input name="name" required defaultValue={role?.name ?? ""} />
           </div>
+
           <div>
             <Label>Descrizione</Label>
             <Textarea name="description" rows={2} defaultValue={role?.description ?? ""} />
           </div>
+
+          {/* Configurazione "La nostra Ciurma" (Staff List) */}
+          <div className="p-3.5 border border-amber-500/20 bg-amber-500/5 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm font-semibold text-amber-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showInStaff}
+                  onChange={(e) => setShowInStaff(e.target.checked)}
+                  className="rounded text-amber-500"
+                />
+                ⚓ Mostra membri di questo ruolo nella Ciurma (Lista Staff)
+              </label>
+            </div>
+
+            {showInStaff && (
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <Label className="text-xs">Peso Gerarchico (Ordina lista)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={staffWeight}
+                    onChange={(e) => setStaffWeight(Number(e.target.value))}
+                    className="bg-background"
+                  />
+                  <span className="text-[10px] text-muted-foreground">100 = Capitano, 50 = Operatore</span>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Colore distintivo Ruolo</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="color"
+                      value={staffColor}
+                      onChange={(e) => setStaffColor(e.target.value)}
+                      className="w-10 h-9 p-1 bg-background cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={staffColor}
+                      onChange={(e) => setStaffColor(e.target.value)}
+                      className="font-mono text-xs bg-background uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <Label>Permessi</Label>
-            <div className="grid grid-cols-1 gap-1.5 mt-2 max-h-72 overflow-y-auto border border-border rounded-md p-3">
+            <div className="grid grid-cols-1 gap-1.5 mt-2 max-h-56 overflow-y-auto border border-border rounded-md p-3">
               {PERMISSIONS.map((p) => {
                 const checked = perms.includes(p.key);
                 return (
@@ -208,7 +286,7 @@ function RoleDialog({ role, onClose }: any) {
             Annulla
           </Button>
           <Button form="role-form" type="submit" disabled={save.isPending}>
-            Salva
+            Salva Ruolo
           </Button>
         </DialogFooter>
       </DialogContent>

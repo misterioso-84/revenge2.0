@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -42,6 +42,10 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Laptop,
+  Smartphone,
+  Unlink,
+  Wifi,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -58,6 +62,7 @@ import {
   updateSanction,
   deleteSanctionCompletely,
 } from "@/lib/admin.functions";
+import { getConnectedDevices, disconnectDevice } from "@/lib/registration.functions";
 
 export const Route = createFileRoute("/_authenticated/utenti")({
   beforeLoad: async () => {
@@ -86,7 +91,10 @@ function UsersPage() {
   const adminFn = useServerFn(setUserAdmin);
   const assignFn = useServerFn(assignCustomRole);
   const updateSanctionFn = useServerFn(updateSanction);
+  const getDevicesFn = useServerFn(getConnectedDevices);
+  const disconnectFn = useServerFn(disconnectDevice);
 
+  const [activeTab, setActiveTab] = useState<"utenti" | "dispositivi">("utenti");
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any>(null);
   const [resetTarget, setResetTarget] = useState<any>(null);
@@ -100,6 +108,14 @@ function UsersPage() {
     description: string;
     onConfirm: () => void;
   }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
+
+  const { data: devices = [], refetch: refetchDevices } = useQuery({
+    queryKey: ["connected-devices"],
+    queryFn: async () => {
+      return await getDevicesFn();
+    },
+    enabled: activeTab === "dispositivi",
+  });
 
   const { data: sanctions = [], refetch: refetchSanctions } = useQuery<any[]>({
     queryKey: ["all-sanctions"],
@@ -137,6 +153,16 @@ function UsersPage() {
       qc.invalidateQueries({ queryKey: ["all-sanctions"] });
     } catch (err: any) {
       toast.error(err.message || "Errore nella rimozione dell'espulsione");
+    }
+  };
+
+  const handleDisconnect = async (userId: string, deviceId: string) => {
+    try {
+      await disconnectFn({ data: { userId, deviceId } });
+      toast.success("Dispositivo disconnesso con successo.");
+      refetchDevices();
+    } catch (err: any) {
+      toast.error("Errore nella disconnessione: " + err.message);
     }
   };
 
@@ -195,178 +221,344 @@ function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Utenti del Pannello</h1>
-          <p className="text-muted-foreground">Gestione accessi (solo amministratore)</p>
+          <h1 className="text-3xl font-bold">Utenti & Dispositivi</h1>
+          <p className="text-muted-foreground">Gestione accessi, ruoli e sessioni collegate</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Nuovo utente
+        {activeTab === "utenti" && (
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> Nuovo utente
+          </Button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 border-b border-border pb-2">
+        <Button
+          variant={activeTab === "utenti" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setActiveTab("utenti")}
+          className="text-xs font-semibold"
+        >
+          Gestione Utenti ({users.length})
+        </Button>
+        <Button
+          variant={activeTab === "dispositivi" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setActiveTab("dispositivi")}
+          className="text-xs font-semibold flex items-center gap-1.5"
+        >
+          <Laptop className="h-3.5 w-3.5" /> Dispositivi e Sessioni
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 max-w-sm border border-border bg-card rounded-lg px-3 py-1.5 shadow-sm">
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-        <Input
-          placeholder="Cerca per username, nome o ruolo..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
-        />
-      </div>
+      {activeTab === "utenti" ? (
+        <>
+          <div className="flex items-center gap-2 max-w-sm border border-border bg-card rounded-lg px-3 py-1.5 shadow-sm">
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              placeholder="Cerca per username, nome o ruolo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+            />
+          </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="py-2.5 px-3 h-auto">Username</TableHead>
-                <TableHead className="py-2.5 px-3 h-auto">Nome</TableHead>
-                <TableHead className="py-2.5 px-3 h-auto">Ruolo</TableHead>
-                <TableHead className="py-2.5 px-3 h-auto">Ruoli personalizzati</TableHead>
-                <TableHead className="py-2.5 px-3 h-auto w-56"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                    Nessun utente trovato
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((u: any) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-mono py-2 px-3">
-                      <div className="flex flex-col gap-1">
-                        <span>{u.username}</span>
-                        {activeExpulsionsMap.has(u.id) && (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider w-fit">
-                            <Skull className="h-3 w-3 animate-pulse" /> Espulso Permanente
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="py-2.5 px-3 h-auto">Username</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto">Telegram</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto">Accesso Pannello</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto">Ciurma / Staff</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto">Ruolo</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto">Ruoli personalizzati</TableHead>
+                    <TableHead className="py-2.5 px-3 h-auto w-56"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                        Nessun utente trovato
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredUsers.map((u: any) => (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-mono py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={`https://mc-heads.net/avatar/${encodeURIComponent(u.username || "Steve")}/24`}
+                              alt="Head"
+                              className="h-6 w-6 rounded border border-amber-500/30 object-cover shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://minotar.net/helm/Steve/24.png";
+                              }}
+                            />
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-white">{u.username}</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                {u.display_name ?? "-"}
+                              </span>
+                              {activeExpulsionsMap.has(u.id) && (
+                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider w-fit">
+                                  <Skull className="h-3 w-3 animate-pulse" /> Espulso Permanente
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2 px-3">{u.display_name ?? "-"}</TableCell>
-                    <TableCell className="py-2 px-3">
-                      {u.roles?.includes("admin") ? (
-                        <Badge className="bg-primary">Admin</Badge>
-                      ) : (
-                        <Badge variant="secondary">Operatore</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground py-2 px-3">
-                      {u.custom_roles?.length === 0
-                        ? "—"
-                        : u.custom_roles?.map((r: any) => r.name).join(", ")}
-                    </TableCell>
-                    <TableCell className="py-2 px-3">
-                      <div className="flex gap-1 justify-end flex-wrap">
-                        {activeExpulsionsMap.has(u.id) && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="h-8 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
-                            onClick={() => handleRemoveExpulsion(u.id)}
-                          >
-                            <X className="h-3.5 w-3.5 mr-1" /> Rimuovi Espulsione
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2 text-indigo-400 border-indigo-900/40 hover:bg-indigo-950/20 hover:text-indigo-300 font-semibold"
-                          onClick={() => setActivityTarget(u)}
-                        >
-                          <History className="h-3.5 w-3.5 mr-1" /> Attività
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2"
-                          onClick={() => setEditTarget(u)}
-                        >
-                          <Pencil className="h-3 w-3 mr-1" /> Modifica
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2"
-                          onClick={() => setRolesTarget(u)}
-                        >
-                          Ruoli
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2"
-                          onClick={() => setResetTarget(u)}
-                        >
-                          <KeyRound className="h-3 w-3" /> Reset
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title={u.roles?.includes("admin") ? "Rimuovi admin" : "Promuovi ad admin"}
-                          onClick={async () => {
-                            await adminFn({
-                              data: { userId: u.id, admin: !u.roles?.includes("admin") },
-                            });
-                            qc.invalidateQueries({ queryKey: ["panel-users"] });
-                            toast.success("Aggiornato");
-                          }}
-                        >
-                          {u.roles?.includes("admin") ? (
-                            <ShieldOff className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell className="py-2 px-3 font-mono text-xs">
+                          {u.telegram_handle ? (
+                            <span className="text-sky-400 font-semibold">{u.telegram_handle}</span>
                           ) : (
-                            <Shield className="h-4 w-4" />
+                            <span className="text-red-400 text-[11px] italic">Non impostato</span>
                           )}
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            setDeleteConfirm({
-                              isOpen: true,
-                              title: "Elimina utente",
-                              description: `Sei sicuro di voler eliminare DEFINITIVAMENTE l'utente "${u.username}"? Questa azione rimuoverà il suo account di accesso.`,
-                              onConfirm: async () => {
-                                try {
-                                  await delFn({ data: { userId: u.id } });
-                                  qc.invalidateQueries({ queryKey: ["panel-users"] });
-                                  qc.invalidateQueries({ queryKey: ["profiles"] });
-                                  toast.success("Eliminato");
-                                } catch (e: any) {
-                                  try {
-                                    await supabase.from("profiles").delete().eq("id", u.id);
-                                    await supabase.from("user_roles").delete().eq("user_id", u.id);
-                                    await supabase
-                                      .from("user_custom_roles")
-                                      .delete()
-                                      .eq("user_id", u.id);
-                                    await supabase.from("sanctions").delete().eq("user_id", u.id);
-                                    qc.invalidateQueries({ queryKey: ["panel-users"] });
-                                    qc.invalidateQueries({ queryKey: ["profiles"] });
-                                    toast.success("Eliminato definitivamente");
-                                  } catch (err: any) {
-                                    toast.error(err?.message || "Impossibile eliminare l'utente");
-                                  }
-                                }
-                              },
-                            })
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        </TableCell>
+                        <TableCell className="py-2 px-3">
+                          {u.has_employee_access ? (
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                              Abilitato
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/30 text-amber-400 bg-amber-500/10"
+                            >
+                              Cliente / Attesa
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-2 px-3">
+                          {u.show_in_staff_list ? (
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="h-3 w-3 rounded-full shrink-0 border border-white/20"
+                                style={{ backgroundColor: u.staff_color || "#3b82f6" }}
+                              />
+                              <span className="text-xs font-semibold text-slate-200">
+                                Peso: {u.staff_weight ?? 50}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Nascosto</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-2 px-3">
+                          {u.roles?.includes("admin") ? (
+                            <Badge className="bg-primary">Admin</Badge>
+                          ) : (
+                            <Badge variant="secondary">Operatore</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground py-2 px-3">
+                          {u.custom_roles?.length === 0
+                            ? "—"
+                            : u.custom_roles?.map((r: any) => r.name).join(", ")}
+                        </TableCell>
+                        <TableCell className="py-2 px-3">
+                          <div className="flex gap-1 justify-end flex-wrap">
+                            {activeExpulsionsMap.has(u.id) && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+                                onClick={() => handleRemoveExpulsion(u.id)}
+                              >
+                                <X className="h-3.5 w-3.5 mr-1" /> Rimuovi Espulsione
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2 text-indigo-400 border-indigo-900/40 hover:bg-indigo-950/20 hover:text-indigo-300 font-semibold"
+                              onClick={() => setActivityTarget(u)}
+                            >
+                              <History className="h-3.5 w-3.5 mr-1" /> Attività
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => setEditTarget(u)}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" /> Modifica
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => setRolesTarget(u)}
+                            >
+                              Ruoli
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => setResetTarget(u)}
+                            >
+                              <KeyRound className="h-3 w-3" /> Reset
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              title={
+                                u.roles?.includes("admin") ? "Rimuovi admin" : "Promuovi ad admin"
+                              }
+                              onClick={async () => {
+                                await adminFn({
+                                  data: { userId: u.id, admin: !u.roles?.includes("admin") },
+                                });
+                                qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                toast.success("Aggiornato");
+                              }}
+                            >
+                              {u.roles?.includes("admin") ? (
+                                <ShieldOff className="h-4 w-4" />
+                              ) : (
+                                <Shield className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                setDeleteConfirm({
+                                  isOpen: true,
+                                  title: "Elimina utente",
+                                  description: `Sei sicuro di voler eliminare DEFINITIVAMENTE l'utente "${u.username}"? Questa azione rimuoverà il suo account di accesso.`,
+                                  onConfirm: async () => {
+                                    try {
+                                      await delFn({ data: { userId: u.id } });
+                                      qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                      qc.invalidateQueries({ queryKey: ["profiles"] });
+                                      toast.success("Eliminato");
+                                    } catch (e: any) {
+                                      try {
+                                        await supabase.from("profiles").delete().eq("id", u.id);
+                                        await supabase
+                                          .from("user_roles")
+                                          .delete()
+                                          .eq("user_id", u.id);
+                                        await supabase
+                                          .from("user_custom_roles")
+                                          .delete()
+                                          .eq("user_id", u.id);
+                                        await supabase
+                                          .from("sanctions")
+                                          .delete()
+                                          .eq("user_id", u.id);
+                                        qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                        qc.invalidateQueries({ queryKey: ["profiles"] });
+                                        toast.success("Eliminato definitivamente");
+                                      } catch (err: any) {
+                                        toast.error(
+                                          err?.message || "Impossibile eliminare l'utente",
+                                        );
+                                      }
+                                    }
+                                  },
+                                })
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Laptop className="h-5 w-5 text-amber-500" /> Dispositivi e Sessioni Collegate
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Elenco di tutti i dispositivi attualmente connessi e autorizzati ad accedere
+              all'account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-2.5 px-3">Utente</TableHead>
+                  <TableHead className="py-2.5 px-3">Dispositivo / Browser</TableHead>
+                  <TableHead className="py-2.5 px-3">Indirizzo IP</TableHead>
+                  <TableHead className="py-2.5 px-3">Stato Sessione</TableHead>
+                  <TableHead className="py-2.5 px-3 text-right">Azione</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {devices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      Nessun dispositivo attualmente collegato.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : (
+                  devices.map((dev: any) => (
+                    <TableRow key={dev.id}>
+                      <TableCell className="font-semibold py-3 px-3">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`https://mc-heads.net/avatar/${encodeURIComponent(dev.username || "Steve")}/24`}
+                            alt="Skin"
+                            className="h-6 w-6 rounded border border-amber-500/30 object-cover shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "https://minotar.net/helm/Steve/24.png";
+                            }}
+                          />
+                          <span>{dev.displayName || dev.username}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs py-3 px-3 text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <Laptop className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{dev.browser}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs py-3 px-3">
+                        <div className="flex items-center gap-1">
+                          <Wifi className="h-3 w-3 text-amber-500" />
+                          <span>{dev.ipAddress}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-3">
+                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">
+                          Attiva Ora
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-3 px-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-7 px-2.5 text-xs font-semibold"
+                          onClick={() => handleDisconnect(dev.userId, dev.id)}
+                        >
+                          <Unlink className="h-3 w-3 mr-1" /> Disconnetti
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {createOpen && (
         <CreateUserDialog
@@ -427,9 +619,14 @@ function UsersPage() {
 
 function CreateUserDialog({ onClose, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [hasEmployeeAccess, setHasEmployeeAccess] = useState(true);
+  const [showInStaffList, setShowInStaffList] = useState(true);
+  const [staffWeight, setStaffWeight] = useState("50");
+  const [staffColor, setStaffColor] = useState("#3b82f6");
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Nuovo utente</DialogTitle>
         </DialogHeader>
@@ -445,7 +642,12 @@ function CreateUserDialog({ onClose, onSubmit }: any) {
                 username: String(fd.get("username")),
                 password: String(fd.get("password")),
                 displayName: String(fd.get("displayName") || ""),
+                telegramHandle: String(fd.get("telegramHandle") || ""),
                 isAdmin: fd.get("isAdmin") === "on",
+                hasEmployeeAccess,
+                showInStaffList,
+                staffWeight: Number(staffWeight) || 50,
+                staffColor,
               });
               onClose();
             } catch (err: any) {
@@ -456,20 +658,99 @@ function CreateUserDialog({ onClose, onSubmit }: any) {
           }}
         >
           <div>
-            <Label>Username *</Label>
-            <Input name="username" required minLength={3} pattern="[a-zA-Z0-9_.\-]+" />
+            <Label>Username Minecraft *</Label>
+            <Input
+              name="username"
+              required
+              minLength={3}
+              pattern="[a-zA-Z0-9_.\-]+"
+              placeholder="es. Mario"
+            />
           </div>
           <div>
             <Label>Nome visualizzato</Label>
-            <Input name="displayName" />
+            <Input name="displayName" placeholder="es. Mario Rossi" />
+          </div>
+          <div>
+            <Label>Username Telegram (@)</Label>
+            <Input name="telegramHandle" placeholder="@username_telegram" />
           </div>
           <div>
             <Label>Password iniziale *</Label>
             <Input name="password" type="password" required minLength={6} />
           </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="isAdmin" name="isAdmin" />
-            <Label htmlFor="isAdmin">Amministratore</Label>
+
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isAdmin"
+                name="isAdmin"
+                className="rounded border-slate-700"
+              />
+              <Label htmlFor="isAdmin">Ruolo Amministratore Totale</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="hasEmployeeAccess"
+                checked={hasEmployeeAccess}
+                onChange={(e) => setHasEmployeeAccess(e.target.checked)}
+                className="rounded border-slate-700"
+              />
+              <Label htmlFor="hasEmployeeAccess" className="text-emerald-400 font-medium">
+                Abilita Accesso al Pannello Dipendenti
+              </Label>
+            </div>
+
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="showInStaffList"
+                  checked={showInStaffList}
+                  onChange={(e) => setShowInStaffList(e.target.checked)}
+                  className="rounded border-slate-700"
+                />
+                <Label htmlFor="showInStaffList" className="font-semibold text-primary">
+                  Mostra nella Ciurma (Lista Staff)
+                </Label>
+              </div>
+
+              {showInStaffList && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <Label className="text-xs">Peso Gerarchico (Ordine)</Label>
+                    <Input
+                      type="number"
+                      value={staffWeight}
+                      onChange={(e) => setStaffWeight(e.target.value)}
+                      placeholder="es. 100 per Capitano, 50 Croupier"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Più è alto, più appare in alto nella lista staff.
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Colore Distintivo / Badge</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={staffColor}
+                        onChange={(e) => setStaffColor(e.target.value)}
+                        className="h-9 w-12 rounded cursor-pointer border border-slate-700 bg-slate-950"
+                      />
+                      <Input
+                        value={staffColor}
+                        onChange={(e) => setStaffColor(e.target.value)}
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </form>
         <DialogFooter>
@@ -577,10 +858,15 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState(user.display_name ?? "");
+  const [telegramHandle, setTelegramHandle] = useState(user.telegram_handle ?? "");
+  const [hasEmployeeAccess, setHasEmployeeAccess] = useState(user.has_employee_access ?? true);
+  const [showInStaffList, setShowInStaffList] = useState(user.show_in_staff_list ?? true);
+  const [staffWeight, setStaffWeight] = useState(String(user.staff_weight ?? 50));
+  const [staffColor, setStaffColor] = useState(user.staff_color ?? "#3b82f6");
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Modifica utente — {user.username}</DialogTitle>
         </DialogHeader>
@@ -594,6 +880,11 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
               await onSubmit({
                 username: username,
                 displayName: displayName,
+                telegramHandle: telegramHandle,
+                hasEmployeeAccess: hasEmployeeAccess,
+                showInStaffList: showInStaffList,
+                staffWeight: Number(staffWeight) || 50,
+                staffColor: staffColor,
               });
               onClose();
             } catch (err: any) {
@@ -604,7 +895,7 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
           }}
         >
           <div>
-            <Label>Username *</Label>
+            <Label>Username Minecraft *</Label>
             <Input
               name="username"
               required
@@ -621,6 +912,78 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
+          </div>
+          <div>
+            <Label>Username Telegram (@)</Label>
+            <Input
+              name="telegramHandle"
+              placeholder="@username_telegram"
+              value={telegramHandle}
+              onChange={(e) => setTelegramHandle(e.target.value)}
+            />
+          </div>
+
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="editHasEmployeeAccess"
+                checked={hasEmployeeAccess}
+                onChange={(e) => setHasEmployeeAccess(e.target.checked)}
+                className="rounded border-slate-700"
+              />
+              <Label htmlFor="editHasEmployeeAccess" className="text-emerald-400 font-medium">
+                Abilita Accesso al Pannello Dipendenti
+              </Label>
+            </div>
+
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="editShowInStaffList"
+                  checked={showInStaffList}
+                  onChange={(e) => setShowInStaffList(e.target.checked)}
+                  className="rounded border-slate-700"
+                />
+                <Label htmlFor="editShowInStaffList" className="font-semibold text-primary">
+                  Mostra nella Ciurma (Lista Staff)
+                </Label>
+              </div>
+
+              {showInStaffList && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <Label className="text-xs">Peso Gerarchico (Ordine)</Label>
+                    <Input
+                      type="number"
+                      value={staffWeight}
+                      onChange={(e) => setStaffWeight(e.target.value)}
+                      placeholder="es. 100 per Capitano, 50 Croupier"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Maggiore peso = Posizione più in alto nella ciurma.
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Colore Ruolo / Distintivo</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={staffColor}
+                        onChange={(e) => setStaffColor(e.target.value)}
+                        className="h-9 w-12 rounded cursor-pointer border border-slate-700 bg-slate-950"
+                      />
+                      <Input
+                        value={staffColor}
+                        onChange={(e) => setStaffColor(e.target.value)}
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </form>
         <DialogFooter>
