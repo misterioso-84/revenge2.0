@@ -63,19 +63,44 @@ function RolesPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Ruoli & Permessi</h1>
-          <p className="text-muted-foreground">Crea ruoli personalizzati con permessi granulari</p>
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
         </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          DEFINIZIONE RUOLI PERSONALIZZATI, PESO GERARCHICO E PERMESSI STAFF
+        </p>
+      </div>
+
+      {/* Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-extrabold uppercase text-white tracking-wider">
+            RUOLI & PERMESSI
+          </h2>
+          <p className="text-xs text-slate-400">
+            Crea e gestisci i ruoli personalizzati con permessi e colori identificativi
+          </p>
+        </div>
+
         <Button
+          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 w-full sm:w-auto"
           onClick={() => {
             setEditing(null);
             setOpen(true);
           }}
         >
-          <Plus className="h-4 w-4" /> Nuovo ruolo
+          <Plus className="h-4 w-4 mr-1.5" /> Nuovo ruolo
         </Button>
       </div>
 
@@ -89,10 +114,7 @@ function RolesPage() {
         )}
         {roles.map((r: any) => (
           <Card key={r.id} className="relative overflow-hidden border border-slate-800">
-            <div
-              className="h-1.5 w-full"
-              style={{ backgroundColor: r.staff_color || "#3b82f6" }}
-            />
+            <div className="h-1.5 w-full" style={{ backgroundColor: r.staff_color || "#3b82f6" }} />
             <CardContent className="pt-5 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -233,7 +255,9 @@ function RoleDialog({ role, onClose }: any) {
                     onChange={(e) => setStaffWeight(Number(e.target.value))}
                     className="bg-background"
                   />
-                  <span className="text-[10px] text-muted-foreground">100 = Capitano, 50 = Operatore</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    100 = Capitano, 50 = Operatore
+                  </span>
                 </div>
 
                 <div>

@@ -520,51 +520,65 @@ function EventiPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Event Banner & Top Stats */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-900/40 via-slate-900 to-slate-950 border border-amber-500/30 p-6 shadow-2xl text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold px-3 py-1 text-xs uppercase tracking-widest flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Gran Galà Casinò Revenge
-              </Badge>
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-xs font-semibold">
-                Esclusivo Staff Casinò
-              </Badge>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-amber-100 flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-amber-400" /> Corsa dei Cavalli 2026
-            </h1>
-            <p className="text-slate-300 text-sm max-w-2xl">
-              Gestione completa per lo staff: Qualificazioni 10 giri (01/08 - 04/08), Gran Finale 15
-              giri (05/08), Biglietteria e Banco Scommesse Casinò.
-            </p>
-          </div>
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-900/80 backdrop-blur border border-amber-500/20 p-3.5 rounded-xl">
-            <div className="text-xs">
-              <div className="text-slate-400 font-medium uppercase tracking-wider">
-                Fase Corrente Evento
-              </div>
-              <div className="text-base font-bold text-amber-300 capitalize flex items-center gap-1.5 mt-0.5">
-                <Flag className="h-4 w-4 text-amber-400" /> {eventPhase}
-              </div>
-            </div>
-            {canWrite && (
-              <Select value={eventPhase} onValueChange={(val: any) => setEventPhase(val)}>
-                <SelectTrigger className="w-36 bg-slate-800 border-slate-700 text-xs text-white h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="qualificazioni">Qualificazioni</SelectItem>
-                  <SelectItem value="finale">Gran Finale</SelectItem>
-                  <SelectItem value="concluso">Concluso</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
         </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          GRAN GALÀ CORSA DEI CAVALLI, QUALIFICAZIONI E SCOMMESSE
+        </p>
+      </div>
+
+      {/* Event Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-2 flex-wrap">
+            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 font-bold px-3 py-1 text-xs uppercase tracking-widest flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Gran Galà Casinò
+            </Badge>
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs font-bold">
+              Esclusivo Staff Casinò
+            </Badge>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center justify-center lg:justify-start gap-3 uppercase">
+            <Trophy className="h-7 w-7 text-amber-400" /> CORSA DEI CAVALLI 2026
+          </h2>
+          <p className="text-slate-400 text-xs max-w-2xl">
+            Gestione completa per lo staff: Qualificazioni 10 giri, Gran Finale 15 giri, Biglietteria e Banco Scommesse Casinò.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 bg-[#0a0b10] border border-slate-800 p-3.5 rounded-xl shadow-inner">
+          <div className="text-xs text-center sm:text-left">
+            <div className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+              Fase Corrente Evento
+            </div>
+            <div className="text-sm font-extrabold text-amber-400 capitalize flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+              {eventPhase === "qualificazioni" ? "🏁 Qualificazioni" : "🏆 Gran Finale"}
+            </div>
+          </div>
+          <div className="h-8 w-[1px] bg-slate-800 hidden sm:block" />
+          <Select value={eventPhase} onValueChange={(val: any) => setEventPhase(val)}>
+            <SelectTrigger className="w-40 bg-[#12141c] border-slate-800 text-white text-xs font-bold rounded-xl h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#12141c] border-slate-800 text-white">
+              <SelectItem value="qualificazioni">Qualificazioni</SelectItem>
+              <SelectItem value="finale">Gran Finale</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
         {/* Quick KPI Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
@@ -604,7 +618,6 @@ function EventiPage() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Main Feature Tabs */}
       <Tabs defaultValue="qualificazioni" className="space-y-6">

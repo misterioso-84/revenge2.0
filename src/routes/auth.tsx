@@ -45,8 +45,24 @@ function AuthPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session?.user?.id) {
+        const [{ data: prof }, { data: roles }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("has_employee_access")
+            .eq("id", data.session.user.id)
+            .maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", data.session.user.id),
+        ]);
+        const isEmployeeOrAdmin =
+          prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
+        if (isEmployeeOrAdmin) {
+          navigate({ to: "/dashboard" });
+        } else {
+          navigate({ to: "/" });
+        }
+      }
     });
   }, [navigate, mounted]);
 
@@ -61,13 +77,32 @@ function AuthPage() {
         setPassword("");
         return;
       }
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authRes, error } = await supabase.auth.signInWithPassword({
         email: usernameToEmail(username),
         password,
       });
       if (error) throw error;
-      toast.success("Accesso effettuato");
-      navigate({ to: "/dashboard" });
+      toast.success("Accesso effettuato con successo");
+
+      if (authRes.user?.id) {
+        const [{ data: prof }, { data: roles }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("has_employee_access")
+            .eq("id", authRes.user.id)
+            .maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", authRes.user.id),
+        ]);
+        const isEmployeeOrAdmin =
+          prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
+        if (isEmployeeOrAdmin) {
+          navigate({ to: "/dashboard" });
+        } else {
+          navigate({ to: "/" });
+        }
+      } else {
+        navigate({ to: "/" });
+      }
     } catch (err: any) {
       toast.error(err?.message ?? "Errore di accesso");
     } finally {

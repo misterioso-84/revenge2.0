@@ -274,45 +274,55 @@ function CongediPage() {
   if (!user) return null;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-          <Palmtree className="h-9 w-9 text-amber-500 animate-pulse" /> Gestione Congedi & Ferie
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
         </h1>
-        <p className="text-slate-400 mt-1">
-          Pianifica le tue assenze e monitora lo stato delle approvazioni dello staff.
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+        </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          RICHIESTA E APPROVAZIONE CONGEDI, FERIE E ASSENZE STAFF
         </p>
       </div>
 
-      {/* Tabs Switcher - Hidden if the user doesn't have permissions */}
+      {/* Tabs Switcher */}
       {canGestisciCongedi && (
-        <div className="flex border-b border-slate-800 gap-6 text-sm mb-6">
-          <button
-            onClick={() => setActiveTab("miei")}
-            className={`pb-3 font-semibold uppercase tracking-wider text-xs transition-all ${
-              activeTab === "miei"
-                ? "border-b-2 border-amber-500 text-amber-500"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            I miei Congedi
-          </button>
-          <button
-            onClick={() => setActiveTab("gestione")}
-            className={`pb-3 font-semibold uppercase tracking-wider text-xs transition-all flex items-center gap-1.5 ${
-              activeTab === "gestione"
-                ? "border-b-2 border-amber-500 text-amber-500"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Gestione Richieste Staff
-            {pendingRequests.length > 0 && (
-              <Badge className="bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-[10px] px-1.5 py-0.2 ml-1">
-                {pendingRequests.length}
-              </Badge>
-            )}
-          </button>
+        <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-2 shadow-xl">
+          <div className="bg-[#0a0b10] border border-slate-800 p-1 rounded-xl flex items-center gap-1">
+            <button
+              onClick={() => setActiveTab("miei")}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all ${
+                activeTab === "miei"
+                  ? "bg-amber-500 text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              I miei Congedi
+            </button>
+            <button
+              onClick={() => setActiveTab("gestione")}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                activeTab === "gestione"
+                  ? "bg-amber-500 text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Gestione Richieste Staff
+              {pendingRequests.length > 0 && (
+                <Badge className="bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0.2">
+                  {pendingRequests.length}
+                </Badge>
+              )}
+            </button>
+          </div>
         </div>
       )}
 

@@ -218,36 +218,60 @@ function UsersPage() {
   }, [users, search]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Utenti & Dispositivi</h1>
-          <p className="text-muted-foreground">Gestione accessi, ruoli e sessioni collegate</p>
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
         </div>
-        {activeTab === "utenti" && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> Nuovo utente
-          </Button>
-        )}
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          GESTIONE UTENTI, ACCESSI STAFF, DISPOSITIVI E SESSIONI
+        </p>
       </div>
 
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <Button
-          variant={activeTab === "utenti" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setActiveTab("utenti")}
-          className="text-xs font-semibold"
-        >
-          Gestione Utenti ({users.length})
-        </Button>
-        <Button
-          variant={activeTab === "dispositivi" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setActiveTab("dispositivi")}
-          className="text-xs font-semibold flex items-center gap-1.5"
-        >
-          <Laptop className="h-3.5 w-3.5" /> Dispositivi e Sessioni
-        </Button>
+      {/* Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-[#0a0b10] border border-slate-800 p-1 rounded-xl flex items-center gap-1 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab("utenti")}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all ${
+                activeTab === "utenti"
+                  ? "bg-amber-500 text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Gestione Utenti ({users.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("dispositivi")}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === "dispositivi"
+                  ? "bg-amber-500 text-slate-950 shadow-md font-black"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Laptop className="h-3.5 w-3.5" /> Sessioni & Dispositivi
+            </button>
+          </div>
+
+          {activeTab === "utenti" && (
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 w-full sm:w-auto"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Nuovo utente
+            </Button>
+          )}
+        </div>
       </div>
 
       {activeTab === "utenti" ? (

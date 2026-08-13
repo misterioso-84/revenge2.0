@@ -129,115 +129,155 @@ function CitizensPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold">Cittadini</h1>
-          <p className="text-muted-foreground">Anagrafica dei clienti del casinò</p>
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
         </div>
-        {canWrite && (
-          <Button
-            onClick={() => {
-              if (createdTodayCount >= 5) {
-                toast.error(
-                  "Limite giornaliero raggiunto: non puoi creare più di 5 cittadini al giorno nella sezione Cittadini!",
-                  { duration: 5000 },
-                );
-                return;
-              }
-              setEditing(null);
-              setOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> Nuovo cittadino
-          </Button>
-        )}
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          ANAGRAFICA CITTAGINI, MEMBERSHIP E STORICO OPERAZIONI
+        </p>
       </div>
 
-      <Input
-        placeholder="Cerca per nome…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-md"
-      />
+      {/* Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold flex items-center justify-center shrink-0">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold uppercase text-white tracking-wider">
+              ANAGRAFICA CITTAGINI
+            </h2>
+            <p className="text-xs text-slate-400">
+              Gestione registro clienti, livello di membership e note dedicate
+            </p>
+          </div>
+        </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 bg-[#0a0b10] border border-slate-800 rounded-xl px-3.5 py-2 w-full sm:w-64 shadow-inner">
+            <Search className="h-4 w-4 text-amber-400 shrink-0" />
+            <Input
+              placeholder="Cerca per nome…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-0 bg-transparent text-white p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-500 text-xs font-medium"
+            />
+          </div>
+
+          {canWrite && (
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 shrink-0"
+              onClick={() => {
+                if (createdTodayCount >= 5) {
+                  toast.error(
+                    "Limite giornaliero raggiunto: non puoi creare più di 5 cittadini al giorno nella sezione Cittadini!",
+                    { duration: 5000 },
+                  );
+                  return;
+                }
+                setEditing(null);
+                setOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Nuovo cittadino
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl overflow-hidden">
+        <Table>
+          <TableHeader className="bg-[#0a0b10] border-b border-slate-800">
+            <TableRow className="border-slate-800 hover:bg-transparent">
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                Nome Cittadino
+              </TableHead>
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                Membership
+              </TableHead>
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5 w-36 text-right">
+                Azione
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 && (
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Membership</TableHead>
-                <TableHead className="w-36"></TableHead>
+                <TableCell colSpan={3} className="text-center text-slate-400 py-8 text-xs font-medium">
+                  Nessun cittadino trovato.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    Nessun cittadino
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.full_name}</TableCell>
-                  <TableCell>
-                    <MembershipBadge tier={c.membership} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-end">
-                      {isAdmin && (
+            )}
+            {filtered.map((c) => (
+              <TableRow key={c.id} className="border-b border-slate-800/60 hover:bg-[#0a0b10]/60 transition-colors">
+                <TableCell className="font-bold text-white text-sm py-3.5">{c.full_name}</TableCell>
+                <TableCell className="py-3.5">
+                  <MembershipBadge tier={c.membership} />
+                </TableCell>
+                <TableCell className="py-3.5">
+                  <div className="flex gap-1 justify-end">
+                    {isAdmin && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setHistoryCitizen(c);
+                          setHistoryOpen(true);
+                        }}
+                        title="Storico Operazioni"
+                        className="h-8 w-8 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-xl"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canWrite && (
+                      <>
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl"
                           onClick={() => {
-                            setHistoryCitizen(c);
-                            setHistoryOpen(true);
+                            setEditing(c);
+                            setOpen(true);
                           }}
-                          title="Storico Operazioni"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
-                          <History className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      )}
-                      {canWrite && (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditing(c);
-                              setOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() =>
-                              setDeleteConfirm({
-                                isOpen: true,
-                                title: "Elimina cittadino",
-                                description: `Sei sicuro di voler eliminare DEFINITIVAMENTE il cittadino "${c.full_name}"? Tutti i dati e lo storico collegati verranno persi.`,
-                                onConfirm: () => del.mutate(c.id),
-                              })
-                            }
-                            className="text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl"
+                          onClick={() =>
+                            setDeleteConfirm({
+                              isOpen: true,
+                              title: "Elimina cittadino",
+                              description: `Sei sicuro di voler eliminare DEFINITIVAMENTE il cittadino "${c.full_name}"? Tutti i dati e lo storico collegati verranno persi.`,
+                              onConfirm: () => del.mutate(c.id),
+                            })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {open && (
         <CitizenDialog

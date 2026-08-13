@@ -4,14 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Send, LogOut, CheckCircle2, ArrowRight, ExternalLink, ShieldCheck, User, Globe } from "lucide-react";
+import {
+  Send,
+  LogOut,
+  CheckCircle2,
+  ArrowRight,
+  ExternalLink,
+  ShieldCheck,
+  User,
+  Globe,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/start")({
   head: () => ({
     meta: [
       { title: "Procedura di Associazione Telegram — Casinò Revenge" },
-      { name: "description", content: "Procedura ufficiale per associare il tuo nickname Minecraft all'account Telegram del Casinò Revenge." },
+      {
+        name: "description",
+        content:
+          "Procedura ufficiale per associare il tuo nickname Minecraft all'account Telegram del Casinò Revenge.",
+      },
     ],
   }),
   component: StartPage,
@@ -172,7 +185,8 @@ function StartPage() {
                   Collega il tuo Nickname Minecraft
                 </CardTitle>
                 <CardDescription className="text-slate-400 text-xs max-w-md mx-auto">
-                  Nessun profilo risulta attualmente collegato. Segui i passaggi per associare il tuo account Telegram.
+                  Nessun profilo risulta attualmente collegato. Segui i passaggi per associare il
+                  tuo account Telegram.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -189,7 +203,8 @@ function StartPage() {
                       Registrazione sul Sito
                     </strong>
                     <p className="text-slate-400 leading-relaxed">
-                      Clicca su <strong>Registrati</strong> nella Home del Casinò ed inserisci il tuo nickname Minecraft esatto.
+                      Clicca su <strong>Registrati</strong> nella Home del Casinò ed inserisci il
+                      tuo nickname Minecraft esatto.
                     </p>
                   </div>
                 </div>
@@ -203,7 +218,9 @@ function StartPage() {
                       Genera Comando /associa
                     </strong>
                     <p className="text-slate-400 leading-relaxed">
-                      Nel Passo 2 della registrazione, clicca su <strong>'Genera Comando /associa'</strong> per ottenere il tuo codice personale di verifica.
+                      Nel Passo 2 della registrazione, clicca su{" "}
+                      <strong>'Genera Comando /associa'</strong> per ottenere il tuo codice
+                      personale di verifica.
                     </p>
                   </div>
                 </div>
@@ -217,7 +234,10 @@ function StartPage() {
                       Invia il Comando al Bot Telegram
                     </strong>
                     <p className="text-slate-400 leading-relaxed">
-                      Apri <strong className="text-sky-400">@CasinoRevengeBot</strong> su Telegram ed incolla il comando (es. <code className="text-amber-300 font-bold">/associa 849201</code>). Il sito si aggiornerà automaticamente!
+                      Apri <strong className="text-sky-400">@CasinoRevengeBot</strong> su Telegram
+                      ed incolla il comando (es.{" "}
+                      <code className="text-amber-300 font-bold">/associa 849201</code>). Il sito si
+                      aggiornerà automaticamente!
                     </p>
                   </div>
                 </div>
@@ -230,7 +250,8 @@ function StartPage() {
                   rel="noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-bold h-11 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-sky-500/20 transition-all"
                 >
-                  <Send className="h-4 w-4" /> Apri @CasinoRevengeBot su Telegram <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                  <Send className="h-4 w-4" /> Apri @CasinoRevengeBot su Telegram{" "}
+                  <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                 </a>
 
                 <Link to="/">

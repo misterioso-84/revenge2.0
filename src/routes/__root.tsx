@@ -134,6 +134,33 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { useAuth } from "@/hooks/useAuth";
+import { TelegramVerificationGuard } from "@/components/TelegramVerificationGuard";
+import { useQueryClient } from "@tanstack/react-query";
+
+function GlobalTelegramEnforcer() {
+  const { user, profile, loading } = useAuth();
+  const qc = useQueryClient();
+
+  if (loading || !user || !profile) return null;
+
+  const isTelegramMissing =
+    !profile.telegram_connected ||
+    !profile.telegram_handle ||
+    profile.telegram_handle.trim() === "";
+
+  if (!isTelegramMissing) return null;
+
+  const signOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  };
+
+  return <TelegramVerificationGuard profile={profile} signOut={signOut} />;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
@@ -149,6 +176,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <GlobalTelegramEnforcer />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

@@ -195,21 +195,52 @@ function DashboardPage() {
 
   return (
     <div className="space-y-10 py-2">
-      {/* Welcome Hero */}
-      <div className="rounded-2xl border bg-card text-card-foreground p-8 relative overflow-hidden shadow-sm">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 h-64 w-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <Badge className="bg-primary/10 hover:bg-primary/15 text-primary border border-primary/20 hover:border-primary/30">
-            Casino Revenge
-          </Badge>
-          <h1 className="text-4xl font-extrabold tracking-tight">
-            Benvenuto, <span className="text-primary">{displayName}</span>!
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Siamo felici di riaverti qui. Questa è la tua dashboard personalizzata. Di seguito trovi
-            l'elenco di tutte le sezioni di cui hai l'autorizzazione all'uso, con il dettaglio delle
-            tue abilitazioni attive.
+      {/* Title Section (Matching Image 1 Style) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+        </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          PANORAMICA E INFORMAZIONI SULLA TUA ESPERIENZA DI GIOCO
+        </p>
+      </div>
+
+      {/* User Greeting Block */}
+      <div className="rounded-2xl border border-slate-800/90 bg-[#12141c] p-6 relative overflow-hidden shadow-2xl flex flex-col sm:flex-row items-center gap-6">
+        <div className="h-20 w-20 rounded-2xl bg-[#0a0b10] border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-inner">
+          <img
+            src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/64`}
+            alt="Avatar Minecraft"
+            className="h-16 w-16 object-contain rounded-xl drop-shadow-md"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/64.png";
+            }}
+          />
+        </div>
+
+        <div className="space-y-1 text-center sm:text-left flex-1">
+          <div className="text-xl md:text-2xl font-black text-white">
+            Buongiorno, <span className="text-amber-400">{displayName}</span>!
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
+            Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle
+            sezioni a te abilitate con il dettaglio delle tue funzioni operative.
           </p>
+        </div>
+
+        <div className="shrink-0 flex items-center gap-2 bg-[#0a0b10] border border-slate-800 px-3.5 py-2 rounded-xl">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+            {isAdmin ? "Amministratore" : "Collaboratore Attivo"}
+          </span>
         </div>
       </div>
 
@@ -219,8 +250,8 @@ function DashboardPage() {
       {/* Features Section */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Le tue funzionalità abilitate</h2>
-          <p className="text-muted-foreground mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">Le tue funzionalità abilitate</h2>
+          <p className="text-slate-400 text-xs mt-1">
             Seleziona una sezione per iniziare a lavorare
           </p>
         </div>
@@ -241,30 +272,30 @@ function DashboardPage() {
             return (
               <Card
                 key={f.to}
-                className="group hover:border-primary/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md"
+                className="group bg-[#12141c] border-slate-800/90 hover:border-amber-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl"
               >
                 <CardHeader className="space-y-4 pb-4">
                   <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-110">
+                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
                       <Icon className="h-5 w-5" />
                     </div>
                     {f.adminOnly && (
-                      <Badge variant="destructive" className="text-[10px] uppercase font-semibold">
+                      <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-[10px] uppercase font-bold">
                         Amministratore
                       </Badge>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                    <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
                       {f.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">{f.description}</CardDescription>
+                    <CardDescription className="line-clamp-2 text-slate-400 text-xs">{f.description}</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-0 flex-1 flex flex-col justify-between">
                   {/* Active Permissions List */}
-                  <div className="space-y-2 border-t pt-4">
-                    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="space-y-2 border-t border-slate-800/80 pt-4">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Le tue abilitazioni:
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -272,8 +303,7 @@ function DashboardPage() {
                         activePerms.map((label, idx) => (
                           <Badge
                             key={idx}
-                            variant="secondary"
-                            className="text-[10px] px-2 py-0.5 font-medium"
+                            className="bg-[#0a0b10] border-slate-800 text-slate-300 text-[10px] px-2 py-0.5 font-semibold"
                           >
                             {label}
                           </Badge>
@@ -281,7 +311,7 @@ function DashboardPage() {
                       ) : (
                         <Badge
                           variant="outline"
-                          className="text-[10px] px-2 py-0.5 text-muted-foreground"
+                          className="border-slate-800 text-[10px] px-2 py-0.5 text-slate-500"
                         >
                           Accesso base consentito
                         </Badge>

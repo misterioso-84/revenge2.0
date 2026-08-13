@@ -87,23 +87,56 @@ function ConversionsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold">Conversioni</h1>
-        <p className="text-muted-foreground mt-1">
-          Soldi ⇄ Dobloni · 1€ = 10 ⛃ · da Dobloni si applica il 75%
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+        </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          CONVERSIONI VALUTA EURO ⇄ DOBLONI E LIMITI DI CASSA
         </p>
       </div>
 
       <Tabs
         value={activeTab || (canExec ? "convert" : canHist ? "history" : "limits")}
         onValueChange={setActiveTab}
+        className="space-y-6"
       >
-        <TabsList>
-          {canExec && <TabsTrigger value="convert">Nuova conversione</TabsTrigger>}
-          {canHist && <TabsTrigger value="history">Storico</TabsTrigger>}
-          <TabsTrigger value="limits">Limiti {isAdmin ? "(modifica)" : ""}</TabsTrigger>
-        </TabsList>
+        <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-3 shadow-xl">
+          <TabsList className="bg-[#0a0b10] border border-slate-800 p-1 rounded-xl w-full flex flex-wrap h-auto gap-1">
+            {canExec && (
+              <TabsTrigger
+                value="convert"
+                className="flex-1 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider text-slate-400 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-md transition-all"
+              >
+                Nuova conversione
+              </TabsTrigger>
+            )}
+            {canHist && (
+              <TabsTrigger
+                value="history"
+                className="flex-1 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider text-slate-400 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-md transition-all"
+              >
+                Storico
+              </TabsTrigger>
+            )}
+            <TabsTrigger
+              value="limits"
+              className="flex-1 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider text-slate-400 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-md transition-all"
+            >
+              Limiti {isAdmin ? "(modifica)" : ""}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {canExec && (
           <TabsContent value="convert" className="mt-6">

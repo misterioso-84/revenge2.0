@@ -32,7 +32,8 @@ export const checkCitizenEligibility = createServerFn({ method: "POST" })
     if (isAlreadyTaken) {
       return {
         eligible: false,
-        message: "Questo nickname Minecraft è già stato associato ed appartiene già a un altro account (non sono consentiti account doppi).",
+        message:
+          "Questo nickname Minecraft è già stato associato ed appartiene già a un altro account (non sono consentiti account doppi).",
       };
     }
 
@@ -65,7 +66,8 @@ export const checkCitizenEligibility = createServerFn({ method: "POST" })
 
     return {
       eligible: false,
-      message: "Questo nickname Minecraft non è stato ancora aggiunto nella sezione dipendenti del pannello. Chiedi ad un amministratore o alla Direzione di inserirti.",
+      message:
+        "Questo nickname Minecraft non è stato ancora aggiunto nella sezione dipendenti del pannello. Chiedi ad un amministratore o alla Direzione di inserirti.",
     };
   });
 
@@ -111,7 +113,9 @@ export const registerPublicUser = createServerFn({ method: "POST" })
         (p.display_name && p.display_name.trim().toLowerCase() === cleanNick),
     );
     if (usernameTaken) {
-      throw new Error("Questo nickname Minecraft è già stato associato ad un altro account (non sono ammessi account doppi).");
+      throw new Error(
+        "Questo nickname Minecraft è già stato associato ad un altro account (non sono ammessi account doppi).",
+      );
     }
 
     // 3. Employee Section Check: Must exist in citizens or employee list in panel
@@ -129,7 +133,9 @@ export const registerPublicUser = createServerFn({ method: "POST" })
     });
 
     if (!citizenMatch && !employeeMatch) {
-      throw new Error("Questo nickname Minecraft non è stato ancora aggiunto nella sezione dipendenti del pannello.");
+      throw new Error(
+        "Questo nickname Minecraft non è stato ancora aggiunto nella sezione dipendenti del pannello.",
+      );
     }
 
     // Format telegram handle with @
@@ -184,7 +190,8 @@ export const requestTelegramVerificationCode = createServerFn({ method: "POST" }
   .inputValidator((d: { userId?: string; telegramHandle?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getTelegramBotInfo, fetchTelegramUpdates, registerPendingCode } = await import("@/lib/telegram.server");
+    const { getTelegramBotInfo, fetchTelegramUpdates, registerPendingCode } =
+      await import("@/lib/telegram.server");
 
     // Flush any pending updates
     await fetchTelegramUpdates().catch(() => {});
@@ -249,7 +256,8 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
   .inputValidator((d: { code: string; userId?: string; telegramHandle?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { fetchTelegramUpdates, getCachedCodeVerification } = await import("@/lib/telegram.server");
+    const { fetchTelegramUpdates, getCachedCodeVerification } =
+      await import("@/lib/telegram.server");
 
     const cleanCode = (data.code || "").trim();
 
@@ -302,7 +310,7 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
 
     if (!realHandle) {
       throw new Error(
-        `Invia il comando '/associa ${cleanCode}' in chat al Bot Telegram @CasinoRevengeBot per completare l'associazione.`
+        `Invia il comando '/associa ${cleanCode}' in chat al Bot Telegram @CasinoRevengeBot per completare l'associazione.`,
       );
     }
 
@@ -396,22 +404,22 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
       .map((ucr: any) => customRoleMap.get(ucr.custom_role_id))
       .filter(Boolean); // Filters out any deleted role!
 
-    // If system admin, include admin role definition if enabled
-    if (isAdmin) {
+    // If user is system admin and has no custom role, optionally fallback to admin role if show_in_staff_list is enabled
+    if (isAdmin && assignedRoles.length === 0) {
       assignedRoles.push({
         id: "admin-role",
-        name: "Amministratore / Capitano",
+        name: "Amministratore",
         show_in_staff_list: true,
         staff_weight: 100,
         staff_color: "#f59e0b",
       });
     }
 
-    // Filter by role: ONLY include users if at least one assigned role exists AND has show_in_staff_list === true!
+    // Filter by roles that have show_in_staff_list === true
     const visibleRoles = assignedRoles.filter((r: any) => r && r.show_in_staff_list === true);
 
     if (visibleRoles.length === 0) {
-      // User has NO existing role or their assigned roles are deleted / hidden -> EXCLUDE COMPLETELY!
+      // User has no assigned role with show_in_staff_list enabled -> exclude
       continue;
     }
 
@@ -419,11 +427,17 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
     visibleRoles.sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
     const topRole = visibleRoles[0];
 
+    // Clean and format Telegram handle
+    let formattedTg = p.telegram_handle ? String(p.telegram_handle).trim() : null;
+    if (formattedTg && !formattedTg.startsWith("@")) {
+      formattedTg = `@${formattedTg}`;
+    }
+
     staffMembers.push({
       id: p.id,
       username: p.username || "StaffMember",
       displayName: p.display_name || p.username,
-      telegramHandle: p.telegram_handle || null,
+      telegramHandle: formattedTg,
       roleName: topRole.name,
       roleId: topRole.id,
       staffWeight: topRole.staff_weight ?? 50,

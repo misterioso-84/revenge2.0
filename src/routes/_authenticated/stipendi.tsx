@@ -690,38 +690,50 @@ export function StipendiPage() {
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-amber-500 uppercase font-bold tracking-widest flex items-center gap-1">
-              <Banknote className="h-4 w-4" /> REPARTO AMMINISTRAZIONE & FINANZA
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Gestione Stipendi & Calcolo Payroll
-            </h1>
+    <div className="space-y-8 py-2 pb-12">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+        </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          CALCOLO BUSTE PAGA, PROVVIGIONI, BONUSA PEX E MARGINI AZIENDALI
+        </p>
+      </div>
+
+      {/* Action Header Control Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="space-y-1 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2">
+            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] uppercase font-bold tracking-wider">
+              REGOLAMENTO UFFICIALE CASINÒ
+            </Badge>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowCalculationInfo(true)}
-              className="gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 text-xs font-medium"
+              className="gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 text-[11px] font-bold h-6 px-2 rounded-lg"
             >
-              <Info className="h-4 w-4 text-amber-400" />
-              Come viene calcolato lo stipendio?
+              <Info className="h-3.5 w-3.5 text-amber-400" />
+              Info Calcoli
             </Button>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Carica il file `.csv` per estrarre le ore svolte, il fatturato e calcolare le spettanze
-            settimanali dei dipendenti.
-          </p>
+          <h2 className="text-xl font-extrabold text-white tracking-wider uppercase">
+            ELABORAZIONE BUSTE PAGA & CSV
+          </h2>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center md:justify-end">
           {parsedRows.length > 0 && (
-            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-mono text-amber-300">
+            <div className="flex items-center gap-2 bg-[#0a0b10] border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-mono text-amber-300 shadow-inner">
               <FileSpreadsheet className="h-4 w-4 text-amber-400 shrink-0" />
               <span className="truncate max-w-[180px] sm:max-w-[240px]">
                 {fileName || "CSV memorizzato in cache"}
@@ -731,15 +743,15 @@ export function StipendiPage() {
                 size="sm"
                 onClick={handleRemoveCSV}
                 title="Rimuovi CSV dalla memoria locale"
-                className="h-7 px-2 text-xs text-amber-300 hover:text-red-400 hover:bg-red-500/20 gap-1 border border-amber-500/20"
+                className="h-7 px-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 border border-slate-800 rounded-lg"
               >
-                <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
                 <span>Rimuovi</span>
               </Button>
             </div>
           )}
           <label htmlFor="csv-upload-input">
-            <Button asChild className="gap-2 cursor-pointer bg-amber-600 hover:bg-amber-700">
+            <Button asChild className="gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10">
               <span>
                 <Upload className="h-4 w-4" />{" "}
                 {parsedRows.length > 0 ? "Sostituisci CSV" : "Carica CSV"}

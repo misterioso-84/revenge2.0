@@ -125,84 +125,139 @@ function NightsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Serate</h1>
-          <p className="text-muted-foreground">Apri una serata e registra i pass dei cittadini</p>
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
         </div>
-        <div className="flex gap-2">
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          REGISTRO DELLE SERATE DI GIOCO, PASS CITTAGINI E INCASSI
+        </p>
+      </div>
+
+      {/* Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold flex items-center justify-center shrink-0">
+            <CalendarDays className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold uppercase text-white tracking-wider">
+              GESTIONE SERATE DI GIOCO
+            </h2>
+            <p className="text-xs text-slate-400">
+              Apri una nuova serata, gestisci la biglietteria e registra i pass dei clienti
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {can("serate.consulta") && (
-            <Button variant="outline" onClick={() => setLookupOpen(true)}>
-              <Search className="h-4 w-4" /> Consulta cittadino
+            <Button
+              variant="outline"
+              className="border-slate-700 bg-[#0a0b10] hover:bg-slate-800 text-slate-200 font-bold text-xs rounded-xl"
+              onClick={() => setLookupOpen(true)}
+            >
+              <Search className="h-4 w-4 mr-1.5 text-amber-400" /> Consulta cittadino
             </Button>
           )}
           {can("serate.crea") && (
-            <Button onClick={() => setNewOpen(true)}>
-              <Plus className="h-4 w-4" /> Nuova serata
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10"
+              onClick={() => setNewOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Nuova serata
             </Button>
           )}
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Stato</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Titolo</TableHead>
-                {can("serate.incassi") && <TableHead className="text-right">Incasso</TableHead>}
-                <TableHead className="w-32"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {nights.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={can("serate.incassi") ? 5 : 4}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    Nessuna serata
-                  </TableCell>
-                </TableRow>
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl overflow-hidden">
+        <Table>
+          <TableHeader className="bg-[#0a0b10] border-b border-slate-800">
+            <TableRow className="border-slate-800 hover:bg-transparent">
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                Stato
+              </TableHead>
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                Data
+              </TableHead>
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                Titolo
+              </TableHead>
+              {can("serate.incassi") && (
+                <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5 text-right">
+                  Incasso
+                </TableHead>
               )}
-              {nights.map((n) => (
-                <TableRow key={n.id} className="cursor-pointer" onClick={() => setOpenId(n.id)}>
-                  <TableCell>
-                    {n.is_closed ? (
-                      <Badge variant="destructive" className="gap-1">
-                        <Lock className="h-3 w-3" /> Chiusa
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-green-600 border-green-600/30 bg-green-500/10 gap-1"
-                      >
-                        <Unlock className="h-3 w-3" /> Aperta
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(n.night_date)}</TableCell>
-                  <TableCell className="font-medium">{n.title ?? "Serata"}</TableCell>
-                  {can("serate.incassi") && (
-                    <TableCell className="text-right font-mono">{formatMoney(n.total)}</TableCell>
+              <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5 w-32 text-right">
+                Azione
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {nights.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={can("serate.incassi") ? 5 : 4}
+                  className="text-center text-slate-400 py-8 text-xs font-medium"
+                >
+                  Nessuna serata trovata.
+                </TableCell>
+              </TableRow>
+            )}
+            {nights.map((n) => (
+              <TableRow
+                key={n.id}
+                className="border-b border-slate-800/60 hover:bg-[#0a0b10]/60 transition-colors cursor-pointer"
+                onClick={() => setOpenId(n.id)}
+              >
+                <TableCell className="py-3.5">
+                  {n.is_closed ? (
+                    <Badge variant="destructive" className="gap-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-extrabold uppercase">
+                      <Lock className="h-3 w-3" /> Chiusa
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-emerald-400 border-emerald-500/40 bg-emerald-500/15 gap-1 text-[10px] font-extrabold uppercase"
+                    >
+                      <Unlock className="h-3 w-3" /> Aperta
+                    </Badge>
                   )}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    {can("serate.crea") &&
-                      !n.is_closed && ( // Non si può eliminare se è chiusa
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteNightId(n.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableCell>
+                <TableCell className="text-slate-200 font-bold text-xs py-3.5">{formatDate(n.night_date)}</TableCell>
+                <TableCell className="font-extrabold text-white text-sm py-3.5">{n.title ?? "Serata"}</TableCell>
+                {can("serate.incassi") && (
+                  <TableCell className="text-right font-mono text-amber-400 font-bold py-3.5">{formatMoney(n.total)}</TableCell>
+                )}
+                <TableCell className="text-right py-3.5" onClick={(e) => e.stopPropagation()}>
+                  {can("serate.crea") &&
+                    !n.is_closed && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl"
+                        onClick={() => setDeleteNightId(n.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {newOpen && (
         <NewNightDialog

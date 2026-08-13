@@ -168,23 +168,42 @@ function AttivitaPage() {
   }, [logs, user, isAdmin]);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-8 py-2">
+      {/* Title Section (Roleplay Theme) */}
+      <div className="text-center space-y-2 pt-2">
+        <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+          GESTIONALE ROLEPLAY
+        </h1>
+
+        {/* Diamond Divider Symbol */}
+        <div className="flex items-center justify-center gap-2 my-2">
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+          <span className="text-amber-400 text-xs font-bold">◆</span>
+          <div className="h-[1px] w-12 bg-amber-500/40" />
+        </div>
+
+        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto uppercase tracking-wider font-medium">
+          REGISTRO AUDIT, REGISTRAZIONE OPERAZIONI E LOG DI SISTEMA
+        </p>
+      </div>
+
+      {/* Control Header Box */}
+      <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-            <History className="h-9 w-9 text-primary animate-pulse" /> Registro delle Attività
-          </h1>
-          <p className="text-slate-400 mt-1">
+          <h2 className="text-lg font-extrabold uppercase text-white tracking-wider">
+            REGISTRO DELLE ATTIVITÀ & AUDIT LOGS
+          </h2>
+          <p className="text-xs text-slate-400">
             {isAdmin
-              ? "Storico completo in tempo reale di tutte le operazioni eseguite sul sito dagli utenti."
+              ? "Storico completo in tempo reale di tutte le operazioni eseguite dal personale."
               : "Storico personale di tutte le operazioni e transazioni eseguite con il tuo account."}
           </p>
         </div>
+
         <Button
           onClick={() => qc.invalidateQueries({ queryKey: ["audit-logs"] })}
           variant="outline"
-          className="border-slate-800 text-slate-300 hover:text-white"
+          className="border-slate-800 bg-[#0a0b10] hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-xl"
         >
           Aggiorna Ora
         </Button>

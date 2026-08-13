@@ -4,9 +4,16 @@
       "id": "mock-user-id-1234",
       "username": "Giuse84pro",
       "created_at": "2026-07-12T13:12:44.187Z",
-      "updated_at": "2026-07-21T08:50:45.738Z",
+      "updated_at": "2026-08-13T09:59:35.893Z",
+      "staff_color": "#3b82f6",
       "display_name": "Giuse84pro",
-      "badge_start_time": null
+      "staff_weight": 50,
+      "telegram_code": null,
+      "telegram_handle": "@Blatnoms",
+      "badge_start_time": null,
+      "show_in_staff_list": true,
+      "telegram_connected": true,
+      "has_employee_access": true
     },
     {
       "id": "user-b9p6dwg58ru",
@@ -344,7 +351,7 @@
       "id": "qb8h239wnp",
       "name": "Mozzo",
       "created_at": "2026-07-15T09:51:49.069Z",
-      "updated_at": "2026-07-15T09:51:49.069Z",
+      "updated_at": "2026-08-12T11:56:25.669Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -354,7 +361,10 @@
         "corse.read",
         "badge.timbra",
         "conversioni.esegui"
-      ]
+      ],
+      "staff_color": "#3b82f6",
+      "staff_weight": 50,
+      "show_in_staff_list": true
     }
   ],
   "user_custom_roles": [
@@ -835,63 +845,63 @@
       "id": "i9bmrfm0y1n",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-14T13:44:28.779Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-14T13:25:07.750Z",
-      "updated_at": "2026-07-14T13:44:48.031Z"
+      "updated_at": "2026-08-12T12:25:12.311Z"
     },
     {
       "id": "ga869crtaoe",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-14T13:44:19.980Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-14T13:39:42.546Z",
       "started_at": "2026-07-14T13:39:42.546Z",
-      "updated_at": "2026-07-14T13:44:43.372Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "l5sr8dhzpq8",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-14T13:51:53.752Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-14T13:51:33.111Z",
       "started_at": "2026-07-14T13:51:33.111Z",
-      "updated_at": "2026-07-14T13:52:08.902Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "zkzjzuor1g",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-15T12:42:01.975Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-14T23:41:01.460Z",
       "started_at": "2026-07-14T23:41:01.460Z",
-      "updated_at": "2026-07-15T12:42:18.496Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "wixyx62r95k",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-15T12:42:08.886Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-15T12:42:20.090Z",
       "started_at": "2026-07-15T12:42:20.090Z",
-      "updated_at": "2026-07-15T12:42:25.411Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "mbhzfdgtxhm",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-15T13:04:41.687Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-15T13:04:36.802Z",
       "started_at": "2026-07-15T13:04:36.802Z",
-      "updated_at": "2026-07-15T13:04:41.739Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "zptyrgxyxz",
       "user_id": "mock-user-id-1234",
       "week_id": "week-1",
-      "ended_at": "2026-07-16T07:25:26.393Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-16T07:25:19.996Z",
       "started_at": "2026-07-16T07:25:19.997Z",
-      "updated_at": "2026-07-16T07:25:27.258Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "r1olcaedvy",
@@ -906,10 +916,10 @@
       "id": "2s4xn76d6py",
       "user_id": "mock-user-id-1234",
       "week_id": "week-u3oj16eds3",
-      "ended_at": "2026-07-17T21:50:16.095Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-17T16:07:20.030Z",
       "started_at": "2026-07-17T16:07:20.030Z",
-      "updated_at": "2026-07-17T21:50:16.759Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "juct835yt2",
@@ -951,10 +961,10 @@
       "id": "o8a734fkbsb",
       "user_id": "mock-user-id-1234",
       "week_id": "week-u3oj16eds3",
-      "ended_at": "2026-07-18T11:41:58.542Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-18T11:41:06.866Z",
       "started_at": "2026-07-18T11:41:06.866Z",
-      "updated_at": "2026-07-18T11:42:18.031Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "jaiz9kea69",
@@ -1149,10 +1159,10 @@
       "id": "s2dmw8z7eqe",
       "user_id": "mock-user-id-1234",
       "week_id": "week-u3oj16eds3",
-      "ended_at": "2026-07-19T14:10:10.669Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-19T11:51:00.461Z",
       "started_at": "2026-07-19T11:51:00.461Z",
-      "updated_at": "2026-07-19T14:10:11.815Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "gwwoehf1xi",
@@ -1212,100 +1222,100 @@
       "id": "o86832a1fm8",
       "user_id": "mock-user-id-1234",
       "week_id": "week-u3oj16eds3",
-      "ended_at": "2026-07-20T09:31:48.500Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-19T18:00:33.557Z",
       "started_at": "2026-07-19T18:00:32.348Z",
-      "updated_at": "2026-07-20T09:31:48.500Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "xpzgwevlyx9",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T07:56:37.028Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T07:56:15.479Z",
       "started_at": "2026-07-21T07:56:14.696Z",
-      "updated_at": "2026-07-21T07:56:37.789Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "goe2wsx1xcs",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:26:04.864Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:25:53.173Z",
       "started_at": "2026-07-21T08:25:52.364Z",
-      "updated_at": "2026-07-21T08:26:05.697Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "sacqolihd8",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:26:14.105Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:26:11.872Z",
       "started_at": "2026-07-21T08:26:11.206Z",
-      "updated_at": "2026-07-21T08:26:15.009Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "xyl8nzlix2d",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:27:04.948Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:26:21.105Z",
       "started_at": "2026-07-21T08:26:20.264Z",
-      "updated_at": "2026-07-21T08:27:05.747Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "8ts87bjfuo",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:35:17.749Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:35:07.783Z",
       "started_at": "2026-07-21T08:35:06.992Z",
-      "updated_at": "2026-07-21T08:35:18.540Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "p2nyic7sxp",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:37:01.069Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:36:50.089Z",
       "started_at": "2026-07-21T08:36:49.289Z",
-      "updated_at": "2026-07-21T08:37:01.714Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "hbqqbchreg4",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:37:14.477Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:37:11.382Z",
       "started_at": "2026-07-21T08:37:10.600Z",
-      "updated_at": "2026-07-21T08:37:15.286Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "9ov1ytfccmg",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:37:29.140Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:37:17.416Z",
       "started_at": "2026-07-21T08:37:16.640Z",
-      "updated_at": "2026-07-21T08:37:29.929Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "nd7iqejaub",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:42:59.364Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:42:49.909Z",
       "started_at": "2026-07-21T08:42:49.085Z",
-      "updated_at": "2026-07-21T08:43:00.156Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     },
     {
       "id": "u7a14xevk79",
       "user_id": "mock-user-id-1234",
       "week_id": "week-8fsv5vkodu",
-      "ended_at": "2026-07-21T08:50:44.490Z",
+      "ended_at": "2026-08-12T12:25:12.311Z",
       "created_at": "2026-07-21T08:50:39.664Z",
       "started_at": "2026-07-21T08:50:38.825Z",
-      "updated_at": "2026-07-21T08:50:45.360Z"
+      "updated_at": "2026-08-12T12:25:12.312Z"
     }
   ],
   "nights": [
@@ -1521,10 +1531,30 @@
       "notes": "Creata automaticamente dal sistema",
       "title": "Giornata del 10/08/2026",
       "total": 0,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-08-10T08:03:11.142Z",
       "night_date": "2026-08-10",
-      "updated_at": "2026-08-10T08:03:11.142Z"
+      "updated_at": "2026-08-12T08:28:50.215Z"
+    },
+    {
+      "id": "night-vi58fprjni",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 12/08/2026",
+      "total": 0,
+      "is_closed": true,
+      "created_at": "2026-08-12T08:28:50.215Z",
+      "night_date": "2026-08-12",
+      "updated_at": "2026-08-13T08:41:21.503Z"
+    },
+    {
+      "id": "night-6uopw9ra74",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 13/08/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-08-13T08:41:21.503Z",
+      "night_date": "2026-08-13",
+      "updated_at": "2026-08-13T08:41:21.503Z"
     }
   ],
   "conversion_settings": [
@@ -2096,6 +2126,1046 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-zzcr8nop48o",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:27:26.237Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-cr7mgu6l95o",
+      "action": "delete",
+      "details": "DELETE su tabella user_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:27:25.980Z",
+      "table_name": "user_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-u6jpz5wdjoj",
+      "action": "delete",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:27:25.636Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-wgjwax6q0x",
+      "action": "update",
+      "details": "UPDATE su tabella maintenance_settings",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T12:26:49.382Z",
+      "table_name": "maintenance_settings",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fka1yz3wtnj",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:59:35.893Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-a9rdovyngyw",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:59:27.158Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-6g7v4hvo6yf",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:54:24.998Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-vu9y65au0z",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:54:24.541Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ee9y4r4jmto",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:45:16.735Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-vkvszac0ohn",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:45:02.758Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-45un9ijzxp3",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:44:53.794Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-f6qqq3p2mjm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:44:53.793Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-u8r59r6kuwd",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-13T09:44:34.852Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-a1rpg9tptc",
+      "action": "update",
+      "details": "Aggiornato profilo utente: AldoMoretti",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-12T12:34:46.131Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-x516figdmxn",
+      "action": "update",
+      "details": "UPDATE su tabella maintenance_settings",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-12T12:27:24.594Z",
+      "table_name": "maintenance_settings",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-3r0dh1isttz",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:25:12.312Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-qkq99v9nixs",
+      "action": "update",
+      "details": "Aggiornato profilo utente: AldoMoretti",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:20:09.841Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-uj0frcto0xb",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:19:29.091Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-9p1ox5lm9sr",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:22.753Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gvd71tt3x3i",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:22.514Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-vwphdg9y81",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:22.141Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-sjgpd8sn7om",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:21.454Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-pzbx8czftv",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:21.201Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1xiaiqntu31",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:20.938Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-belabwmos3r",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:17.660Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-75y2tyoclco",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:17.397Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-iief2lakpct",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:16.919Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b1x2iqd132i",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:16.411Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-9o5csbuhssd",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:16.178Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-yltudbm02yl",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:02:15.779Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-7jy7hf64jf8",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:53.723Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b9ygxu1lae",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:53.428Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ojdi6z9cfm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:52.886Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-hirswx2uojw",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:52.236Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8ubsfiwakv",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:51.927Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-smh1iakpbis",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:51.605Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ntdgunsr7fl",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:45.258Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1tpxuqx6otd",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:45.080Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-big9fo831yh",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.872Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-bnoai4u2b8",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.859Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-a8g4cnb1izm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.685Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1nvvtv04bil",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.536Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-kt9cahtk7t",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.470Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-eppyxewdv57",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.218Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-zj4zgdwl8j",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:44.142Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-sga5rlh5l2s",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:43.566Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-y1a1vnizlud",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:43.309Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-79bnfmu2gly",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:43.013Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-m2mfxhuyd0f",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:40.265Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ikgjdretbg",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:39.913Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-tsk9x92beac",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:39.468Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-u3s4s1l9jxh",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:38.975Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-1os6180uqgsj",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:38.554Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3nxljs7ab8",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:38.287Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-cmuocdsc64p",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:01:38.066Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-drzawai2ywc",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:57.665Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-bv3qxhul8wf",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:57.203Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8jbgmozmilc",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:56.940Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e284o5kygo4",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:56.654Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-nxc7hglcew",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:53.775Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-hhbsmq9ljls",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:53.586Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-j4z0k9lp15",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:53.409Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3qrr1noq0lh",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:53.216Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-v6wsp8e9gb",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:52.222Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-q30qm1wfja",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:51.546Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-aaq2nla6x1p",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:51.271Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-kx6rsrkbbv8",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:50.890Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-oo0jk2ymrcm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:47.582Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gbokq9zutx",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:46.793Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-lkah0ca3win",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:46.470Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-7vqqz4jnu6c",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T12:00:45.976Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-2eflvac8k7v",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Mozzo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T11:56:25.669Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-y66kuwlc9k",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T11:56:14.914Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-6om7a9dttnd",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:54.577Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ktzy5qn53y8",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:51.067Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-9g9ml7sfxdt",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:50.752Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-39dttyxrfk4",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:50.403Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3f5o5ydn034",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:37.338Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-nktqb2xqr7",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:34.044Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-r38vop2jvy",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:33.709Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-z6djuxrj0kg",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:22:29.514Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-0fudv4yik22c",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:18:25.752Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-2f66nunryes",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:09:16.161Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-bllcg4tlwxo",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T09:08:37.874Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-qnbgcve6bx",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:57:18.693Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-6yxdbc2y1bm",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:56:39.656Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-53ut9bj0loy",
+      "action": "update",
+      "details": "Aggiornato profilo utente: Giuse84pro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:55:58.835Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-jdxgj0fizo",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:50.471Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-75rwtzb06iw",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:50.288Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-au5r60zonx",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:50.140Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-bdya2lp1u5u",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:49.956Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-7ttcq523ggv",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:49.591Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-5tpl7ey8r4",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:49.427Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-kwxzha6rols",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:49.266Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-z5c9renq7b",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:49.120Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xu06cx3qc0s",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:48.942Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-rrv13vnv3b",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:48.782Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-thw4f9b4ad",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:48.620Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-831eypak3eh",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:48.454Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-klfdhn3dr4k",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:47.816Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-dwmxjlgdnuv",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:49:46.949Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-sxxqil7ex7",
+      "action": "update",
+      "details": "Aggiornato profilo utente: Giuse84pro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:47:44.850Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3a9oqi070ag",
+      "action": "update",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:46:07.995Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xp86t5h4eb",
+      "action": "update",
+      "details": "Chiusa sessione di lavoro (timbratura uscita)",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-12T08:31:18.040Z",
+      "table_name": "badge_sessions",
+      "user_display_name": "Giuse84pro"
+    },
     {
       "id": "log-db2jhlqjt2",
       "action": "update",
@@ -4837,7 +5907,7 @@
     {
       "id": "global",
       "created_at": "2026-07-15T13:02:46.203Z",
-      "updated_at": "2026-08-09T09:23:43.870Z",
+      "updated_at": "2026-08-13T12:26:49.382Z",
       "is_maintenance": true
     }
   ]
