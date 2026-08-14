@@ -314,6 +314,23 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
       );
     }
 
+    // Check if this Telegram handle is already connected to ANOTHER user
+    const targetUserId = data.userId;
+    const { data: duplicateProfiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, username, display_name")
+      .ilike("telegram_handle", realHandle)
+      .eq("telegram_connected", true);
+
+    if (duplicateProfiles && duplicateProfiles.length > 0) {
+      const other = duplicateProfiles.find((p: any) => !targetUserId || p.id !== targetUserId);
+      if (other) {
+        throw new Error(
+          `Questo account Telegram (${realHandle}) è già stato collegato all'account ${other.display_name || other.username}. Un utente può avere al massimo 1 solo account collegato a Telegram. Usa prima /scollega per liberare l'account.`,
+        );
+      }
+    }
+
     // Save REAL Telegram handle into user profile
     if (data.userId) {
       await supabaseAdmin
@@ -454,36 +471,45 @@ export const syncUserSession = createServerFn({ method: "POST" })
     (d: { userId: string; sessionId?: string; username?: string; displayName?: string }) => d,
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { extractCloudflareInfo } = await import("@/lib/cloudflare.server");
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { extractCloudflareInfo } = await import("@/lib/cloudflare.server");
 
-    let req: Request | null = null;
-    if (typeof window === "undefined") {
-      try {
-        const { getRequest } = await import("@tanstack/react-start/server");
-        req = getRequest() || null;
-      } catch (e) {
-        // ignore
+      let req: Request | null = null;
+      if (typeof window === "undefined") {
+        try {
+          const { getRequest } = await import("@tanstack/react-start/server");
+          req = getRequest() || null;
+        } catch (e) {
+          // ignore
+        }
       }
-    }
 
-    const cfInfo = extractCloudflareInfo(req);
+      const cfInfo = extractCloudflareInfo(req);
 
-    const res = await supabaseAdmin.auth._proxy({
-      action: "syncUserSession",
-      payload: {
-        userId: data.userId,
+      const res = await supabaseAdmin.auth._proxy({
+        action: "syncUserSession",
+        payload: {
+          userId: data.userId,
+          sessionId: data.sessionId,
+          username: data.username,
+          displayName: data.displayName,
+        },
+      });
+
+      return {
+        isRevoked: res?.data?.isRevoked === true,
+        sessionId: res?.data?.session?.id || data.sessionId,
+        clientInfo: cfInfo,
+      };
+    } catch (err: any) {
+      console.warn("[syncUserSession] Handled fallback:", err?.message || err);
+      return {
+        isRevoked: false,
         sessionId: data.sessionId,
-        username: data.username,
-        displayName: data.displayName,
-      },
-    });
-
-    return {
-      isRevoked: res?.data?.isRevoked === true,
-      sessionId: res?.data?.session?.id || data.sessionId,
-      clientInfo: cfInfo,
-    };
+        clientInfo: null,
+      };
+    }
   });
 
 export const getConnectedDevices = createServerFn({ method: "GET" }).handler(async () => {

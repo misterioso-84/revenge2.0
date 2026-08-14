@@ -318,6 +318,61 @@ export async function fetchTelegramUpdates() {
         const isValidCode = isPendingInMemory || isPendingInDb;
 
         if (isValidCode) {
+          // Check if this Telegram account is ALREADY connected to another Minecraft account
+          let existingLinkedProfile: any = null;
+          const handlesToVerify = new Set<string>();
+          if (rawHandle) handlesToVerify.add(rawHandle);
+          if (from.username) {
+            handlesToVerify.add(`@${from.username}`);
+            handlesToVerify.add(from.username);
+          }
+
+          for (const h of handlesToVerify) {
+            if (existingLinkedProfile) break;
+            try {
+              const { data: found } = await supabaseAdmin
+                .from("profiles")
+                .select("id, username, display_name, telegram_connected, telegram_handle")
+                .ilike("telegram_handle", h.startsWith("@") ? h : `@${h}`)
+                .eq("telegram_connected", true)
+                .limit(1);
+              if (found && found.length > 0) {
+                existingLinkedProfile = found[0];
+              }
+            } catch (err) {
+              console.error("Error checking existing Telegram profile:", err);
+            }
+          }
+
+          // Determine target user ID for this code
+          let targetUserId = pendingMemoryObj?.userId;
+          if (!targetUserId) {
+            try {
+              const { data: pData } = await supabaseAdmin
+                .from("profiles")
+                .select("id, username, display_name")
+                .eq("telegram_code", code)
+                .limit(1);
+              if (pData && pData.length > 0) {
+                targetUserId = pData[0].id;
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // If this Telegram account is already linked to a DIFFERENT account, reject!
+          if (existingLinkedProfile && targetUserId && existingLinkedProfile.id !== targetUserId) {
+            await sendTelegramMessage(
+              msg.chat.id,
+              `⚠️ <b>ACCOUNT TELEGRAM GIÀ COLLEGATO</b>\n\n` +
+                `Questo account Telegram (<b>${rawHandle}</b>) è già stato collegato ad un altro account Minecraft (<b>${existingLinkedProfile.display_name || existingLinkedProfile.username}</b>).\n\n` +
+                `📌 <b>Regola:</b> Un utente può avere al massimo <b>1 solo account</b> collegato a Telegram.\n\n` +
+                `Se desideri cambiare account o associare questo Telegram a un nuovo profilo, invia prima il comando <code>/scollega</code>.`,
+            );
+            continue;
+          }
+
           verifiedCodesStore.set(code, {
             handle: rawHandle,
             chatId: msg.chat.id,
@@ -329,7 +384,7 @@ export async function fetchTelegramUpdates() {
 
           // Update database directly if a user profile is waiting for this code
           try {
-            if (pendingMemoryObj?.userId) {
+            if (targetUserId) {
               await supabaseAdmin
                 .from("profiles")
                 .update({
@@ -337,7 +392,7 @@ export async function fetchTelegramUpdates() {
                   telegram_connected: true,
                   telegram_code: null,
                 })
-                .eq("id", pendingMemoryObj.userId);
+                .eq("id", targetUserId);
             }
 
             await supabaseAdmin

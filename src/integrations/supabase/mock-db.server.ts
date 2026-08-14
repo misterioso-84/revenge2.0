@@ -297,6 +297,228 @@ function getInitialDb() {
     ],
     eventi_scommesse: [],
     eventi_finalisti: [],
+    application_forms: [
+      {
+        id: "form-croupier-1",
+        title: "Candidatura Staff Casinò (Croupier & Addetto Tavoli)",
+        description:
+          "Modulo ufficiale di candidatura per entrare nello Staff Operativo del Casinò Revenge. Cerchiamo persone motivate, affidabili e con buone doti comunicative per la conduzione dei tavoli da gioco e animazione delle serate.",
+        role_target: "Croupier / Staff Tavoli",
+        status: "open",
+        visibility: "public",
+        created_by: "mock-user-id-1234",
+        created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+        expires_at: null,
+        fields: [
+          {
+            id: "f_mc_nick",
+            label: "Nickname Minecraft",
+            description: "Il tuo nickname esatto su Minecraft",
+            type: "text",
+            placeholder: "Es: Notch",
+            required: true,
+          },
+          {
+            id: "f_age",
+            label: "Età Anagrafica",
+            description: "Inserisci la tua età",
+            type: "number",
+            placeholder: "Es: 18",
+            required: true,
+          },
+          {
+            id: "f_discord",
+            label: "Tag Discord & Telegram",
+            description: "Contatto per fissare il colloquio di selezione",
+            type: "text",
+            placeholder: "Es: mario_rossi#1234",
+            required: true,
+          },
+          {
+            id: "f_hours",
+            label: "Disponibilità oraria settimanale",
+            description: "Quante ore puoi dedicare al Casinò a settimana?",
+            type: "select",
+            options: ["Meno di 5 ore", "5 - 10 ore", "10 - 20 ore", "Oltre 20 ore"],
+            required: true,
+          },
+          {
+            id: "f_availability_slots",
+            label: "Fasce orarie di maggiore presenza",
+            description: "Seleziona i momenti in cui sei più attivo",
+            type: "checkbox",
+            options: [
+              "Pomeriggio (15:00 - 19:00)",
+              "Serale Infrasettimanale (20:30 - 23:30)",
+              "Tarda Notte (23:30 - 02:00)",
+              "Weekend (Sabato & Domenica)",
+            ],
+            required: true,
+          },
+          {
+            id: "f_experience",
+            label: "Esperienza pregressa in Ruoli Staff / RP",
+            description: "Hai già avuto esperienze simili in altri server o contesti RP?",
+            type: "radio",
+            options: [
+              "Sì, notevole esperienza nella gestione tavoli/staff",
+              "Sì, qualche esperienza base",
+              "No, ma ho tanta voglia di imparare",
+            ],
+            required: true,
+          },
+          {
+            id: "f_motivation",
+            label: "Perché vorresti entrare nello Staff del Casinò Revenge?",
+            description: "Descrivi le tue motivazioni e cosa puoi portare al gruppo",
+            type: "textarea",
+            placeholder: "Scrivi qui la tua motivazione...",
+            required: true,
+          },
+          {
+            id: "f_scenario",
+            label: "Situazione RP: Gestione contestazioni al tavolo",
+            description:
+              "Un giocatore contesta una puntata e crea disturbo in sala insultando gli altri clienti. Come ti comporti?",
+            type: "textarea",
+            placeholder: "Descrivi il tuo approccio e le azioni da intraprendere...",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "form-security-1",
+        title: "Candidatura Servizio Sicurezza & Vigilanza Caveau",
+        description:
+          "Selezioniamo personale per il servizio d'ordine, controllo accessi sala VIP e scorta valori/dobloni durante le serate ufficiali del Casinò.",
+        role_target: "Addetto alla Sicurezza",
+        status: "open",
+        visibility: "public",
+        created_by: "mock-user-id-1234",
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+        expires_at: null,
+        fields: [
+          {
+            id: "f_mc_nick",
+            label: "Nickname Minecraft",
+            description: "Il tuo nickname esatto in gioco",
+            type: "text",
+            placeholder: "Es: Steve",
+            required: true,
+          },
+          {
+            id: "f_age",
+            label: "Età Anagrafica",
+            type: "number",
+            placeholder: "Es: 19",
+            required: true,
+          },
+          {
+            id: "f_discord",
+            label: "Tag Discord",
+            type: "text",
+            placeholder: "Es: sicurezza_99",
+            required: true,
+          },
+          {
+            id: "f_pvp_knowledge",
+            label: "Livello di familiarità con regole di ingaggio RP & Polizia",
+            type: "radio",
+            options: [
+              "Alto (Conosco perfettamente le regole di perquisizione e fermo)",
+              "Medio",
+              "Base (Necessito di breve addestramento)",
+            ],
+            required: true,
+          },
+          {
+            id: "f_why_security",
+            label: "Cosa rende un buttafuori del Casinò professionale ed efficace?",
+            type: "textarea",
+            placeholder: "Spiega la tua visione del ruolo...",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "form-internal-promotions",
+        title: "[CONCORSO INTERNO] Selezione Responsabile di Turno & Cassa",
+        description:
+          "Bando interno riservato esclusivamente ai membri dello staff attuale per la posizione di Responsabile di Turno e gestione operativa della cassa e del caveau.",
+        role_target: "Responsabile Staff",
+        status: "open",
+        visibility: "internal_staff",
+        created_by: "mock-user-id-1234",
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        updated_at: new Date(Date.now() - 86400000).toISOString(),
+        expires_at: null,
+        fields: [
+          {
+            id: "f_current_role",
+            label: "Ruolo attuale nello Staff del Casinò",
+            type: "text",
+            placeholder: "Es: Croupier Senior",
+            required: true,
+          },
+          {
+            id: "f_service_months",
+            label: "Da quanti mesi sei in servizio attivo nel Casinò?",
+            type: "select",
+            options: ["Meno di 1 mese", "1 - 3 mesi", "3 - 6 mesi", "Oltre 6 mesi"],
+            required: true,
+          },
+          {
+            id: "f_project_proposal",
+            label: "Proposte di miglioramento per l'organizzazione dei turni o serate",
+            type: "textarea",
+            placeholder: "Descrivi una o più idee concrete per efficientare le serate...",
+            required: true,
+          },
+          {
+            id: "f_leadership_skills",
+            label: "Perché ritieni di meritare questa promozione interna?",
+            type: "textarea",
+            placeholder: "Spiega i tuoi punti di forza...",
+            required: true,
+          },
+        ],
+      },
+    ],
+    applications: [
+      {
+        id: "app-sample-1",
+        form_id: "form-croupier-1",
+        user_id: "mock-user-id-1234",
+        citizen_id: "citizen-1",
+        applicant_name: "Mario Rossi",
+        applicant_nickname: "Il Capo",
+        applicant_email: "mario@revenge.local",
+        applicant_discord: "mariorossi#4321",
+        status: "pending",
+        answers: {
+          f_mc_nick: "Il Capo",
+          f_age: 22,
+          f_discord: "mariorossi#4321",
+          f_hours: "10 - 20 ore",
+          f_availability_slots: [
+            "Serale Infrasettimanale (20:30 - 23:30)",
+            "Weekend (Sabato & Domenica)",
+          ],
+          f_experience: "Sì, notevole esperienza nella gestione tavoli/staff",
+          f_motivation:
+            "Sono un assiduo frequentatore del Casinò e vorrei contribuire attivamente a rendere le serate ancora più coinvolgenti e fluide per tutti i cittadini.",
+          f_scenario:
+            "Mantenere sempre la calma senza alzare i toni. Chiamare tempestivamente la sicurezza per isolare l'individuo se diventa aggressivo e verificare con il responsabile di cassa i registri per chiarire l'eventuale fraintendimento in modo trasparente.",
+        },
+        reviewer_id: null,
+        reviewer_notes: null,
+        reviewed_at: null,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        updated_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ],
     user_sessions: [
       {
         id: "sess-mock-admin-1",
@@ -1364,10 +1586,16 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         cleanSelect.includes("custom_roles(") ||
         cleanSelect.includes("user_roles(") ||
         cleanSelect.includes("nights(") ||
+        cleanSelect.includes("application_forms(") ||
         cleanSelect.includes("service_categories("))
     ) {
       filtered = filtered.map((item) => {
         const newItem = { ...item };
+        if (table === "applications") {
+          const forms = db.application_forms || [];
+          const form = forms.find((f: any) => f.id === item.form_id);
+          newItem.application_forms = form ? { ...form } : null;
+        }
         if (table === "profiles") {
           const userRoles = db.user_roles || [];
           const customRoles = db.custom_roles || [];

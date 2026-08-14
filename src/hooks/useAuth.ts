@@ -103,8 +103,9 @@ export function useAuth() {
         if (res?.clientInfo) {
           setNetworkInfo(res.clientInfo as ClientNetworkInfo);
         }
-      } catch (err) {
-        console.error("[useAuth] Session sync error:", err);
+      } catch (err: any) {
+        // Non-blocking background session synchronization
+        console.warn("[useAuth] Session sync non-blocking notice:", err?.message || err);
       }
     };
 

@@ -37,6 +37,7 @@ import {
   Anchor,
   Check,
   Copy,
+  ClipboardList,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -50,6 +51,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/cittadini", label: "Cittadini", icon: Users },
+  { to: "/candidature", label: "Candidature", icon: ClipboardList },
   { to: "/serate", label: "Serate", icon: CalendarDays },
   { to: "/conversioni", label: "Conversioni", icon: ArrowLeftRight },
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },
@@ -126,13 +128,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
+  const isStaffMember =
+    isAdmin ||
+    permissions.length > 0 ||
+    customRoleNames.length > 0 ||
+    profile?.has_employee_access === true ||
+    !!profile?.show_in_staff_list;
+
   const items = NAV.filter((n) => {
     if (isAdmin) return true;
     if (n.adminOnly) return false;
 
-    if (n.to === "/cittadini") {
-      return permissions.includes("cittadini.read");
+    if (n.to === "/dashboard") {
+      return true;
     }
+    if (n.to === "/cittadini") {
+      return true;
+    }
+    if (n.to === "/candidature") {
+      return true;
+    }
+
+    // Citizen-only without employee access cannot view internal employee tools
+    if (!isStaffMember) {
+      return false;
+    }
+
     if (n.to === "/serate") {
       return (
         permissions.includes("serate.crea") ||
@@ -177,6 +198,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return true; // accessible to any logged in employee
     }
     return true;
+  }).map((n) => {
+    if (n.to === "/cittadini") {
+      return {
+        ...n,
+        label: isStaffMember ? "Anagrafica Cittadini" : "Pannello Cittadino",
+      };
+    }
+    return n;
   });
 
   if (loading) {
@@ -195,8 +224,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return <TelegramVerificationGuard profile={profile} signOut={signOut} />;
   }
 
-  // 1. Check if user has employee panel access (non-employee/public users cannot access panel)
-  if (profile?.has_employee_access === false && !isAdmin && customRoleNames.length === 0) {
+  // 1. Check if user is trying to access an internal employee-only route without employee access
+  const isCitizenOnly = !isStaffMember;
+  const isAllowedCitizenRoute =
+    path === "/cittadini" ||
+    path === "/candidature" ||
+    path === "/dashboard" ||
+    path === "/" ||
+    path.startsWith("/candidature");
+
+  if (isCitizenOnly && !isAllowedCitizenRoute) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
@@ -211,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }}
             />
             <h1 className="text-2xl font-bold tracking-tight text-white uppercase mt-2">
-              Accesso Non Autorizzato
+              Area Riservata allo Staff
             </h1>
             <p className="text-sm text-slate-400">
               Benvenuto,{" "}
@@ -224,31 +261,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 space-y-2 leading-relaxed">
             <p>
-              Il tuo account è stato creato correttamente, ma{" "}
-              <strong>
-                non disponi ancora dei permessi per accedere al Pannello Dipendenti Interno
-              </strong>
-              .
-            </p>
-            <p className="text-slate-400">
-              Un Amministratore o la Direzione del Casinò potrà abilitare la tua posizione e
-              assegnarti i permessi necessari se fai parte della ciurma.
+              Questa sezione interna è riservata ai dipendenti del Casinò. Come cittadino
+              registrato, puoi consultare la tua <strong>Tessera & Storico</strong> o inviare una{" "}
+              <strong>Candidatura</strong> per entrare nello Staff.
             </p>
           </div>
 
           <div className="space-y-3 pt-2">
             <Button
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold"
-              onClick={() => navigate({ to: "/" })}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+              onClick={() => navigate({ to: "/cittadini" })}
             >
-              Torna alla Guida del Casinò
+              Apri il tuo Pannello Cittadino
             </Button>
             <Button
               variant="outline"
-              className="w-full border-slate-700 text-slate-300"
-              onClick={signOut}
+              className="w-full border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+              onClick={() => navigate({ to: "/candidature" })}
             >
-              Scollegati
+              Invia una Candidatura Staff
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-slate-400 hover:text-white text-xs"
+              onClick={() => navigate({ to: "/" })}
+            >
+              Torna alla Homepage
             </Button>
           </div>
         </div>
@@ -452,76 +490,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Enforce Telegram Handle if missing for employee
-  if (profile && (!profile.telegram_handle || profile.telegram_handle.trim() === "")) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-900 border border-primary/40 rounded-2xl p-8 space-y-6 shadow-2xl relative">
-          <div className="flex flex-col items-center text-center space-y-3">
-            <div className="h-16 w-16 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-3xl text-primary">
-              ✈️
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              Imposta Username Telegram
-            </h1>
-            <p className="text-sm text-slate-300">
-              Per accedere ed operare nel <strong>Pannello Dipendenti</strong>, è obbligatorio
-              specificare il tuo username Telegram (@username).
-            </p>
-          </div>
-
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const form = e.target as HTMLFormElement;
-              const input = form.elements.namedItem("tg") as HTMLInputElement;
-              if (!input?.value.trim()) return;
-              let handle = input.value.trim();
-              if (!handle.startsWith("@")) handle = `@${handle}`;
-              try {
-                const { error } = await supabase
-                  .from("profiles")
-                  .update({ telegram_handle: handle, telegram_connected: true })
-                  .eq("id", profile.id);
-                if (error) throw error;
-                window.location.reload();
-              } catch (err: any) {
-                alert("Errore nel salvataggio: " + err.message);
-              }
-            }}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Username Telegram (@)
-              </label>
-              <input
-                id="tg"
-                name="tg"
-                type="text"
-                required
-                placeholder="@tuo_username"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-primary"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-primary text-black font-semibold hover:bg-primary/90"
-            >
-              Salva e Continua
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-slate-400 hover:text-white"
-              onClick={signOut}
-            >
-              Scollegati
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
+  // Enforce Telegram Bot Verification if not connected
+  if (
+    profile &&
+    (!profile.telegram_connected ||
+      !profile.telegram_handle ||
+      profile.telegram_handle.trim() === "")
+  ) {
+    return <TelegramVerificationGuard profile={profile} signOut={signOut} />;
   }
 
   return (

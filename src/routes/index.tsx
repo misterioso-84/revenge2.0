@@ -44,6 +44,7 @@ import {
   RotateCcw,
   Gamepad2,
   Flame,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteFooter } from "@/components/Footer";
@@ -794,6 +795,12 @@ function LandingPage() {
               >
                 <Anchor className="h-3 w-3 text-amber-500" /> La nostra Ciurma
               </Link>
+              <Link
+                to="/candidature"
+                className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-300 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg"
+              >
+                <ClipboardList className="h-3 w-3 text-amber-400" /> Candidature
+              </Link>
             </nav>
 
             <div className="flex items-center gap-3">
@@ -886,10 +893,18 @@ function LandingPage() {
                   Leggi la Guida Ufficiale <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </a>
+              <Link to="/candidature">
+                <Button
+                  variant="outline"
+                  className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 font-bold px-6 h-12 text-sm rounded-xl flex items-center gap-2 shadow-lg shadow-amber-500/10"
+                >
+                  <ClipboardList className="h-4 w-4 text-amber-400" /> Candidature Staff
+                </Button>
+              </Link>
               {!user && (
                 <Button
                   variant="outline"
-                  className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 font-bold px-6 h-12 text-sm rounded-xl"
+                  className="border-slate-800 text-slate-300 hover:bg-slate-900 font-bold px-6 h-12 text-sm rounded-xl"
                   onClick={() => {
                     setRegStep(1);
                     setRegisterOpen(true);
@@ -1238,6 +1253,74 @@ function LandingPage() {
                 <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-8 h-12 text-sm shadow-xl shadow-amber-500/20 rounded-xl">
                   <Anchor className="h-4 w-4 mr-2" /> VAI ALLA PAGINA DELLA CIURMA{" "}
                   <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </motion.section>
+        {/* SECTION: CANDIDATURE & RECLUTAMENTO STAFF */}
+        <motion.section
+          id="candidature-section"
+          className="py-16 px-4 max-w-6xl mx-auto space-y-8 border-t border-amber-500/10"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="bg-gradient-to-br from-slate-900 via-[#151208] to-slate-900 border border-amber-500/40 rounded-3xl p-8 md:p-12 text-center space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute -left-10 -top-10 opacity-10 pointer-events-none">
+              <ClipboardList className="h-64 w-64 text-amber-500" />
+            </div>
+
+            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 px-4 py-1 text-xs font-bold rounded-full uppercase tracking-wider">
+              ✨ Reclutamento Ufficiale Aperto
+            </Badge>
+
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase">
+              Unisciti allo Staff del{" "}
+              <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 bg-clip-text text-transparent">
+                Casinò Revenge
+              </span>
+            </h2>
+
+            <p className="text-slate-300 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+              Cerchiamo Croupier per Roulette e Blackjack, Addetti alla Sicurezza e Hostess/Steward
+              di Sala. Invia la tua candidatura online, compila il questionario e visualizza lo
+              stato della tua richiesta in tempo reale.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-left pt-2">
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 space-y-1">
+                <div className="text-xs font-black text-amber-400 uppercase tracking-wider">
+                  💰 Retribuzione & Mance
+                </div>
+                <div className="text-xs text-slate-400">
+                  Paghe settimanali in Dobloni ed Euro con bonus mance ai tavoli
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 space-y-1">
+                <div className="text-xs font-black text-amber-400 uppercase tracking-wider">
+                  🎓 Formazione Completa
+                </div>
+                <div className="text-xs text-slate-400">
+                  Addestramento con i Croupier Master e guide ai regolamenti
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 space-y-1">
+                <div className="text-xs font-black text-amber-400 uppercase tracking-wider">
+                  📈 Carriera & Concorsi
+                </div>
+                <div className="text-xs text-slate-400">
+                  Possibilità di avanzamento a Capo Tavolo e Manager di Sala
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
+              <Link to="/candidature">
+                <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-8 h-12 text-sm shadow-xl shadow-amber-500/20 rounded-xl flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" /> COMPILA MODULO CANDIDATURA{" "}
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>

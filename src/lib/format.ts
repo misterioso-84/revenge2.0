@@ -65,4 +65,6 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "stipendi.visualizza", label: "Vedere gli stipendi e calcolo payroll" },
   { key: "stipendi.gestisci", label: "Gestire ed elaborare gli stipendi" },
   { key: "congedi.gestisci", label: "Approvare o rifiutare richieste di congedo" },
+  { key: "candidature.gestisci", label: "Gestire, creare moduli e valutare candidature staff" },
+  { key: "candidature.visualizza", label: "Vedere tutte le candidature e risposte inviate" },
 ];

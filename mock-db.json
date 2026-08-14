@@ -4,14 +4,14 @@
       "id": "mock-user-id-1234",
       "username": "Giuse84pro",
       "created_at": "2026-07-12T13:12:44.187Z",
-      "updated_at": "2026-08-13T09:59:35.893Z",
+      "updated_at": "2026-08-13T12:55:31.510Z",
       "staff_color": "#3b82f6",
       "display_name": "Giuse84pro",
       "staff_weight": 50,
       "telegram_code": null,
       "telegram_handle": "@Blatnoms",
       "badge_start_time": null,
-      "show_in_staff_list": true,
+      "show_in_staff_list": false,
       "telegram_connected": true,
       "has_employee_access": true
     },
@@ -84,13 +84,6 @@
       "created_at": "2026-07-18T12:15:13.219Z",
       "updated_at": "2026-07-18T12:15:13.219Z",
       "display_name": "malsana"
-    },
-    {
-      "id": "user-t8qxbvwhrvm",
-      "username": "_HiTa_",
-      "created_at": "2026-07-18T12:59:56.028Z",
-      "updated_at": "2026-07-18T12:59:56.028Z",
-      "display_name": "_HiTa_"
     },
     {
       "id": "user-jjwqy43hj8i",
@@ -195,7 +188,7 @@
       "id": "37e7i6z95k7",
       "name": "Capitano",
       "created_at": "2026-07-15T09:46:39.982Z",
-      "updated_at": "2026-07-15T13:05:14.074Z",
+      "updated_at": "2026-08-13T13:04:51.628Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -217,14 +210,17 @@
         "conversioni.esegui",
         "conversioni.storico",
         "dipendenti.sanzioni"
-      ]
+      ],
+      "staff_color": "#ff6200",
+      "staff_weight": 100,
+      "show_in_staff_list": true
     },
     {
       "id": "5d7eafafjmu",
       "name": "Vice Capitano",
       "created_at": "2026-07-15T09:47:01.814Z",
-      "updated_at": "2026-07-15T13:05:47.703Z",
-      "description": null,
+      "updated_at": "2026-08-13T13:05:08.219Z",
+      "description": "Descrizione Vice",
       "permissions": [
         "cittadini.read",
         "cittadini.write",
@@ -245,38 +241,34 @@
         "conversioni.esegui",
         "conversioni.storico",
         "dipendenti.sanzioni"
-      ]
+      ],
+      "staff_color": "#ff2b2b",
+      "staff_weight": 99,
+      "show_in_staff_list": true
     },
     {
       "id": "7jqqvbfk763",
-      "name": "Quartiermastro",
+      "name": "Dealer Jr.",
       "created_at": "2026-07-15T09:47:53.623Z",
-      "updated_at": "2026-07-15T13:05:22.313Z",
+      "updated_at": "2026-08-13T15:15:23.656Z",
       "description": null,
       "permissions": [
         "cittadini.read",
         "cittadini.write",
-        "serate.crea",
         "serate.gestisci",
         "serate.consulta",
         "servizi.read",
-        "servizi.write",
-        "serate.incassi",
-        "corse.read",
-        "corse.write",
-        "badge.visualizza",
-        "badge.timbra",
-        "badge.settimane",
-        "conversioni.esegui",
-        "conversioni.storico",
-        "dipendenti.sanzioni"
-      ]
+        "conversioni.esegui"
+      ],
+      "staff_color": "#97b807",
+      "staff_weight": 3,
+      "show_in_staff_list": true
     },
     {
       "id": "745nc4e6n1r",
-      "name": "Caposala",
+      "name": "Caposala Jr.",
       "created_at": "2026-07-15T09:48:24.215Z",
-      "updated_at": "2026-07-15T13:05:40.296Z",
+      "updated_at": "2026-08-13T15:34:55.203Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -293,13 +285,16 @@
         "conversioni.esegui",
         "conversioni.storico",
         "dipendenti.sanzioni"
-      ]
+      ],
+      "staff_color": "#ff00d9",
+      "staff_weight": 13,
+      "show_in_staff_list": true
     },
     {
       "id": "2vu11boct4i",
-      "name": "Barman",
+      "name": "Barman Jr.",
       "created_at": "2026-07-15T09:49:27.773Z",
-      "updated_at": "2026-07-15T09:49:27.773Z",
+      "updated_at": "2026-08-13T15:33:48.525Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -310,13 +305,16 @@
         "corse.read",
         "badge.timbra",
         "conversioni.esegui"
-      ]
+      ],
+      "staff_color": "#ffff00",
+      "staff_weight": 9,
+      "show_in_staff_list": true
     },
     {
       "id": "f91ux1xggt",
       "name": "Soubrette",
       "created_at": "2026-07-15T09:50:07.485Z",
-      "updated_at": "2026-07-15T09:50:07.485Z",
+      "updated_at": "2026-08-13T15:13:15.847Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -328,13 +326,16 @@
         "corse.write",
         "badge.timbra",
         "conversioni.esegui"
-      ]
+      ],
+      "staff_color": "#0077ff",
+      "staff_weight": 2,
+      "show_in_staff_list": true
     },
     {
       "id": "w19dv9baafi",
-      "name": "Croupier",
+      "name": "Croupier Jr.",
       "created_at": "2026-07-15T09:50:51.025Z",
-      "updated_at": "2026-07-15T09:50:51.025Z",
+      "updated_at": "2026-08-13T15:32:36.535Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -345,13 +346,16 @@
         "corse.read",
         "badge.timbra",
         "conversioni.esegui"
-      ]
+      ],
+      "staff_color": "#3b82f6",
+      "staff_weight": 5,
+      "show_in_staff_list": true
     },
     {
       "id": "qb8h239wnp",
       "name": "Mozzo",
       "created_at": "2026-07-15T09:51:49.069Z",
-      "updated_at": "2026-08-12T11:56:25.669Z",
+      "updated_at": "2026-08-13T15:13:43.749Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -362,19 +366,256 @@
         "badge.timbra",
         "conversioni.esegui"
       ],
-      "staff_color": "#3b82f6",
+      "staff_color": "#00ffff",
+      "staff_weight": 1,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "77ofiysgn69",
+      "name": "Dealer Sr.",
+      "created_at": "2026-08-13T15:16:14.516Z",
+      "updated_at": "2026-08-13T15:17:23.722Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#73c400",
+      "staff_weight": 4,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "0sai80zv3b1",
+      "name": "Croupier Sr.",
+      "created_at": "2026-08-13T15:18:17.268Z",
+      "updated_at": "2026-08-13T15:32:49.347Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#0059ff",
+      "staff_weight": 6,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "dt1z8hfsbfp",
+      "name": "Croupier VIP",
+      "created_at": "2026-08-13T15:22:07.257Z",
+      "updated_at": "2026-08-13T15:32:59.895Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#0045f2",
+      "staff_weight": 7,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "oytljvym3pr",
+      "name": "Croupier Exclusive",
+      "created_at": "2026-08-13T15:22:41.861Z",
+      "updated_at": "2026-08-13T15:33:12.738Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "cittadini.write",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#1b00c7",
+      "staff_weight": 8,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "ge1iu6g3xk9",
+      "name": "Barman Sr.",
+      "created_at": "2026-08-13T15:24:05.147Z",
+      "updated_at": "2026-08-13T15:34:00.709Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#d1ce0a",
+      "staff_weight": 10,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "04c4xyktnpcg",
+      "name": "Barman VIP",
+      "created_at": "2026-08-13T15:25:21.358Z",
+      "updated_at": "2026-08-13T15:34:16.049Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#b3b000",
+      "staff_weight": 11,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "dq0u37kg7ka",
+      "name": "Barman Exclusive",
+      "created_at": "2026-08-13T15:25:37.274Z",
+      "updated_at": "2026-08-13T15:34:25.846Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.esegui"
+      ],
+      "staff_color": "#ffff00",
+      "staff_weight": 12,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "s4aarlf68v",
+      "name": "Caposala Sr.",
+      "created_at": "2026-08-13T15:27:40.036Z",
+      "updated_at": "2026-08-13T15:35:05.035Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "servizi.read",
+        "conversioni.storico",
+        "conversioni.esegui",
+        "congedi.gestisci"
+      ],
+      "staff_color": "#d600e6",
+      "staff_weight": 14,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "2d90043iqc3",
+      "name": "Caposala VIP",
+      "created_at": "2026-08-13T15:28:30.860Z",
+      "updated_at": "2026-08-13T15:28:30.860Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "congedi.gestisci"
+      ],
+      "staff_color": "#d900ff",
       "staff_weight": 50,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "v0wzqpxxp",
+      "name": "Caposala Exclusive",
+      "created_at": "2026-08-13T15:29:31.555Z",
+      "updated_at": "2026-08-13T15:35:15.277Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "congedi.gestisci"
+      ],
+      "staff_color": "#c400ff",
+      "staff_weight": 15,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "2b78df48djr",
+      "name": "Nostromo",
+      "created_at": "2026-08-13T15:30:49.027Z",
+      "updated_at": "2026-08-13T15:35:31.959Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.crea",
+        "serate.gestisci",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "servizi.write",
+        "conversioni.esegui",
+        "conversioni.storico",
+        "dipendenti.sanzioni",
+        "stipendi.gestisci",
+        "stipendi.visualizza",
+        "congedi.gestisci"
+      ],
+      "staff_color": "#ff008c",
+      "staff_weight": 16,
+      "show_in_staff_list": true
+    },
+    {
+      "id": "gsstr50iroe",
+      "name": "Quartiermastro",
+      "created_at": "2026-08-13T15:31:29.051Z",
+      "updated_at": "2026-08-13T15:35:42.258Z",
+      "description": null,
+      "permissions": [
+        "cittadini.read",
+        "cittadini.write",
+        "serate.gestisci",
+        "serate.crea",
+        "serate.consulta",
+        "serate.incassi",
+        "servizi.read",
+        "servizi.write",
+        "conversioni.esegui",
+        "eventi.gestisci",
+        "conversioni.storico",
+        "dipendenti.sanzioni",
+        "stipendi.visualizza",
+        "stipendi.gestisci",
+        "congedi.gestisci"
+      ],
+      "staff_color": "#ff006f",
+      "staff_weight": 17,
       "show_in_staff_list": true
     }
   ],
   "user_custom_roles": [
-    {
-      "id": "hy2r6g15il4",
-      "user_id": "mock-user-id-1234",
-      "created_at": "2026-07-15T13:38:14.985Z",
-      "updated_at": "2026-07-15T13:38:14.985Z",
-      "custom_role_id": "745nc4e6n1r"
-    },
     {
       "id": "fdbg3o6obuf",
       "user_id": "user-m96sy1nqsjj",
@@ -458,6 +699,13 @@
       "created_at": "2026-08-08T17:53:23.971Z",
       "updated_at": "2026-08-08T17:53:23.971Z",
       "custom_role_id": "qb8h239wnp"
+    },
+    {
+      "id": "4japyz6gk5g",
+      "user_id": "mock-user-id-1234",
+      "created_at": "2026-08-13T12:55:37.241Z",
+      "updated_at": "2026-08-13T12:55:37.241Z",
+      "custom_role_id": "5d7eafafjmu"
     }
   ],
   "citizens": [
@@ -473,12 +721,12 @@
     },
     {
       "id": "citizen-2",
-      "notes": "Giocatore serale.",
-      "nickname": "Pino",
+      "notes": "",
+      "nickname": "Giuse84pro",
       "full_name": "Giuse84pro",
       "created_at": "2026-07-12T13:12:44.187Z",
-      "membership": "standard",
-      "updated_at": "2026-07-13T12:35:50.934Z",
+      "membership": "elite",
+      "updated_at": "2026-08-14T08:50:15.023Z",
       "membership_since": null
     },
     {
@@ -1551,10 +1799,20 @@
       "notes": "Creata automaticamente dal sistema",
       "title": "Giornata del 13/08/2026",
       "total": 0,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-08-13T08:41:21.503Z",
       "night_date": "2026-08-13",
-      "updated_at": "2026-08-13T08:41:21.503Z"
+      "updated_at": "2026-08-14T07:48:33.758Z"
+    },
+    {
+      "id": "night-i6trt711rs",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 14/08/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-08-14T07:48:33.758Z",
+      "night_date": "2026-08-14",
+      "updated_at": "2026-08-14T07:48:33.758Z"
     }
   ],
   "conversion_settings": [
@@ -2126,6 +2384,586 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-6l0fbx8vilg",
+      "action": "update",
+      "details": "Aggiornato cittadino: Giuse84pro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-14T08:50:15.023Z",
+      "table_name": "citizens",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-2gn5p6trutk",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Quartiermastro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:35:42.258Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-6mf84litse",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Nostromo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:35:31.959Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xd36y6qwy7c",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Caposala Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:35:15.277Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ecuosoz62am",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Caposala Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:35:05.036Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-lmp12gq34lb",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Caposala Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:34:55.203Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gyk8kp53ltk",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:34:25.846Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-z2q9or30cv8",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman VIP",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:34:16.049Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ferw2najmcb",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:34:00.709Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-50rql7taq0i",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:33:48.525Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-jw6wuyt6xqa",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:33:12.738Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8mqmjtdy8u4",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier VIP",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:32:59.896Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-5qkbmnnnnzd",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:32:49.347Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-lmbp7wqnqu",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:32:36.535Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-rbtqs3buugb",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Quartiermastro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:31:29.051Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-2r8ovf4y54h",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Nostromo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:30:49.027Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-vqn4elwzzs",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Caposala Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:29:31.555Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-e69pjrfnml9",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Caposala VIP",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:28:30.860Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-r4uqvvnln08",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Caposala Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:27:40.036Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-wwp6ygxnjkb",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Caposala Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:26:32.667Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ug375zyye2m",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:25:54.470Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ru7vcob70sf",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Barman Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:25:37.274Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-6jnb2e4ppmm",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Barman VIP",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:25:21.358Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-aiovbi9flsi",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:24:48.353Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ik9wmgwjv19",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:24:35.556Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-7qpug60tzbe",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:24:28.299Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-imzwtgqqlr",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Barman Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:24:17.292Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-oyq4zei197",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Barman",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:24:05.147Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-4fbt1ou6dh9",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:23:08.125Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-pn13pvk8qbk",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Croupier Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:22:41.861Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-0eb9i9zpjbcb",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Croupier VIP",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:22:07.257Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-y6xto2rxksj",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:21:27.655Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-iot2eu2vg78",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Croupier Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:21:00.509Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-wzo6ngjlsuf",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Dealer Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:18:33.455Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-gtksf8jshiu",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Dealer Exclusive",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:18:17.268Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-cbuf31uls3p",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Dealer Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:17:23.722Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-mxixlqb2j2m",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Dealer Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:16:57.564Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-wpnbvg1wcbb",
+      "action": "insert",
+      "details": "Modificato ruolo personalizzato: Dealer Sr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:16:14.516Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-3ur26g7df4c",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Dealer Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:15:23.656Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-9wynod8z1k",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Dealer Jr.",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:14:39.539Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-8xykzrjm7at",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Mozzo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:13:43.749Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b4ccjk6qbbb",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Soubrette",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T15:13:15.848Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-52ejt10wxl2",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Mozzo",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:05:32.213Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-b7rrzprqdru",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Vice Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:05:08.220Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-f3qlwmxvvxj",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:04:51.628Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-hcsnk2xg0p",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:04:02.392Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-p4j3sifd49",
+      "action": "delete",
+      "details": "DELETE su tabella user_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:04:02.184Z",
+      "table_name": "user_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-eyg4qg7hwwm",
+      "action": "delete",
+      "details": "Aggiornato profilo utente: ",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:04:01.848Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-ng79l51e0m",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Vice Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:02:11.006Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-c5q9exkt1d",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T13:00:41.544Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-xuirw4p7r5m",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:55:40.100Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-j8tqnqp4o6",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:55:37.241Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-baaradrlcen",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:55:36.980Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-nfb5t6ocgb",
+      "action": "update",
+      "details": "Aggiornato profilo utente: Giuse84pro",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:55:31.510Z",
+      "table_name": "profiles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-v6mciiqrlia",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:54:38.276Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-g7uxrfhf3xj",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Vice Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:54:14.348Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-yjja7ytv6gl",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:54:02.634Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
+    {
+      "id": "log-dgk6jiknkkh",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Capitano",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-13T12:53:47.378Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Giuse84pro"
+    },
     {
       "id": "log-zzcr8nop48o",
       "action": "delete",
@@ -5901,6 +6739,265 @@
       "final_position": 3,
       "qualifying_rank": 3,
       "qualifying_time": "01:21.340"
+    }
+  ],
+  "application_forms": [
+    {
+      "id": "form-croupier-1",
+      "title": "Candidatura Staff Casinò (Croupier & Addetto Tavoli)",
+      "fields": [
+        {
+          "id": "f_mc_nick",
+          "type": "text",
+          "label": "Nickname Minecraft",
+          "required": true,
+          "description": "Il tuo nickname esatto su Minecraft",
+          "placeholder": "Es: Notch"
+        },
+        {
+          "id": "f_age",
+          "type": "number",
+          "label": "Età Anagrafica",
+          "required": true,
+          "description": "Inserisci la tua età",
+          "placeholder": "Es: 18"
+        },
+        {
+          "id": "f_discord",
+          "type": "text",
+          "label": "Tag Discord & Telegram",
+          "required": true,
+          "description": "Contatto per fissare il colloquio di selezione",
+          "placeholder": "Es: mario_rossi#1234"
+        },
+        {
+          "id": "f_hours",
+          "type": "select",
+          "label": "Disponibilità oraria settimanale",
+          "options": [
+            "Meno di 5 ore",
+            "5 - 10 ore",
+            "10 - 20 ore",
+            "Oltre 20 ore"
+          ],
+          "required": true,
+          "description": "Quante ore puoi dedicare al Casinò a settimana?"
+        },
+        {
+          "id": "f_availability_slots",
+          "type": "checkbox",
+          "label": "Fasce orarie di maggiore presenza",
+          "options": [
+            "Pomeriggio (15:00 - 19:00)",
+            "Serale Infrasettimanale (20:30 - 23:30)",
+            "Tarda Notte (23:30 - 02:00)",
+            "Weekend (Sabato & Domenica)"
+          ],
+          "required": true,
+          "description": "Seleziona i momenti in cui sei più attivo"
+        },
+        {
+          "id": "f_experience",
+          "type": "radio",
+          "label": "Esperienza pregressa in Ruoli Staff / RP",
+          "options": [
+            "Sì, notevole esperienza nella gestione tavoli/staff",
+            "Sì, qualche esperienza base",
+            "No, ma ho tanta voglia di imparare"
+          ],
+          "required": true,
+          "description": "Hai già avuto esperienze simili in altri server o contesti RP?"
+        },
+        {
+          "id": "f_motivation",
+          "type": "textarea",
+          "label": "Perché vorresti entrare nello Staff del Casinò Revenge?",
+          "required": true,
+          "description": "Descrivi le tue motivazioni e cosa puoi portare al gruppo",
+          "placeholder": "Scrivi qui la tua motivazione..."
+        },
+        {
+          "id": "f_scenario",
+          "type": "textarea",
+          "label": "Situazione RP: Gestione contestazioni al tavolo",
+          "required": true,
+          "description": "Un giocatore contesta una puntata e crea disturbo in sala insultando gli altri clienti. Come ti comporti?",
+          "placeholder": "Descrivi il tuo approccio e le azioni da intraprendere..."
+        }
+      ],
+      "status": "open",
+      "created_at": "2026-08-11T09:02:05.486Z",
+      "created_by": "mock-user-id-1234",
+      "expires_at": null,
+      "updated_at": "2026-08-11T09:02:05.486Z",
+      "visibility": "public",
+      "description": "Modulo ufficiale di candidatura per entrare nello Staff Operativo del Casinò Revenge. Cerchiamo persone motivate, affidabili e con buone doti comunicative per la conduzione dei tavoli da gioco e animazione delle serate.",
+      "role_target": "Croupier / Staff Tavoli"
+    },
+    {
+      "id": "form-security-1",
+      "title": "Candidatura Servizio Sicurezza & Vigilanza Caveau",
+      "fields": [
+        {
+          "id": "f_mc_nick",
+          "type": "text",
+          "label": "Nickname Minecraft",
+          "required": true,
+          "description": "Il tuo nickname esatto in gioco",
+          "placeholder": "Es: Steve"
+        },
+        {
+          "id": "f_age",
+          "type": "number",
+          "label": "Età Anagrafica",
+          "required": true,
+          "placeholder": "Es: 19"
+        },
+        {
+          "id": "f_discord",
+          "type": "text",
+          "label": "Tag Discord",
+          "required": true,
+          "placeholder": "Es: sicurezza_99"
+        },
+        {
+          "id": "f_pvp_knowledge",
+          "type": "radio",
+          "label": "Livello di familiarità con regole di ingaggio RP & Polizia",
+          "options": [
+            "Alto (Conosco perfettamente le regole di perquisizione e fermo)",
+            "Medio",
+            "Base (Necessito di breve addestramento)"
+          ],
+          "required": true
+        },
+        {
+          "id": "f_why_security",
+          "type": "textarea",
+          "label": "Cosa rende un buttafuori del Casinò professionale ed efficace?",
+          "required": true,
+          "placeholder": "Spiega la tua visione del ruolo..."
+        }
+      ],
+      "status": "open",
+      "created_at": "2026-08-12T09:02:05.486Z",
+      "created_by": "mock-user-id-1234",
+      "expires_at": null,
+      "updated_at": "2026-08-12T09:02:05.486Z",
+      "visibility": "public",
+      "description": "Selezioniamo personale per il servizio d'ordine, controllo accessi sala VIP e scorta valori/dobloni durante le serate ufficiali del Casinò.",
+      "role_target": "Addetto alla Sicurezza"
+    },
+    {
+      "id": "form-internal-promotions",
+      "title": "[CONCORSO INTERNO] Selezione Responsabile di Turno & Cassa",
+      "fields": [
+        {
+          "id": "f_current_role",
+          "type": "text",
+          "label": "Ruolo attuale nello Staff del Casinò",
+          "required": true,
+          "placeholder": "Es: Croupier Senior"
+        },
+        {
+          "id": "f_service_months",
+          "type": "select",
+          "label": "Da quanti mesi sei in servizio attivo nel Casinò?",
+          "options": [
+            "Meno di 1 mese",
+            "1 - 3 mesi",
+            "3 - 6 mesi",
+            "Oltre 6 mesi"
+          ],
+          "required": true
+        },
+        {
+          "id": "f_project_proposal",
+          "type": "textarea",
+          "label": "Proposte di miglioramento per l'organizzazione dei turni o serate",
+          "required": true,
+          "placeholder": "Descrivi una o più idee concrete per efficientare le serate..."
+        },
+        {
+          "id": "f_leadership_skills",
+          "type": "textarea",
+          "label": "Perché ritieni di meritare questa promozione interna?",
+          "required": true,
+          "placeholder": "Spiega i tuoi punti di forza..."
+        }
+      ],
+      "status": "open",
+      "created_at": "2026-08-13T09:02:05.486Z",
+      "created_by": "mock-user-id-1234",
+      "expires_at": null,
+      "updated_at": "2026-08-13T09:02:05.486Z",
+      "visibility": "internal_staff",
+      "description": "Bando interno riservato esclusivamente ai membri dello staff attuale per la posizione di Responsabile di Turno e gestione operativa della cassa e del caveau.",
+      "role_target": "Responsabile Staff"
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-sample-1",
+      "status": "pending",
+      "answers": {
+        "f_age": 22,
+        "f_hours": "10 - 20 ore",
+        "f_discord": "mariorossi#4321",
+        "f_mc_nick": "Il Capo",
+        "f_scenario": "Mantenere sempre la calma senza alzare i toni. Chiamare tempestivamente la sicurezza per isolare l'individuo se diventa aggressivo e verificare con il responsabile di cassa i registri per chiarire l'eventuale fraintendimento in modo trasparente.",
+        "f_experience": "Sì, notevole esperienza nella gestione tavoli/staff",
+        "f_motivation": "Sono un assiduo frequentatore del Casinò e vorrei contribuire attivamente a rendere le serate ancora più coinvolgenti e fluide per tutti i cittadini.",
+        "f_availability_slots": [
+          "Serale Infrasettimanale (20:30 - 23:30)",
+          "Weekend (Sabato & Domenica)"
+        ]
+      },
+      "form_id": "form-croupier-1",
+      "user_id": "mock-user-id-1234",
+      "citizen_id": "citizen-1",
+      "created_at": "2026-08-13T09:02:05.486Z",
+      "updated_at": "2026-08-13T09:02:05.486Z",
+      "reviewed_at": null,
+      "reviewer_id": null,
+      "applicant_name": "Mario Rossi",
+      "reviewer_notes": null,
+      "applicant_email": "mario@revenge.local",
+      "applicant_discord": "mariorossi#4321",
+      "applicant_nickname": "Il Capo"
+    }
+  ],
+  "user_sessions": [
+    {
+      "id": "sess-mock-admin-1",
+      "browser": "Chrome su Windows 11",
+      "user_id": "mock-user-id-1234",
+      "username": "admin",
+      "created_at": "2026-08-14T06:50:15.018Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-14T08:50:15.023Z",
+      "display_name": "Amministratore"
+    },
+    {
+      "id": "sess-user-xoigsxonpgp-1786698125489",
+      "cf_ray": null,
+      "browser": "Google Chrome su Windows 11",
+      "user_id": "user-xoigsxonpgp",
+      "username": "Staff",
+      "created_at": "2026-08-14T09:02:05.489Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-14T09:02:05.489Z",
+      "country_code": "IT",
+      "country_flag": "🇮🇹",
+      "country_name": "Italia",
+      "display_name": "Staff",
+      "is_cloudflare": false
     }
   ],
   "maintenance_settings": [

@@ -120,6 +120,9 @@ class MockPostgrestServerBuilder {
 
 class MockSupabaseServerClient {
   auth = {
+    _proxy: async (data: any) => {
+      return await handleMockAuth(data);
+    },
     admin: {
       listUsers: async () => {
         const db = await queryMockDb({ table: "profiles", operation: "select" });

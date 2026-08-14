@@ -22,10 +22,13 @@ export function TelegramVerificationGuard({
   const [busy, setBusy] = useState(false);
   const [detectedHandle, setDetectedHandle] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
-  const handleGenerateCode = async () => {
-    if (!profile?.id) return;
+  const handleGenerateCode = async (isManual = false) => {
+    if (!profile?.id || busy) return;
     setBusy(true);
+    setErrorMessage(null);
     try {
       const res = await reqCodeFn({
         data: {
@@ -42,18 +45,23 @@ export function TelegramVerificationGuard({
       if (res.botUrl) {
         setBotUrl(res.botUrl);
       }
-      toast.success("Nuovo codice /associa generato!");
+      if (isManual) {
+        toast.success("Nuovo codice /associa generato!");
+      }
     } catch (err: any) {
-      toast.error(err.message || "Errore nella generazione del codice Telegram.");
+      setErrorMessage(err.message || "Errore nella generazione del codice Telegram.");
+      if (isManual) {
+        toast.error(err.message || "Errore nella generazione del codice Telegram.");
+      }
     } finally {
       setBusy(false);
     }
   };
 
-  // Auto-generate fresh code on mount to ensure DB and memory always match
+  // Generate code only once on initial mount if not already present
   useEffect(() => {
-    if (!profile?.id) return;
-    handleGenerateCode();
+    if (!profile?.id || pinCode || isVerified) return;
+    handleGenerateCode(false);
   }, [profile?.id]);
 
   const copyToClipboard = () => {
@@ -65,7 +73,7 @@ export function TelegramVerificationGuard({
   };
 
   const handleVerifyFromBot = async (silent = false) => {
-    if (!pinCode.trim() || !profile?.id) return;
+    if (!pinCode.trim() || !profile?.id || isVerified) return;
     if (!silent) setBusy(true);
     try {
       const res = await verifyCodeFn({
@@ -76,15 +84,20 @@ export function TelegramVerificationGuard({
       });
 
       if (res.handle) {
+        setIsVerified(true);
         setDetectedHandle(res.handle);
+        setErrorMessage(null);
         toast.success(
           `✅ Account Telegram collegato con successo! (@${res.handle.replace(/^@/, "")})`,
         );
         setTimeout(() => {
           window.location.reload();
-        }, 600);
+        }, 1200);
       }
     } catch (err: any) {
+      if (err.message && err.message.includes("già stato collegato")) {
+        setErrorMessage(err.message);
+      }
       if (!silent) {
         toast.error(err.message || "Invia prima il comando al Bot Telegram, poi riprova.");
       }
@@ -93,14 +106,14 @@ export function TelegramVerificationGuard({
     }
   };
 
-  // Auto-check every 3 seconds
+  // Auto-check every 3 seconds only if not verified
   useEffect(() => {
-    if (!pinCode || !profile?.id) return;
+    if (!pinCode || !profile?.id || isVerified) return;
     const interval = setInterval(() => {
       handleVerifyFromBot(true);
     }, 3000);
     return () => clearInterval(interval);
-  }, [pinCode, profile?.id]);
+  }, [pinCode, profile?.id, isVerified]);
 
   return (
     <div className="fixed inset-0 z-[999999] bg-slate-950/98 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
@@ -192,13 +205,25 @@ export function TelegramVerificationGuard({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleGenerateCode}
+                    onClick={() => handleGenerateCode(true)}
                     disabled={busy}
                     className="w-full border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold h-11 text-xs"
                   >
                     🔄 Genera Nuovo Codice
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-start gap-2.5 leading-relaxed">
+              <span className="text-base shrink-0">⚠️</span>
+              <div>
+                <strong className="block font-bold text-rose-200 mb-0.5">
+                  Avviso Associazione:
+                </strong>
+                {errorMessage}
               </div>
             </div>
           )}
