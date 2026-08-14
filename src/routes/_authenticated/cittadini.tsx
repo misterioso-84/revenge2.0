@@ -214,13 +214,19 @@ function CitizensPage() {
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-slate-400 py-8 text-xs font-medium">
+                <TableCell
+                  colSpan={3}
+                  className="text-center text-slate-400 py-8 text-xs font-medium"
+                >
                   Nessun cittadino trovato.
                 </TableCell>
               </TableRow>
             )}
             {filtered.map((c) => (
-              <TableRow key={c.id} className="border-b border-slate-800/60 hover:bg-[#0a0b10]/60 transition-colors">
+              <TableRow
+                key={c.id}
+                className="border-b border-slate-800/60 hover:bg-[#0a0b10]/60 transition-colors"
+              >
                 <TableCell className="font-bold text-white text-sm py-3.5">{c.full_name}</TableCell>
                 <TableCell className="py-3.5">
                   <MembershipBadge tier={c.membership} />

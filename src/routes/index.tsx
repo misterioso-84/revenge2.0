@@ -40,6 +40,10 @@ import {
   MapPin,
   Anchor,
   MessageCircle,
+  Play,
+  RotateCcw,
+  Gamepad2,
+  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteFooter } from "@/components/Footer";

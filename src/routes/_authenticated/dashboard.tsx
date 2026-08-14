@@ -231,8 +231,8 @@ function DashboardPage() {
             Buongiorno, <span className="text-amber-400">{displayName}</span>!
           </div>
           <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
-            Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle
-            sezioni a te abilitate con il dettaglio delle tue funzioni operative.
+            Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle sezioni a
+            te abilitate con il dettaglio delle tue funzioni operative.
           </p>
         </div>
 
@@ -250,7 +250,9 @@ function DashboardPage() {
       {/* Features Section */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">Le tue funzionalità abilitate</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">
+            Le tue funzionalità abilitate
+          </h2>
           <p className="text-slate-400 text-xs mt-1">
             Seleziona una sezione per iniziare a lavorare
           </p>
@@ -289,7 +291,9 @@ function DashboardPage() {
                     <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
                       {f.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2 text-slate-400 text-xs">{f.description}</CardDescription>
+                    <CardDescription className="line-clamp-2 text-slate-400 text-xs">
+                      {f.description}
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-0 flex-1 flex flex-col justify-between">

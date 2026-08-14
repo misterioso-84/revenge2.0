@@ -63,7 +63,9 @@ function DipendentiPage() {
   const [sanctionsTarget, setSanctionsTarget] = useState<Prof | null>(null);
   const [forceLeaveTarget, setForceLeaveTarget] = useState<Prof | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"tutti" | "in_servizio" | "in_congedo" | "sospesi" | "fuori_servizio">("tutti");
+  const [statusFilter, setStatusFilter] = useState<
+    "tutti" | "in_servizio" | "in_congedo" | "sospesi" | "fuori_servizio"
+  >("tutti");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -248,7 +250,16 @@ function DipendentiPage() {
       const term = searchTerm.toLowerCase();
       return name.includes(term) || username.includes(term);
     });
-  }, [profiles, searchTerm, statusFilter, activeSanctionsMap, activeUserMap, localMySession, leaveUserIds, user]);
+  }, [
+    profiles,
+    searchTerm,
+    statusFilter,
+    activeSanctionsMap,
+    activeUserMap,
+    localMySession,
+    leaveUserIds,
+    user,
+  ]);
 
   if (!canVedere) {
     return (
@@ -311,7 +322,10 @@ function DipendentiPage() {
         <div className="space-y-1 text-center sm:text-left flex-1">
           <div className="text-sm font-bold text-white">Buongiorno,</div>
           <h2 className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-            {currentUserProfile?.display_name || currentUserProfile?.username || user?.email?.split("@")[0] || "Operatore"}
+            {currentUserProfile?.display_name ||
+              currentUserProfile?.username ||
+              user?.email?.split("@")[0] ||
+              "Operatore"}
           </h2>
         </div>
 
@@ -389,7 +403,9 @@ function DipendentiPage() {
                 <Palmtree className="h-3.5 w-3.5 text-amber-400" /> In Congedo
               </div>
               <div className="text-2xl font-black text-amber-400 mt-2">{inLeaveCount}</div>
-              <div className="text-[10px] text-slate-500 mt-1 font-medium">Assenti giustificati</div>
+              <div className="text-[10px] text-slate-500 mt-1 font-medium">
+                Assenti giustificati
+              </div>
             </div>
 
             <div
@@ -421,7 +437,9 @@ function DipendentiPage() {
               <h3 className="text-base font-extrabold uppercase text-white tracking-wider">
                 PERSONALE & REGISTRO
               </h3>
-              <p className="text-xs text-slate-400">Gestione operativa, stato di servizio e provvedimenti</p>
+              <p className="text-xs text-slate-400">
+                Gestione operativa, stato di servizio e provvedimenti
+              </p>
             </div>
           </div>
 
@@ -558,7 +576,8 @@ function DipendentiPage() {
                             alt={p.username}
                             className="h-11 w-11 rounded-xl border border-slate-800 shrink-0 bg-[#12141c] object-contain p-0.5 group-hover:border-amber-500/40 transition-colors"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/44.png";
+                              (e.target as HTMLImageElement).src =
+                                "https://minotar.net/helm/Steve/44.png";
                             }}
                           />
                           <div className="space-y-0.5">
@@ -644,17 +663,12 @@ function DipendentiPage() {
                                         .from("user_custom_roles")
                                         .delete()
                                         .eq("user_id", p.id);
-                                      await supabase
-                                        .from("sanctions")
-                                        .delete()
-                                        .eq("user_id", p.id);
+                                      await supabase.from("sanctions").delete().eq("user_id", p.id);
                                       qc.invalidateQueries({ queryKey: ["profiles"] });
                                       qc.invalidateQueries({ queryKey: ["panel-users"] });
                                       toast.success("Utente eliminato definitivamente");
                                     } catch (err: any) {
-                                      toast.error(
-                                        err?.message || "Impossibile eliminare l'utente",
-                                      );
+                                      toast.error(err?.message || "Impossibile eliminare l'utente");
                                     }
                                   }
                                 },
@@ -690,13 +704,19 @@ function DipendentiPage() {
                 <TableBody>
                   {isLoadingProfiles ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-10 text-slate-400 italic text-xs">
+                      <TableCell
+                        colSpan={3}
+                        className="text-center py-10 text-slate-400 italic text-xs"
+                      >
                         Caricamento dipendenti in corso...
                       </TableCell>
                     </TableRow>
                   ) : filteredProfiles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-10 text-slate-400 text-xs font-medium">
+                      <TableCell
+                        colSpan={3}
+                        className="text-center py-10 text-slate-400 text-xs font-medium"
+                      >
                         Nessun dipendente trovato per i filtri selezionati.
                       </TableCell>
                     </TableRow>
@@ -723,7 +743,8 @@ function DipendentiPage() {
                                 alt={p.username}
                                 className="h-9 w-9 rounded-lg border border-slate-800 shrink-0 bg-[#0a0b10] object-contain p-0.5"
                                 onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/32.png";
+                                  (e.target as HTMLImageElement).src =
+                                    "https://minotar.net/helm/Steve/32.png";
                                 }}
                               />
                               <div className="space-y-0.5">

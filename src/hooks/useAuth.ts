@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { syncUserSession } from "@/lib/registration.functions";
+import { toast } from "sonner";
 
 export type Profile = {
   id: string;
@@ -15,6 +17,19 @@ export type Profile = {
   ip_address?: string;
 };
 
+export interface ClientNetworkInfo {
+  ip: string;
+  countryCode: string;
+  countryName: string;
+  countryFlag: string;
+  cfRay: string | null;
+  colo: string | null;
+  protocol: string;
+  browser: string;
+  deviceType: string;
+  isCloudflare: boolean;
+}
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +40,7 @@ export function useAuth() {
   const [activeSuspension, setActiveSuspension] = useState<any | null>(null);
   const [activeLeave, setActiveLeave] = useState<any | null>(null);
   const [userSanctions, setUserSanctions] = useState<any[]>([]);
+  const [networkInfo, setNetworkInfo] = useState<ClientNetworkInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +55,68 @@ export function useAuth() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Sync active user session with server & Cloudflare headers
+  useEffect(() => {
+    if (!user) {
+      setNetworkInfo(null);
+      return;
+    }
+
+    let isMounted = true;
+    const syncSession = async () => {
+      try {
+        const storedStr =
+          typeof window !== "undefined" ? localStorage.getItem("casinorevenge_session") : null;
+        let storedSessionId: string | undefined;
+        if (storedStr) {
+          try {
+            const parsed = JSON.parse(storedStr);
+            storedSessionId = parsed.session?.session_id;
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        const res = await syncUserSession({
+          data: {
+            userId: user.id,
+            sessionId: storedSessionId,
+            username: user.user_metadata?.username,
+            displayName: user.user_metadata?.display_name,
+          },
+        });
+
+        if (!isMounted) return;
+
+        if (res?.isRevoked) {
+          toast.error("La tua sessione è stata revocata dall'amministratore.", {
+            description: "Sei stato disconnesso per motivi di sicurezza.",
+          });
+          await supabase.auth.signOut();
+          if (typeof window !== "undefined") {
+            window.location.href = "/auth";
+          }
+          return;
+        }
+
+        if (res?.clientInfo) {
+          setNetworkInfo(res.clientInfo as ClientNetworkInfo);
+        }
+      } catch (err) {
+        console.error("[useAuth] Session sync error:", err);
+      }
+    };
+
+    syncSession();
+    // Heartbeat every 45s to maintain active status and verify session validity
+    const interval = setInterval(syncSession, 45000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -118,6 +196,7 @@ export function useAuth() {
     activeSuspension,
     activeLeave,
     userSanctions,
+    networkInfo,
     loading,
   };
 }

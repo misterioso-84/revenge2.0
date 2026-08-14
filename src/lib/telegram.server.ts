@@ -453,20 +453,39 @@ export function getCachedCodeVerification(code: string) {
 
 export function startBackgroundPolling() {
   if (g._telegramPollingStarted) return;
+
+  // Only start long-running setInterval on dedicated Node.js processes (not Edge/Cloudflare Workers)
+  const isDedicatedNodeProcess =
+    typeof process !== "undefined" &&
+    process.versions?.node &&
+    !process.env.CF_PAGES &&
+    !process.env.WORKERS &&
+    typeof setInterval === "function";
+
+  if (!isDedicatedNodeProcess) return;
+
   g._telegramPollingStarted = true;
 
-  // Immediate initial run
-  fetchTelegramUpdates().catch(() => {});
+  try {
+    // Immediate initial run
+    fetchTelegramUpdates().catch(() => {});
 
-  // Continuous background loop running every 1 second H24
-  setInterval(() => {
-    fetchTelegramUpdates().catch((err) => {
-      console.error("Background polling loop error:", err);
-    });
-  }, 1000);
+    // Continuous background loop running every 2 seconds
+    setInterval(() => {
+      fetchTelegramUpdates().catch((err) => {
+        console.error("Background polling loop error:", err);
+      });
+    }, 2000);
+  } catch (e) {
+    // Silently fail if runtime does not support timers
+  }
 }
 
-// Auto-start continuous polling on server load
+// Auto-start continuous polling on server load if supported
 if (typeof window === "undefined") {
-  startBackgroundPolling();
+  try {
+    startBackgroundPolling();
+  } catch (e) {
+    // ignore
+  }
 }

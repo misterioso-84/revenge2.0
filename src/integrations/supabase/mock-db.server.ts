@@ -297,9 +297,133 @@ function getInitialDb() {
     ],
     eventi_scommesse: [],
     eventi_finalisti: [],
+    user_sessions: [
+      {
+        id: "sess-mock-admin-1",
+        user_id: "mock-user-id-1234",
+        username: "admin",
+        display_name: "Amministratore",
+        ip_address: "185.220.101.5",
+        browser: "Chrome su Windows 11",
+        device_type: "desktop",
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+        last_active: new Date().toISOString(),
+        is_revoked: false,
+      },
+    ],
   };
 
   return db;
+}
+
+function parseClientInfo() {
+  let clientIp = "185.220.101.5";
+  let userAgentStr = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36";
+  let countryCode = "IT";
+  let cfRay: string | null = null;
+  let isCloudflare = false;
+
+  if (typeof window !== "undefined") {
+    userAgentStr = navigator?.userAgent || userAgentStr;
+  } else if (getRequestModule) {
+    try {
+      const req = getRequestModule();
+      if (req) {
+        const cfIp = req.headers.get("cf-connecting-ip");
+        const cfCountry = req.headers.get("cf-ipcountry");
+        const cfRayHdr = req.headers.get("cf-ray");
+        const xForwardedFor = req.headers.get("x-forwarded-for");
+        const xRealIp = req.headers.get("x-real-ip");
+
+        if (cfIp) {
+          clientIp = cfIp.trim();
+          isCloudflare = true;
+        } else if (xForwardedFor) {
+          clientIp = xForwardedFor.split(",")[0].trim();
+        } else if (xRealIp) {
+          clientIp = xRealIp.trim();
+        }
+
+        if (cfCountry) {
+          countryCode = cfCountry.trim().toUpperCase();
+          isCloudflare = true;
+        }
+
+        if (cfRayHdr) {
+          cfRay = cfRayHdr.trim();
+          isCloudflare = true;
+        }
+
+        userAgentStr = req.headers.get("user-agent") || userAgentStr;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  let browser = "Google Chrome";
+  let os = "Windows 11";
+  let deviceType: "desktop" | "mobile" | "tablet" = "desktop";
+
+  const ua = userAgentStr.toLowerCase();
+
+  // OS detection
+  if (ua.includes("windows nt 10.0") || ua.includes("win64") || ua.includes("windows"))
+    os = "Windows 11";
+  else if (ua.includes("macintosh") || ua.includes("mac os x")) os = "macOS";
+  else if (ua.includes("iphone")) os = "iOS (iPhone)";
+  else if (ua.includes("ipad")) os = "iPadOS";
+  else if (ua.includes("android")) os = ua.includes("mobile") ? "Android" : "Android Tablet";
+  else if (ua.includes("linux")) os = "Linux";
+
+  // Browser detection
+  if (ua.includes("edg/")) browser = "Microsoft Edge";
+  else if (ua.includes("opr/") || ua.includes("opera")) browser = "Opera";
+  else if (ua.includes("chrome/") && !ua.includes("edg/")) browser = "Google Chrome";
+  else if (ua.includes("safari/") && !ua.includes("chrome")) browser = "Apple Safari";
+  else if (ua.includes("firefox/")) browser = "Mozilla Firefox";
+
+  // Device type detection
+  if (
+    ua.includes("mobile") ||
+    ua.includes("iphone") ||
+    (ua.includes("android") && !ua.includes("tablet"))
+  ) {
+    deviceType = "mobile";
+  } else if (ua.includes("ipad") || ua.includes("tablet")) {
+    deviceType = "tablet";
+  } else {
+    deviceType = "desktop";
+  }
+
+  const countryFlags: Record<string, { name: string; flag: string }> = {
+    IT: { name: "Italia", flag: "🇮🇹" },
+    SM: { name: "San Marino", flag: "🇸🇲" },
+    CH: { name: "Svizzera", flag: "🇨🇭" },
+    FR: { name: "Francia", flag: "🇫🇷" },
+    DE: { name: "Germania", flag: "🇩🇪" },
+    ES: { name: "Spagna", flag: "🇪🇸" },
+    GB: { name: "Regno Unito", flag: "🇬🇧" },
+    US: { name: "Stati Uniti", flag: "🇺🇸" },
+    AT: { name: "Austria", flag: "🇦🇹" },
+    BE: { name: "Belgio", flag: "🇧🇪" },
+    NL: { name: "Paesi Bassi", flag: "🇳🇱" },
+  };
+
+  const countryInfo = countryFlags[countryCode] || { name: countryCode, flag: "🌐" };
+
+  return {
+    clientIp,
+    countryCode,
+    countryName: countryInfo.name,
+    countryFlag: countryInfo.flag,
+    cfRay,
+    isCloudflare,
+    userAgentStr,
+    browser: `${browser} su ${os}`,
+    deviceType,
+  };
 }
 
 function ensureDbTables(db: Record<string, any[]>) {
@@ -311,6 +435,7 @@ function ensureDbTables(db: Record<string, any[]>) {
     }
   }
   db.audit_logs = db.audit_logs || [];
+  db.user_sessions = db.user_sessions || [];
   return db;
 }
 
@@ -1559,6 +1684,23 @@ export async function handleMockAuth(query: any): Promise<any> {
       role,
     });
 
+    const { clientIp, userAgentStr, browser, deviceType } = parseClientInfo();
+    const sessionId = `sess-${newUserId}-${Date.now()}`;
+    db.user_sessions = db.user_sessions || [];
+    db.user_sessions.push({
+      id: sessionId,
+      user_id: newUserId,
+      username,
+      display_name,
+      ip_address: clientIp,
+      browser,
+      device_type: deviceType,
+      user_agent: userAgentStr,
+      created_at: new Date().toISOString(),
+      last_active: new Date().toISOString(),
+      is_revoked: false,
+    });
+
     await saveDb(db);
 
     // Save as current active mock session
@@ -1570,6 +1712,7 @@ export async function handleMockAuth(query: any): Promise<any> {
     // Return session
     const session = {
       access_token: `mock-token-${newUserId}`,
+      session_id: sessionId,
       token_type: "bearer",
       expires_in: 3600,
       refresh_token: "mock-refresh",
@@ -1610,6 +1753,32 @@ export async function handleMockAuth(query: any): Promise<any> {
       return { data: { session: null }, error: { message: "Credenziali non valide." } };
     }
 
+    const clientInfo = parseClientInfo();
+    const sessionId = `sess-${profile.id}-${Date.now()}`;
+    db.user_sessions = db.user_sessions || [];
+
+    // Check if there is an active session for this user/ip/browser or create new
+    db.user_sessions.push({
+      id: sessionId,
+      user_id: profile.id,
+      username: profile.username || "user",
+      display_name: profile.display_name || profile.username || "Utente",
+      ip_address: clientInfo.clientIp,
+      country_code: clientInfo.countryCode,
+      country_name: clientInfo.countryName,
+      country_flag: clientInfo.countryFlag,
+      cf_ray: clientInfo.cfRay,
+      is_cloudflare: clientInfo.isCloudflare,
+      browser: clientInfo.browser,
+      device_type: clientInfo.deviceType,
+      user_agent: clientInfo.userAgentStr,
+      created_at: new Date().toISOString(),
+      last_active: new Date().toISOString(),
+      is_revoked: false,
+    });
+
+    await saveDb(db);
+
     const mockUser = {
       id: profile.id,
       email,
@@ -1621,6 +1790,7 @@ export async function handleMockAuth(query: any): Promise<any> {
 
     const session = {
       access_token: `mock-token-${profile.id}`,
+      session_id: sessionId,
       token_type: "bearer",
       expires_in: 3600,
       refresh_token: "mock-refresh",
@@ -1628,6 +1798,115 @@ export async function handleMockAuth(query: any): Promise<any> {
     };
 
     return { data: { user: mockUser, session }, error: null };
+  }
+
+  if (action === "syncUserSession") {
+    const { userId, username, displayName, sessionId } = payload || {};
+    if (!userId) {
+      return { data: null, error: { message: "UserId required" } };
+    }
+
+    const clientInfo = parseClientInfo();
+    db.user_sessions = db.user_sessions || [];
+
+    // Check if there is an existing session by ID or matching active session for this user
+    let existingSession = sessionId ? db.user_sessions.find((s: any) => s.id === sessionId) : null;
+
+    if (!existingSession) {
+      existingSession = db.user_sessions.find(
+        (s: any) => s.user_id === userId && !s.is_revoked && s.ip_address === clientInfo.clientIp,
+      );
+    }
+
+    const profile = db.profiles?.find((p: any) => p.id === userId);
+    const resolvedUsername = username || profile?.username || "Utente";
+    const resolvedDisplayName = displayName || profile?.display_name || resolvedUsername;
+
+    if (existingSession) {
+      if (existingSession.is_revoked) {
+        return { data: { isRevoked: true, session: existingSession }, error: null };
+      }
+      existingSession.last_active = new Date().toISOString();
+      existingSession.ip_address = clientInfo.clientIp;
+      existingSession.country_code = clientInfo.countryCode;
+      existingSession.country_name = clientInfo.countryName;
+      existingSession.country_flag = clientInfo.countryFlag;
+      existingSession.cf_ray = clientInfo.cfRay || existingSession.cf_ray;
+      existingSession.is_cloudflare = clientInfo.isCloudflare;
+      existingSession.browser = clientInfo.browser;
+      existingSession.device_type = clientInfo.deviceType;
+      existingSession.user_agent = clientInfo.userAgentStr;
+      existingSession.username = resolvedUsername;
+      existingSession.display_name = resolvedDisplayName;
+    } else {
+      const newSessionId = sessionId || `sess-${userId}-${Date.now()}`;
+      existingSession = {
+        id: newSessionId,
+        user_id: userId,
+        username: resolvedUsername,
+        display_name: resolvedDisplayName,
+        ip_address: clientInfo.clientIp,
+        country_code: clientInfo.countryCode,
+        country_name: clientInfo.countryName,
+        country_flag: clientInfo.countryFlag,
+        cf_ray: clientInfo.cfRay,
+        is_cloudflare: clientInfo.isCloudflare,
+        browser: clientInfo.browser,
+        device_type: clientInfo.deviceType,
+        user_agent: clientInfo.userAgentStr,
+        created_at: new Date().toISOString(),
+        last_active: new Date().toISOString(),
+        is_revoked: false,
+      };
+      db.user_sessions.push(existingSession);
+    }
+
+    await saveDb(db);
+    return { data: { isRevoked: false, session: existingSession }, error: null };
+  }
+
+  if (action === "getUserSessions") {
+    const sessions = (db.user_sessions || []).map((s: any) => {
+      const prof = db.profiles?.find((p: any) => p.id === s.user_id);
+      return {
+        ...s,
+        username: prof?.username || s.username || "Utente",
+        display_name: prof?.display_name || s.display_name || prof?.username || "Utente",
+      };
+    });
+    return { data: sessions, error: null };
+  }
+
+  if (action === "revokeSession") {
+    const { sessionId, userId } = payload || {};
+    db.user_sessions = db.user_sessions || [];
+    let modified = false;
+    db.user_sessions.forEach((s: any) => {
+      if (s.id === sessionId || (userId && s.user_id === userId && !sessionId)) {
+        s.is_revoked = true;
+        modified = true;
+      }
+    });
+    if (modified) {
+      await saveDb(db);
+    }
+    return { data: { success: true }, error: null };
+  }
+
+  if (action === "revokeAllSessions") {
+    const { userId } = payload || {};
+    db.user_sessions = db.user_sessions || [];
+    let modified = false;
+    db.user_sessions.forEach((s: any) => {
+      if (!userId || s.user_id === userId) {
+        s.is_revoked = true;
+        modified = true;
+      }
+    });
+    if (modified) {
+      await saveDb(db);
+    }
+    return { data: { success: true }, error: null };
   }
 
   if (action === "signOut") {
@@ -1673,8 +1952,34 @@ function getActiveSessionSync(db: any) {
     if (userId) {
       const profile = db.profiles.find((p: any) => p.id === userId);
       if (profile) {
+        db.user_sessions = db.user_sessions || [];
+        // Ensure user has at least one active session recorded
+        let activeSession = db.user_sessions.find(
+          (s: any) => s.user_id === userId && !s.is_revoked,
+        );
+        if (!activeSession) {
+          const { clientIp, userAgentStr, browser, deviceType } = parseClientInfo();
+          activeSession = {
+            id: `sess-${profile.id}-${Date.now()}`,
+            user_id: profile.id,
+            username: profile.username || "user",
+            display_name: profile.display_name || profile.username || "Utente",
+            ip_address: clientIp,
+            browser,
+            device_type: deviceType,
+            user_agent: userAgentStr,
+            created_at: new Date().toISOString(),
+            last_active: new Date().toISOString(),
+            is_revoked: false,
+          };
+          db.user_sessions.push(activeSession);
+        } else {
+          activeSession.last_active = new Date().toISOString();
+        }
+
         return {
           access_token: `mock-token-${profile.id}`,
+          session_id: activeSession.id,
           token_type: "bearer",
           expires_in: 86400,
           refresh_token: "mock-refresh",

@@ -44,8 +44,15 @@ import {
   Info,
   Laptop,
   Smartphone,
+  Tablet,
+  Monitor,
   Unlink,
   Wifi,
+  Globe,
+  RefreshCw,
+  Power,
+  LogOut,
+  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -62,7 +69,11 @@ import {
   updateSanction,
   deleteSanctionCompletely,
 } from "@/lib/admin.functions";
-import { getConnectedDevices, disconnectDevice } from "@/lib/registration.functions";
+import {
+  getConnectedDevices,
+  disconnectDevice,
+  disconnectAllUserDevices,
+} from "@/lib/registration.functions";
 
 export const Route = createFileRoute("/_authenticated/utenti")({
   beforeLoad: async () => {
@@ -93,6 +104,7 @@ function UsersPage() {
   const updateSanctionFn = useServerFn(updateSanction);
   const getDevicesFn = useServerFn(getConnectedDevices);
   const disconnectFn = useServerFn(disconnectDevice);
+  const disconnectAllFn = useServerFn(disconnectAllUserDevices);
 
   const [activeTab, setActiveTab] = useState<"utenti" | "dispositivi">("utenti");
   const [createOpen, setCreateOpen] = useState(false);
@@ -100,6 +112,8 @@ function UsersPage() {
   const [resetTarget, setResetTarget] = useState<any>(null);
   const [rolesTarget, setRolesTarget] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [deviceSearch, setDeviceSearch] = useState("");
+  const [deviceFilterStatus, setDeviceFilterStatus] = useState<"all" | "active" | "revoked">("all");
   const [activityTarget, setActivityTarget] = useState<any>(null);
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -109,12 +123,17 @@ function UsersPage() {
     onConfirm: () => void;
   }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
 
-  const { data: devices = [], refetch: refetchDevices } = useQuery({
+  const {
+    data: devices = [],
+    refetch: refetchDevices,
+    isFetching: isFetchingDevices,
+  } = useQuery({
     queryKey: ["connected-devices"],
     queryFn: async () => {
       return await getDevicesFn();
     },
     enabled: activeTab === "dispositivi",
+    refetchInterval: activeTab === "dispositivi" ? 5000 : false,
   });
 
   const { data: sanctions = [], refetch: refetchSanctions } = useQuery<any[]>({
@@ -156,15 +175,71 @@ function UsersPage() {
     }
   };
 
-  const handleDisconnect = async (userId: string, deviceId: string) => {
+  const handleDisconnect = async (userId?: string, sessionId?: string) => {
     try {
-      await disconnectFn({ data: { userId, deviceId } });
-      toast.success("Dispositivo disconnesso con successo.");
+      await disconnectFn({ data: { userId, sessionId, deviceId: sessionId } });
+      toast.success("Sessione/Dispositivo disconnesso con successo.");
       refetchDevices();
     } catch (err: any) {
       toast.error("Errore nella disconnessione: " + err.message);
     }
   };
+
+  const handleDisconnectAll = async (userId: string, username: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      title: `Disconnetti tutte le sessioni di ${username}`,
+      description: `Sei sicuro di voler revocare tutte le sessioni attive per ${username}? L'utente verrà disconnesso forzatamente da tutti i suoi dispositivi.`,
+      onConfirm: async () => {
+        try {
+          await disconnectAllFn({ data: { userId } });
+          toast.success(`Tutte le sessioni di ${username} sono state revocate.`);
+          refetchDevices();
+        } catch (err: any) {
+          toast.error("Errore nella disconnessione di massa: " + err.message);
+        }
+      },
+    });
+  };
+
+  const filteredDevices = useMemo(() => {
+    return devices.filter((dev: any) => {
+      const q = deviceSearch.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (dev.username || "").toLowerCase().includes(q) ||
+        (dev.displayName || "").toLowerCase().includes(q) ||
+        (dev.browser || "").toLowerCase().includes(q) ||
+        (dev.ipAddress || "").toLowerCase().includes(q);
+
+      const matchStatus =
+        deviceFilterStatus === "all" ||
+        (deviceFilterStatus === "active" && !dev.isRevoked) ||
+        (deviceFilterStatus === "revoked" && dev.isRevoked);
+
+      return matchSearch && matchStatus;
+    });
+  }, [devices, deviceSearch, deviceFilterStatus]);
+
+  const deviceStats = useMemo(() => {
+    const activeList = devices.filter((d: any) => !d.isRevoked);
+    const desktops = activeList.filter(
+      (d: any) => (d.deviceType || "desktop") === "desktop",
+    ).length;
+    const mobiles = activeList.filter(
+      (d: any) => d.deviceType === "mobile" || d.deviceType === "tablet",
+    ).length;
+    const uniqueUsers = new Set(activeList.map((d: any) => d.userId)).size;
+
+    return {
+      total: devices.length,
+      active: activeList.length,
+      revoked: devices.length - activeList.length,
+      desktops,
+      mobiles,
+      uniqueUsers,
+    };
+  }, [devices]);
 
   // Query modificata per estrarre correttamente i dati uniti dal client
   const { data: users = [] } = useQuery({
@@ -503,85 +578,379 @@ function UsersPage() {
           </Card>
         </>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Laptop className="h-5 w-5 text-amber-500" /> Dispositivi e Sessioni Collegate
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Elenco di tutti i dispositivi attualmente connessi e autorizzati ad accedere
-              all'account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="py-2.5 px-3">Utente</TableHead>
-                  <TableHead className="py-2.5 px-3">Dispositivo / Browser</TableHead>
-                  <TableHead className="py-2.5 px-3">Indirizzo IP</TableHead>
-                  <TableHead className="py-2.5 px-3">Stato Sessione</TableHead>
-                  <TableHead className="py-2.5 px-3 text-right">Azione</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {devices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      Nessun dispositivo attualmente collegato.
-                    </TableCell>
+        <div className="space-y-6">
+          {/* CLOUDFLARE EDGE & NETWORK STATUS BANNER */}
+          <div className="bg-gradient-to-r from-[#12141c] via-[#161a26] to-[#12141c] border border-amber-500/20 rounded-2xl p-4 sm:p-5 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">
+              <div className="flex items-center gap-3.5">
+                <div className="h-11 w-11 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                  <Shield className="h-6 w-6 text-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-black text-white uppercase tracking-tight">
+                      Rete Protetta Cloudflare Edge & DDoS Shield
+                    </span>
+                    <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono uppercase tracking-widest px-2 py-0.5">
+                      SSL / TLS 1.3 Attivo
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 max-w-2xl">
+                    I token di autenticazione e gli indirizzi IP sono verificati in tempo reale
+                    tramite i nodi Edge di Cloudflare (
+                    <span className="text-amber-400 font-mono font-bold">CF-Connecting-IP</span> e{" "}
+                    <span className="text-amber-400 font-mono font-bold">CF-IPCountry</span>).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <div className="bg-[#0a0b10]/90 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs">
+                  <Globe className="h-3.5 w-3.5 text-sky-400" />
+                  <span className="text-slate-400 font-mono text-[11px]">Anycast CDN</span>
+                  <span className="text-emerald-400 font-bold font-mono text-[11px]">
+                    100% Uptime
+                  </span>
+                </div>
+                <div className="bg-[#0a0b10]/90 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs">
+                  <Radio className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-slate-400 font-mono text-[11px]">Sync Sessioni</span>
+                  <span className="text-amber-400 font-bold font-mono text-[11px]">Real-Time</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* STATS OVERVIEW CARDS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                  Sessioni Attive
+                </span>
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <div className="text-2xl font-black text-white mt-1">{deviceStats.active}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {deviceStats.uniqueUsers} utent{deviceStats.uniqueUsers === 1 ? "e" : "i"} online
+              </div>
+            </div>
+
+            <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                  Desktop & Laptop
+                </span>
+                <Monitor className="h-3.5 w-3.5 text-amber-400" />
+              </div>
+              <div className="text-2xl font-black text-amber-400 mt-1">{deviceStats.desktops}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Postazioni fisse</div>
+            </div>
+
+            <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                  Dispositivi Mobile
+                </span>
+                <Smartphone className="h-3.5 w-3.5 text-sky-400" />
+              </div>
+              <div className="text-2xl font-black text-sky-400 mt-1">{deviceStats.mobiles}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Smartphone e Tablet</div>
+            </div>
+
+            <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                  Revocate / Chiuse
+                </span>
+                <Power className="h-3.5 w-3.5 text-rose-400" />
+              </div>
+              <div className="text-2xl font-black text-rose-400 mt-1">{deviceStats.revoked}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Sessioni terminate</div>
+            </div>
+          </div>
+
+          {/* FILTER & SEARCH BAR */}
+          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full md:max-w-md border border-slate-800 bg-[#0a0b10] rounded-xl px-3 py-2">
+              <Search className="h-4 w-4 text-slate-500 shrink-0" />
+              <Input
+                placeholder="Filtra per username, IP, browser o sistema..."
+                value={deviceSearch}
+                onChange={(e) => setDeviceSearch(e.target.value)}
+                className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-xs text-white"
+              />
+              {deviceSearch && (
+                <button
+                  onClick={() => setDeviceSearch("")}
+                  className="text-slate-500 hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+              <div className="bg-[#0a0b10] border border-slate-800 p-1 rounded-xl flex items-center gap-1">
+                <button
+                  onClick={() => setDeviceFilterStatus("all")}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    deviceFilterStatus === "all"
+                      ? "bg-amber-500 text-slate-950 font-black shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Tutte ({devices.length})
+                </button>
+                <button
+                  onClick={() => setDeviceFilterStatus("active")}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    deviceFilterStatus === "active"
+                      ? "bg-emerald-500 text-slate-950 font-black shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Attive ({deviceStats.active})
+                </button>
+                <button
+                  onClick={() => setDeviceFilterStatus("revoked")}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    deviceFilterStatus === "revoked"
+                      ? "bg-rose-500 text-slate-950 font-black shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Revocate ({deviceStats.revoked})
+                </button>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-slate-800 bg-[#0a0b10] text-slate-300 hover:text-amber-400 text-xs font-bold"
+                onClick={() => refetchDevices()}
+                disabled={isFetchingDevices}
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 mr-1.5 ${isFetchingDevices ? "animate-spin" : ""}`}
+                />
+                Aggiorna
+              </Button>
+            </div>
+          </div>
+
+          {/* MAIN SESSIONS TABLE */}
+          <Card className="bg-[#12141c] border-slate-800/90 shadow-2xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-800/80 p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <Laptop className="h-5 w-5 text-amber-400" /> Registro Sessioni & Dispositivi
+                    Autorizzati
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-400 mt-0.5">
+                    Monitoraggio in tempo reale dei token di accesso, indirizzi IP e terminali di
+                    gioco o gestione.
+                  </CardDescription>
+                </div>
+                <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] font-mono uppercase tracking-widest px-2.5 py-1">
+                  Protezione H24 Live
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-800 bg-[#0a0b10]/80">
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Utente / Ruolo
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Dispositivo & Browser
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Indirizzo IP
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Ultima Attività
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Stato
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-mono uppercase tracking-wider text-slate-400 text-right">
+                      Azioni di Sicurezza
+                    </TableHead>
                   </TableRow>
-                ) : (
-                  devices.map((dev: any) => (
-                    <TableRow key={dev.id}>
-                      <TableCell className="font-semibold py-3 px-3">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={`https://mc-heads.net/avatar/${encodeURIComponent(dev.username || "Steve")}/24`}
-                            alt="Skin"
-                            className="h-6 w-6 rounded border border-amber-500/30 object-cover shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                "https://minotar.net/helm/Steve/24.png";
-                            }}
-                          />
-                          <span>{dev.displayName || dev.username}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs py-3 px-3 text-slate-300">
-                        <div className="flex items-center gap-1.5">
-                          <Laptop className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{dev.browser}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs py-3 px-3">
-                        <div className="flex items-center gap-1">
-                          <Wifi className="h-3 w-3 text-amber-500" />
-                          <span>{dev.ipAddress}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3 px-3">
-                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">
-                          Attiva Ora
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-3 px-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="h-7 px-2.5 text-xs font-semibold"
-                          onClick={() => handleDisconnect(dev.userId, dev.id)}
-                        >
-                          <Unlink className="h-3 w-3 mr-1" /> Disconnetti
-                        </Button>
+                </TableHeader>
+                <TableBody>
+                  {filteredDevices.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10 text-slate-500 text-xs">
+                        Nessuna sessione trovata con i filtri correnti.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  ) : (
+                    filteredDevices.map((dev: any) => {
+                      const isMobile = dev.deviceType === "mobile";
+                      const isTablet = dev.deviceType === "tablet";
+                      const lastActiveDate = new Date(dev.lastActive || dev.createdAt);
+                      const isRecent = Date.now() - lastActiveDate.getTime() < 1000 * 60 * 10; // active in last 10m
+
+                      return (
+                        <TableRow
+                          key={dev.id}
+                          className={`border-slate-800/80 transition-colors ${
+                            dev.isRevoked ? "opacity-50 bg-slate-950/40" : "hover:bg-slate-800/30"
+                          }`}
+                        >
+                          {/* USER INFO */}
+                          <TableCell className="py-3 px-4 font-medium">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={`https://mc-heads.net/avatar/${encodeURIComponent(dev.username || "Steve")}/32`}
+                                alt="Skin"
+                                className="h-8 w-8 rounded-lg border border-amber-500/30 object-cover shrink-0 bg-slate-900"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "https://minotar.net/helm/Steve/32.png";
+                                }}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                                  {dev.username}
+                                  {dev.isCurrent && (
+                                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono uppercase">
+                                      Tu
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {dev.displayName || dev.username}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* DEVICE & BROWSER */}
+                          <TableCell className="py-3 px-4 text-xs text-slate-300">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+                                {isMobile ? (
+                                  <Smartphone className="h-4 w-4 text-sky-400" />
+                                ) : isTablet ? (
+                                  <Tablet className="h-4 w-4 text-indigo-400" />
+                                ) : (
+                                  <Monitor className="h-4 w-4 text-amber-400" />
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-200">{dev.browser}</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-mono">
+                                  {dev.deviceType || "Desktop"}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* IP ADDRESS & CLOUDFLARE GEOLOCATION */}
+                          <TableCell className="py-3 px-4 font-mono text-xs text-slate-300">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="text-base shrink-0 select-none"
+                                  title={dev.countryName || dev.countryCode}
+                                >
+                                  {dev.countryFlag || "🇮🇹"}
+                                </span>
+                                <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[11px] font-bold text-slate-200">
+                                  {dev.ipAddress}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                <span className="text-slate-400 font-sans">
+                                  {dev.countryName || "Italia"}
+                                </span>
+                                {dev.isCloudflare && (
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] text-amber-400/90 font-mono font-medium bg-amber-500/10 px-1 rounded border border-amber-500/20">
+                                    <Shield className="h-2.5 w-2.5" /> CF Edge
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* LAST ACTIVE */}
+                          <TableCell className="py-3 px-4 text-xs text-slate-400">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-slate-300">
+                                {lastActiveDate.toLocaleTimeString("it-IT", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                })}
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                {lastActiveDate.toLocaleDateString("it-IT")}
+                              </span>
+                            </div>
+                          </TableCell>
+
+                          {/* STATUS BADGE */}
+                          <TableCell className="py-3 px-4">
+                            {dev.isRevoked ? (
+                              <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] font-mono uppercase">
+                                Revocata
+                              </Badge>
+                            ) : isRecent ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-mono uppercase flex items-center gap-1 w-fit">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                Attiva Ora
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-slate-800/80 text-slate-400 border-slate-700 text-[10px] font-mono uppercase">
+                                Inattiva
+                              </Badge>
+                            )}
+                          </TableCell>
+
+                          {/* ACTIONS */}
+                          <TableCell className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {!dev.isRevoked && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-7 px-2.5 text-xs font-bold rounded-lg uppercase tracking-wider shadow"
+                                    onClick={() => handleDisconnect(dev.userId, dev.id)}
+                                    title="Disconnetti questa sessione specifica"
+                                  >
+                                    <Unlink className="h-3 w-3 mr-1" /> Termina
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-[11px] border-slate-800 bg-slate-900 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 rounded-lg"
+                                    onClick={() => handleDisconnectAll(dev.userId, dev.username)}
+                                    title="Disconnetti tutte le sessioni di questo utente"
+                                  >
+                                    <LogOut className="h-3 w-3 mr-1" /> Tutte
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {createOpen && (

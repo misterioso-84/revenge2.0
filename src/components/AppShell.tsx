@@ -610,7 +610,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     : "text-slate-400 hover:text-slate-200 hover:bg-[#12141c]",
                 )}
               >
-                <Icon className={cn("h-4 w-4 shrink-0", active ? "text-amber-400" : "text-slate-500")} />
+                <Icon
+                  className={cn("h-4 w-4 shrink-0", active ? "text-amber-400" : "text-slate-500")}
+                />
                 {!collapsed && <span className="truncate">{n.label}</span>}
               </Link>
             );

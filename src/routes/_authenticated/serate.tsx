@@ -223,7 +223,10 @@ function NightsPage() {
               >
                 <TableCell className="py-3.5">
                   {n.is_closed ? (
-                    <Badge variant="destructive" className="gap-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-extrabold uppercase">
+                    <Badge
+                      variant="destructive"
+                      className="gap-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-extrabold uppercase"
+                    >
                       <Lock className="h-3 w-3" /> Chiusa
                     </Badge>
                   ) : (
@@ -235,23 +238,28 @@ function NightsPage() {
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-slate-200 font-bold text-xs py-3.5">{formatDate(n.night_date)}</TableCell>
-                <TableCell className="font-extrabold text-white text-sm py-3.5">{n.title ?? "Serata"}</TableCell>
+                <TableCell className="text-slate-200 font-bold text-xs py-3.5">
+                  {formatDate(n.night_date)}
+                </TableCell>
+                <TableCell className="font-extrabold text-white text-sm py-3.5">
+                  {n.title ?? "Serata"}
+                </TableCell>
                 {can("serate.incassi") && (
-                  <TableCell className="text-right font-mono text-amber-400 font-bold py-3.5">{formatMoney(n.total)}</TableCell>
+                  <TableCell className="text-right font-mono text-amber-400 font-bold py-3.5">
+                    {formatMoney(n.total)}
+                  </TableCell>
                 )}
                 <TableCell className="text-right py-3.5" onClick={(e) => e.stopPropagation()}>
-                  {can("serate.crea") &&
-                    !n.is_closed && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl"
-                        onClick={() => setDeleteNightId(n.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                  {can("serate.crea") && !n.is_closed && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl"
+                      onClick={() => setDeleteNightId(n.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

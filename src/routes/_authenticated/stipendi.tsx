@@ -751,7 +751,10 @@ export function StipendiPage() {
             </div>
           )}
           <label htmlFor="csv-upload-input">
-            <Button asChild className="gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10">
+            <Button
+              asChild
+              className="gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10"
+            >
               <span>
                 <Upload className="h-4 w-4" />{" "}
                 {parsedRows.length > 0 ? "Sostituisci CSV" : "Carica CSV"}

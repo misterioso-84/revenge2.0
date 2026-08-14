@@ -136,7 +136,9 @@ function StaffCiurmaPage() {
                   className="inline-flex items-center gap-1.5 text-[11px] text-sky-400 hover:text-sky-300 font-mono font-semibold bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1 rounded-full border border-sky-500/20 transition-colors"
                 >
                   <MessageCircle className="h-3 w-3" />
-                  {member.telegramHandle.startsWith("@") ? member.telegramHandle : `@${member.telegramHandle}`}
+                  {member.telegramHandle.startsWith("@")
+                    ? member.telegramHandle
+                    : `@${member.telegramHandle}`}
                 </a>
               ) : (
                 <div className="text-[10px] text-slate-500 font-mono italic">@CasinòRevenge</div>

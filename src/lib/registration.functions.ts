@@ -449,64 +449,173 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
   return staffMembers.sort((a, b) => b.staffWeight - a.staffWeight);
 });
 
+export const syncUserSession = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { userId: string; sessionId?: string; username?: string; displayName?: string }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { extractCloudflareInfo } = await import("@/lib/cloudflare.server");
+
+    let req: Request | null = null;
+    if (typeof window === "undefined") {
+      try {
+        const { getRequest } = await import("@tanstack/react-start/server");
+        req = getRequest() || null;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const cfInfo = extractCloudflareInfo(req);
+
+    const res = await supabaseAdmin.auth._proxy({
+      action: "syncUserSession",
+      payload: {
+        userId: data.userId,
+        sessionId: data.sessionId,
+        username: data.username,
+        displayName: data.displayName,
+      },
+    });
+
+    return {
+      isRevoked: res?.data?.isRevoked === true,
+      sessionId: res?.data?.session?.id || data.sessionId,
+      clientInfo: cfInfo,
+    };
+  });
+
 export const getConnectedDevices = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { extractCloudflareInfo, getCountryInfo } = await import("@/lib/cloudflare.server");
 
-  let clientIp = "185.220.101.5";
-  let userAgentStr = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/127.0.0.0 Safari/537.36";
+  let currentUserId: string | null = null;
+  let req: Request | null = null;
 
   if (typeof window === "undefined") {
     try {
       const { getRequest } = await import("@tanstack/react-start/server");
-      const req = getRequest();
+      req = getRequest() || null;
       if (req) {
-        clientIp =
-          req.headers.get("x-forwarded-for")?.split(",")[0] ||
-          req.headers.get("x-real-ip") ||
-          clientIp;
-        userAgentStr = req.headers.get("user-agent") || userAgentStr;
+        const cookie = req.headers.get("cookie") || "";
+        const match = cookie.match(/casino_userId=([^;]+)/);
+        if (match) {
+          currentUserId = match[1];
+        }
       }
     } catch (e) {
       // Ignore
     }
   }
 
-  let browserInfo = "Chrome su Windows 11";
-  if (userAgentStr.includes("iPhone") || userAgentStr.includes("iPad")) {
-    browserInfo = "Safari su iOS Mobile";
-  } else if (userAgentStr.includes("Android")) {
-    browserInfo = "Chrome su Android Mobile";
-  } else if (userAgentStr.includes("Macintosh") || userAgentStr.includes("Mac OS")) {
-    browserInfo = "Safari / Chrome su macOS";
-  } else if (userAgentStr.includes("Firefox")) {
-    browserInfo = "Firefox su Desktop";
-  } else if (userAgentStr.includes("Edg")) {
-    browserInfo = "Edge su Windows";
-  }
+  const currentCfInfo = extractCloudflareInfo(req);
+
+  // Retrieve user sessions from Supabase/Mock
+  const authProxyRes = await supabaseAdmin.auth._proxy({
+    action: "getUserSessions",
+  });
+
+  const rawSessions = (authProxyRes?.data || []) as any[];
 
   const { data: profiles } = await supabaseAdmin
     .from("profiles")
     .select("id, username, display_name, ip_address, created_at, updated_at");
 
-  return (profiles || []).map((p: any) => ({
-    id: `dev-${p.id}`,
-    userId: p.id,
-    username: p.username || "Utente",
-    displayName: p.display_name || p.username || "Utente",
-    ipAddress: p.ip_address || clientIp,
-    browser: browserInfo,
-    lastActive: p.updated_at || p.created_at || new Date().toISOString(),
-    isCurrent: true,
-  }));
+  const profileMap = new Map<string, any>();
+  (profiles || []).forEach((p: any) => {
+    profileMap.set(p.id, p);
+  });
+
+  // If no sessions yet, build fallback devices from profiles
+  if (rawSessions.length === 0) {
+    return (profiles || []).map((p: any) => {
+      const country = getCountryInfo(p.country_code || "IT");
+      return {
+        id: `sess-${p.id}`,
+        userId: p.id,
+        username: p.username || "Utente",
+        displayName: p.display_name || p.username || "Utente",
+        ipAddress: p.ip_address || currentCfInfo.ip,
+        countryCode: p.country_code || "IT",
+        countryName: country.name,
+        countryFlag: country.flag,
+        cfRay: currentCfInfo.cfRay,
+        isCloudflare: currentCfInfo.isCloudflare,
+        browser: currentCfInfo.browser,
+        deviceType: currentCfInfo.deviceType,
+        lastActive: p.updated_at || p.created_at || new Date().toISOString(),
+        createdAt: p.created_at || new Date().toISOString(),
+        isRevoked: false,
+        isCurrent: p.id === currentUserId,
+      };
+    });
+  }
+
+  return rawSessions.map((s: any) => {
+    const prof = profileMap.get(s.user_id);
+    const country = getCountryInfo(s.country_code || "IT");
+    const isCurrent = s.user_id === currentUserId && !s.is_revoked;
+
+    return {
+      id: s.id,
+      userId: s.user_id,
+      username: prof?.username || s.username || "Utente",
+      displayName: prof?.display_name || s.display_name || prof?.username || "Utente",
+      ipAddress: isCurrent ? currentCfInfo.ip : s.ip_address || currentCfInfo.ip,
+      countryCode: s.country_code || (isCurrent ? currentCfInfo.countryCode : "IT"),
+      countryName: country.name,
+      countryFlag: country.flag,
+      cfRay: s.cf_ray || (isCurrent ? currentCfInfo.cfRay : null),
+      isCloudflare: s.is_cloudflare ?? currentCfInfo.isCloudflare,
+      browser: s.browser || currentCfInfo.browser,
+      deviceType: s.device_type || currentCfInfo.deviceType,
+      lastActive: s.last_active || s.created_at || new Date().toISOString(),
+      createdAt: s.created_at || new Date().toISOString(),
+      isRevoked: s.is_revoked === true,
+      isCurrent,
+    };
+  });
 });
 
 export const disconnectDevice = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string; deviceId: string }) => d)
+  .inputValidator((d: { userId?: string; deviceId?: string; sessionId?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const targetSessionId = data.sessionId || data.deviceId;
+
+    await supabaseAdmin.auth._proxy({
+      action: "revokeSession",
+      sessionId: targetSessionId,
+      userId: data.userId,
+    });
+
+    if (data.userId) {
+      await supabaseAdmin
+        .from("badge_sessions")
+        .update({ ended_at: new Date().toISOString() })
+        .eq("user_id", data.userId)
+        .is("ended_at", null);
+    }
+
+    return { ok: true, message: "Dispositivo/Sessione disconnessa con successo." };
+  });
+
+export const disconnectAllUserDevices = createServerFn({ method: "POST" })
+  .inputValidator((d: { userId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    await supabaseAdmin.auth._proxy({
+      action: "revokeAllSessions",
+      userId: data.userId,
+    });
+
     await supabaseAdmin
       .from("badge_sessions")
       .update({ ended_at: new Date().toISOString() })
-      .eq("user_id", data.userId);
-    return { ok: true, message: "Dispositivo disconnesso con successo." };
+      .eq("user_id", data.userId)
+      .is("ended_at", null);
+
+    return { ok: true, message: "Tutte le sessioni dell'utente sono state revocate." };
   });

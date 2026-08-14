@@ -1,9 +1,5 @@
 import "./lib/error-capture";
-import { startBackgroundPolling, fetchTelegramUpdates } from "./lib/telegram.server";
-
-// Start Telegram bot polling immediately when app server starts
-startBackgroundPolling();
-
+import { fetchTelegramUpdates } from "./lib/telegram.server";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
@@ -22,36 +18,56 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
+// Catches unhandled SSR errors or h3 500 JSON responses on Cloudflare Pages / Node
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
 
-  const body = await response.clone().text();
-  if (!body.includes('"unhandled":true') || !body.includes('"message":"HTTPError"')) {
-    return response;
+  try {
+    const body = await response.clone().text();
+    // Catch any h3/nitro unhandled JSON error like {"error":true,"status":500,"unhandled":true}
+    if (
+      body.includes('"unhandled":true') ||
+      body.includes('"error":true') ||
+      body.includes('"status":500')
+    ) {
+      const capturedErr = consumeLastCapturedError();
+      if (capturedErr) {
+        console.error("[SSR Catastrophic Catch] Captured error:", capturedErr);
+      } else {
+        console.error(`[SSR Catastrophic Catch] Nitro 500 response intercepted: ${body}`);
+      }
+      return new Response(renderErrorPage(), {
+        status: 500,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    }
+  } catch (e) {
+    // If reading body fails, return standard error page
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return new Response(renderErrorPage(), {
-    status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+  return response;
 }
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    // Keep Telegram updates pumping on every request
-    fetchTelegramUpdates().catch(() => {});
+    // Keep Telegram updates running safely within request lifecycle on Cloudflare Pages / Node
+    try {
+      const p = fetchTelegramUpdates().catch(() => {});
+      if (ctx && typeof (ctx as any).waitUntil === "function") {
+        (ctx as any).waitUntil(p);
+      }
+    } catch (e) {
+      // Ignore background fetch errors
+    }
 
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
-      console.error(error);
+      console.error("[Server Entry] Unhandled exception:", error);
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },

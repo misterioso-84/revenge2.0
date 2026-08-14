@@ -554,7 +554,8 @@ function EventiPage() {
             <Trophy className="h-7 w-7 text-amber-400" /> CORSA DEI CAVALLI 2026
           </h2>
           <p className="text-slate-400 text-xs max-w-2xl">
-            Gestione completa per lo staff: Qualificazioni 10 giri, Gran Finale 15 giri, Biglietteria e Banco Scommesse Casinò.
+            Gestione completa per lo staff: Qualificazioni 10 giri, Gran Finale 15 giri,
+            Biglietteria e Banco Scommesse Casinò.
           </p>
         </div>
 
@@ -580,44 +581,44 @@ function EventiPage() {
         </div>
       </div>
 
-        {/* Quick KPI Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-              <Ticket className="h-3.5 w-3.5 text-amber-400" /> Incassi Biglietteria
-            </div>
-            <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-              € {totalTicketRevenue.toLocaleString("it-IT")}
-            </div>
+      {/* Quick KPI Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
+          <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <Ticket className="h-3.5 w-3.5 text-amber-400" /> Incassi Biglietteria
           </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-              <Dices className="h-3.5 w-3.5 text-purple-400" /> Volume Scommesse
-            </div>
-            <div className="text-xl font-bold font-mono text-purple-300 mt-1">
-              € {totalBetsVolume.toLocaleString("it-IT")}
-            </div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-amber-400" /> Fantini Qualificati
-            </div>
-            <div className="text-xl font-bold font-mono text-amber-300 mt-1">
-              {leaderboard.length} Iscritti
-            </div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-              <Ticket className="h-3.5 w-3.5 text-sky-400" /> Biglietti Spettatori
-            </div>
-            <div className="text-xl font-bold font-mono text-sky-300 mt-1">
-              {totalSpectatorsCount} Spettatori
-            </div>
+          <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+            € {totalTicketRevenue.toLocaleString("it-IT")}
           </div>
         </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
+          <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <Dices className="h-3.5 w-3.5 text-purple-400" /> Volume Scommesse
+          </div>
+          <div className="text-xl font-bold font-mono text-purple-300 mt-1">
+            € {totalBetsVolume.toLocaleString("it-IT")}
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
+          <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 text-amber-400" /> Fantini Qualificati
+          </div>
+          <div className="text-xl font-bold font-mono text-amber-300 mt-1">
+            {leaderboard.length} Iscritti
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
+          <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <Ticket className="h-3.5 w-3.5 text-sky-400" /> Biglietti Spettatori
+          </div>
+          <div className="text-xl font-bold font-mono text-sky-300 mt-1">
+            {totalSpectatorsCount} Spettatori
+          </div>
+        </div>
+      </div>
 
       {/* Main Feature Tabs */}
       <Tabs defaultValue="qualificazioni" className="space-y-6">
