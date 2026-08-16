@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useServerFn } from "@tanstack/react-start";
 import { requestTelegramVerificationCode, verifyTelegramCode } from "@/lib/registration.functions";
+import { getMaintenanceStatus } from "@/lib/admin.functions";
 import { TelegramVerificationGuard } from "@/components/TelegramVerificationGuard";
 import { toast } from "sonner";
 import {
@@ -96,14 +97,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: maintenanceData } = useQuery({
     queryKey: ["maintenance-settings"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("maintenance_settings")
-        .select("*")
-        .eq("id", "global")
-        .maybeSingle();
-      return data ?? null;
+      try {
+        const res = await getMaintenanceStatus();
+        return res;
+      } catch {
+        const { data } = await supabase
+          .from("maintenance_settings")
+          .select("*")
+          .eq("id", "global")
+          .maybeSingle();
+        return data ?? null;
+      }
     },
-    refetchInterval: 60000,
+    staleTime: 5000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
   const isMaintenanceActive = !!maintenanceData?.is_maintenance;

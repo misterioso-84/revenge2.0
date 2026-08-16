@@ -488,3 +488,43 @@ export const deleteSanctionCompletely = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getMaintenanceStatus = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("maintenance_settings")
+      .select("*")
+      .eq("id", "global")
+      .maybeSingle();
+
+    return {
+      id: "global",
+      is_maintenance: Boolean(data?.is_maintenance),
+      updated_at: data?.updated_at || new Date().toISOString(),
+    };
+  });
+
+export const setMaintenanceMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: any) => {
+    const payload = d?.data !== undefined ? d.data : d;
+    return {
+      isMaintenance: Boolean(payload?.isMaintenance),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin.from("maintenance_settings").upsert({
+      id: "global",
+      is_maintenance: data.isMaintenance,
+      updated_at: now,
+    });
+
+    if (error) throw new Error(error.message);
+    return { is_maintenance: data.isMaintenance, updated_at: now, ok: true };
+  });
+

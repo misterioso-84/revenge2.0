@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { getUserTelegramGroups, generateGroupInviteLink } from "@/lib/telegram-groups.functions";
+import { getMaintenanceStatus, setMaintenanceMode } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -145,46 +146,62 @@ function DashboardPage() {
   const { data: maintenanceData } = useQuery({
     queryKey: ["maintenance-settings"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("maintenance_settings")
-        .select("*")
-        .eq("id", "global")
-        .maybeSingle();
-      return data ?? null;
+      try {
+        const res = await getMaintenanceStatus();
+        return res;
+      } catch {
+        const { data } = await supabase
+          .from("maintenance_settings")
+          .select("*")
+          .eq("id", "global")
+          .maybeSingle();
+        return data ?? null;
+      }
     },
+    staleTime: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const isMaintenance = !!maintenanceData?.is_maintenance;
 
   const toggleMaintenance = useMutation({
-    mutationFn: async () => {
-      const { data: existing } = await supabase
-        .from("maintenance_settings")
-        .select("*")
-        .eq("id", "global")
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("maintenance_settings")
-          .update({ is_maintenance: !isMaintenance, updated_at: new Date().toISOString() })
-          .eq("id", "global");
+    mutationFn: async (explicitTarget?: boolean) => {
+      const nextVal = typeof explicitTarget === "boolean" ? explicitTarget : !isMaintenance;
+      try {
+        const res = await setMaintenanceMode({ data: { isMaintenance: nextVal } });
+        return res?.is_maintenance ?? nextVal;
+      } catch {
+        const { error } = await supabase.from("maintenance_settings").upsert({
+          id: "global",
+          is_maintenance: nextVal,
+          updated_at: new Date().toISOString(),
+        });
         if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("maintenance_settings")
-          .insert({ id: "global", is_maintenance: true, updated_at: new Date().toISOString() });
-        if (error) throw error;
+        return nextVal;
       }
     },
-    onSuccess: () => {
+    onMutate: async (explicitTarget?: boolean) => {
+      const nextVal = typeof explicitTarget === "boolean" ? explicitTarget : !isMaintenance;
+      await qc.cancelQueries({ queryKey: ["maintenance-settings"] });
+      const previousData = qc.getQueryData(["maintenance-settings"]);
+      qc.setQueryData(["maintenance-settings"], {
+        id: "global",
+        is_maintenance: nextVal,
+        updated_at: new Date().toISOString(),
+      });
+      return { previousData };
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(["maintenance-settings"], context.previousData);
+      }
+      toast.error(err.message || "Errore durante il cambio modalità manutenzione");
+    },
+    onSuccess: (newVal) => {
       qc.invalidateQueries({ queryKey: ["maintenance-settings"] });
       toast.success(
-        isMaintenance ? "Modalità manutenzione disattivata" : "Modalità manutenzione attivata!",
+        newVal ? "Modalità manutenzione attivata!" : "Modalità manutenzione disattivata!",
       );
-    },
-    onError: (err: any) => {
-      toast.error(err.message);
     },
   });
 

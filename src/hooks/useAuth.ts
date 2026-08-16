@@ -166,13 +166,37 @@ export function useAuth() {
 
       if (!isMounted) return;
 
-      setProfile(p as Profile | null);
-      setIsAdmin(!!roles?.some((r: { role: string }) => r.role === "admin"));
-      setPermissions((perms as string[] | null) ?? []);
+      const profileData = p as Profile | null;
+      setProfile(profileData);
+
+      const userRoles = roles || [];
+      const permsList = (perms as string[] | null) ?? [];
       const names = ((cr as Array<{ custom_roles: { name: string } | null }> | null) ?? [])
         .map((r) => r.custom_roles?.name)
         .filter((n): n is string => !!n);
       setCustomRoleNames(names);
+
+      const userRoleAdmin = userRoles.some(
+        (r: { role: string }) =>
+          r.role === "admin" || r.role === "gestore" || r.role === "capitano",
+      );
+      const usernameAdmin =
+        profileData?.username?.toLowerCase() === "admin" ||
+        profileData?.username?.toLowerCase() === "giuse84pro";
+      const customRoleAdmin = names.some((n) => {
+        const lower = n.toLowerCase();
+        return (
+          lower.includes("amministratore") ||
+          lower.includes("capitano") ||
+          lower.includes("direzione") ||
+          lower.includes("gestore")
+        );
+      });
+      const permAdmin =
+        permsList.includes("utenti.gestisci") || permsList.includes("ruoli.gestisci");
+
+      setIsAdmin(userRoleAdmin || usernameAdmin || customRoleAdmin || permAdmin);
+      setPermissions(permsList);
 
       const sanctionsList = (sancs as any[] | null) ?? [];
       setUserSanctions(sanctionsList);

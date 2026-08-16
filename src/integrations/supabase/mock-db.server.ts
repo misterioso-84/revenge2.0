@@ -536,6 +536,14 @@ function getInitialDb() {
     ],
     telegram_groups: [],
     telegram_group_members: [],
+    maintenance_settings: [
+      {
+        id: "global",
+        is_maintenance: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
   };
 
   return db;
@@ -660,6 +668,21 @@ function ensureDbTables(db: Record<string, any[]>) {
   }
   db.audit_logs = db.audit_logs || [];
   db.user_sessions = db.user_sessions || [];
+
+  if (
+    !db.maintenance_settings ||
+    !Array.isArray(db.maintenance_settings) ||
+    db.maintenance_settings.length === 0
+  ) {
+    db.maintenance_settings = [
+      {
+        id: "global",
+        is_maintenance: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+  }
 
   // Remove test mock groups if present
   if (Array.isArray(db.telegram_groups)) {
@@ -1390,13 +1413,30 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
           ur.user_id === userId &&
           (ur.role === "admin" || ur.role === "gestore" || ur.role === "capitano"),
       );
-      const isCustomRoleAdmin = userCustomRoles.some(
-        (ucr: any) =>
-          ucr.user_id === userId &&
-          (ucr.custom_role_id === "crole-admin" ||
-            ucr.custom_role_id === "crole-gestore" ||
-            ucr.custom_role_id === "crole-1"),
-      );
+      const isCustomRoleAdmin =
+        userCustomRoles.some(
+          (ucr: any) =>
+            ucr.user_id === userId &&
+            (ucr.custom_role_id === "crole-admin" ||
+              ucr.custom_role_id === "crole-gestore" ||
+              ucr.custom_role_id === "crole-1" ||
+              ucr.custom_role_id === "5d7eafafjmu"),
+        ) ||
+        userCustomRoles.some((ucr: any) => {
+          if (ucr.user_id !== userId) return false;
+          const cr = (db.custom_roles || []).find((c: any) => c.id === ucr.custom_role_id);
+          if (!cr) return false;
+          const name = (cr.name || "").toLowerCase();
+          return (
+            name.includes("admin") ||
+            name.includes("capitano") ||
+            name.includes("direzione") ||
+            name.includes("gestore") ||
+            (cr.permissions &&
+              (cr.permissions.includes("utenti.gestisci") ||
+                cr.permissions.includes("ruoli.gestisci")))
+          );
+        });
       const isAdmin =
         isUserRoleAdmin ||
         isCustomRoleAdmin ||
@@ -1871,7 +1911,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     }
 
     const updatedRows: any[] = [];
-    db[table] = db[table].map((item) => {
+    db[table] = (db[table] || []).map((item: any) => {
       if (matchFilters(item, table, filters)) {
         const updated = { ...item, ...updateData, updated_at: new Date().toISOString() };
         updatedRows.push(updated);
@@ -1879,6 +1919,18 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       }
       return item;
     });
+
+    if (table === "maintenance_settings" && updatedRows.length === 0) {
+      const created = {
+        id: "global",
+        is_maintenance: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...updateData,
+      };
+      db.maintenance_settings = [created];
+      updatedRows.push(created);
+    }
 
     if (table === "badge_sessions") {
       updatedRows.forEach((row) => {
