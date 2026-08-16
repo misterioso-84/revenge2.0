@@ -489,6 +489,70 @@ export async function syncTelegramUserWithGroupAndProfile(
 // -------------------------------------------------------------
 // Audit Routine & Role Change Sync
 // -------------------------------------------------------------
+export function isUserOrHandleAuthorizedForGroup(
+  group: any,
+  profile: any | null,
+  userRoleIds: string[] | Set<string> = [],
+  isAdmin: boolean = false,
+  telegramHandleOverride?: string,
+  telegramUserIdOverride?: string | number,
+): boolean {
+  if (!group) return false;
+  if (isAdmin) return true;
+
+  const allowedRoles = group.allowed_role_ids || [];
+  if (allowedRoles.includes("admin") || allowedRoles.includes("crole-admin")) {
+    if (isAdmin) return true;
+  }
+
+  // 1. Check custom roles
+  const roleSet = Array.isArray(userRoleIds) ? new Set(userRoleIds) : new Set(userRoleIds || []);
+  const hasRole = allowedRoles.some((rId: string) => roleSet.has(rId));
+  if (hasRole) return true;
+
+  // 2. Check manual exceptions / allowed handles / allowed nicknames / manual user ids
+  const rawExceptions: string[] = [
+    ...(group.allowed_exceptions || []),
+    ...(group.allowed_handles || []),
+    ...(group.manual_user_ids || []),
+  ];
+
+  const exceptions = rawExceptions
+    .map((s) => String(s || "").trim().toLowerCase().replace(/^@/, ""))
+    .filter(Boolean);
+
+  if (exceptions.length === 0) return false;
+
+  // Check user profile IDs
+  if (profile?.id && exceptions.includes(String(profile.id).toLowerCase())) return true;
+
+  // Check Telegram User ID
+  if (telegramUserIdOverride && exceptions.includes(String(telegramUserIdOverride).toLowerCase())) return true;
+  if (profile?.telegram_user_id && exceptions.includes(String(profile.telegram_user_id).toLowerCase())) return true;
+
+  // Check Telegram handle
+  if (telegramHandleOverride) {
+    const cleanTg = telegramHandleOverride.trim().toLowerCase().replace(/^@/, "");
+    if (cleanTg && exceptions.includes(cleanTg)) return true;
+  }
+  if (profile?.telegram_handle) {
+    const cleanTg = profile.telegram_handle.trim().toLowerCase().replace(/^@/, "");
+    if (cleanTg && exceptions.includes(cleanTg)) return true;
+  }
+
+  // Check Minecraft nickname / site username / display name
+  if (profile?.username) {
+    const cleanUsername = profile.username.trim().toLowerCase().replace(/^@/, "");
+    if (cleanUsername && exceptions.includes(cleanUsername)) return true;
+  }
+  if (profile?.display_name) {
+    const cleanDisplay = profile.display_name.trim().toLowerCase().replace(/^@/, "");
+    if (cleanDisplay && exceptions.includes(cleanDisplay)) return true;
+  }
+
+  return false;
+}
+
 export async function syncUserTelegramGroupAccess(userId: string) {
   try {
     const { supabaseAdmin } = await import("../integrations/supabase/client.server");
@@ -518,11 +582,12 @@ export async function syncUserTelegramGroupAccess(userId: string) {
       : "";
 
     for (const group of allGroups || []) {
-      const allowed = group.allowed_role_ids || [];
-      const hasPermission =
-        isAdmin ||
-        (allowed.includes("admin") && isAdmin) ||
-        userRoleIds.some((rId: string) => allowed.includes(rId));
+      const hasPermission = isUserOrHandleAuthorizedForGroup(
+        group,
+        profile,
+        userRoleIds,
+        isAdmin,
+      );
 
       const existingMember = (allMembers || []).find((m: any) => {
         const matchesGroup = m.group_id === group.id || String(m.chat_id) === String(group.chat_id);
@@ -645,10 +710,12 @@ export async function runDaily1700TelegramAudit() {
       for (const prof of profiles || []) {
         const isAdmin = adminUserIds.has(prof.id);
         const roles = userRoleMap.get(prof.id) || new Set();
-        const hasAccess =
-          isAdmin ||
-          (allowedRoles.includes("admin") && isAdmin) ||
-          allowedRoles.some((rId: string) => roles.has(rId));
+        const hasAccess = isUserOrHandleAuthorizedForGroup(
+          group,
+          prof,
+          roles,
+          isAdmin,
+        );
 
         const userHandle = prof.telegram_handle
           ? prof.telegram_handle.toLowerCase().replace("@", "")
@@ -714,27 +781,28 @@ export async function runDaily1700TelegramAudit() {
           });
         }
 
-        if (m.status === "member" && m.verified) {
+        const isAuthorized = isUserOrHandleAuthorizedForGroup(
+          group,
+          matchedProfile,
+          matchedProfile ? userRoleMap.get(matchedProfile.id) || new Set() : new Set(),
+          matchedProfile ? adminUserIds.has(matchedProfile.id) : false,
+          m.telegram_handle,
+          m.telegram_user_id,
+        );
+
+        if (isAuthorized) {
+          authorized = true;
+        } else if (m.status === "member" && m.verified) {
           authorized = true;
         } else if (
           matchedProfile &&
           !matchedProfile.is_fired &&
           matchedProfile.has_employee_access !== false
         ) {
-          const isAdmin = adminUserIds.has(matchedProfile.id);
-          const roles = userRoleMap.get(matchedProfile.id) || new Set();
-          authorized =
-            isAdmin ||
-            allowedRoles.length === 0 ||
-            allowedRoles.includes("admin") ||
-            allowedRoles.includes("crole-admin") ||
-            allowedRoles.some((rId: string) => roles.has(rId)) ||
-            (group.title && group.title.toLowerCase().includes("dipendenti"));
-        } else if (m.status === "member") {
-          authorized = true;
+          authorized = isAuthorized;
         }
 
-        if (matchedProfile && !authorized) {
+        if (!authorized) {
           // Expel from group
           if (m.telegram_user_id) {
             await kickTelegramChatMember(group.chat_id, m.telegram_user_id);
@@ -1026,10 +1094,14 @@ export async function fetchTelegramUpdates() {
             const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
             const allowed = group.allowed_role_ids || [];
 
-            const isAllowed =
-              isAdmin ||
-              (allowed.includes("admin") && isAdmin) ||
-              userRoleIds.some((rId: string) => allowed.includes(rId));
+            const isAllowed = isUserOrHandleAuthorizedForGroup(
+              group,
+              prof,
+              userRoleIds,
+              isAdmin,
+              cbFrom?.username,
+              cbFrom?.id,
+            );
 
             if (isAllowed) {
               const inviteLink = await createTelegramInviteLink(
@@ -1095,12 +1167,16 @@ export async function fetchTelegramUpdates() {
             const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
             const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
 
-            const userGroups = (allGroups || []).filter((g: any) => {
-              if (isAdmin) return true;
-              const allowed = g.allowed_role_ids || [];
-              if (allowed.includes("admin") && isAdmin) return true;
-              return userRoleIds.some((rId: string) => allowed.includes(rId));
-            });
+            const userGroups = (allGroups || []).filter((g: any) =>
+              isUserOrHandleAuthorizedForGroup(
+                g,
+                prof,
+                userRoleIds,
+                isAdmin,
+                cbFrom?.username,
+                cbFrom?.id,
+              ),
+            );
 
             if (userGroups.length === 0) {
               await sendTelegramMessage(

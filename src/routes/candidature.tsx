@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteFooter } from "@/components/Footer";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +51,7 @@ import {
   FileEdit,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/candidature")({
+export const Route = createFileRoute("/candidature")({
   component: CandidaturePage,
 });
 
@@ -65,16 +66,9 @@ function CandidaturePage() {
     customRoleNames.length > 0 ||
     !!profile?.show_in_staff_list;
 
-  const canManageForms =
-    isAdmin ||
-    permissions.includes("candidature.gestisci") ||
-    permissions.includes("ruoli.gestisci");
+  const canManageForms = isAdmin || permissions.includes("candidature.gestisci");
 
-  const canReview =
-    isAdmin ||
-    permissions.includes("candidature.gestisci") ||
-    permissions.includes("candidature.visualizza") ||
-    isStaff;
+  const canReview = isAdmin || permissions.includes("candidature.gestisci") || permissions.includes("candidature.visualizza");
 
   // Active view tab
   const [activeTab, setActiveTab] = useState<
@@ -320,10 +314,47 @@ function CandidaturePage() {
         />
       </div>
     );
-  }
+}
 
   return (
-    <div className="space-y-8 py-2">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
+      <div>
+        <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-amber-500/20 px-4 lg:px-8 py-3 transition-all">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                ♠
+              </div>
+              <div>
+                <div className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase">
+                  Casinò Revenge
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium tracking-widest uppercase">
+                  Liberty Bay • Lavora con noi
+                </div>
+              </div>
+            </Link>
+            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <Link to="/" className="hover:text-amber-400 transition-colors">
+                Home & Guida
+              </Link>
+              <Link to="/ciurma" className="hover:text-amber-400 transition-colors">
+                La Ciurma
+              </Link>
+              {profile ? (
+                 <Link to="/dashboard" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1.5 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/30">
+                   Pannello Gestionale
+                 </Link>
+              ) : (
+                 <Link to="/auth" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1.5 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/30">
+                   Accedi
+                 </Link>
+              )}
+            </nav>
+          </div>
+        </header>
+        <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
+          <div className="space-y-8 py-2">
       {/* Title Section (Roleplay Theme) */}
       <div className="text-center space-y-2 pt-2">
         <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
@@ -1214,6 +1245,10 @@ function CandidaturePage() {
         description={`Sei sicuro di voler eliminare definitivamente il modulo "${deleteFormConfirm.title}"? Le relative candidature inviate rimarranno archiviate.`}
         confirmText="Elimina Definitivamente"
       />
+        </div>
+        </main>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

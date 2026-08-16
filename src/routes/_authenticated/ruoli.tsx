@@ -45,7 +45,7 @@ import {
   syncTelegramGroupsNow,
   checkGroupBotPermissionsFn,
 } from "@/lib/telegram-groups.functions";
-import { AlertTriangle, XCircle, Shield, Check, Info } from "lucide-react";
+import { AlertTriangle, XCircle, Shield, Check, Info, AtSign, Gamepad2, X, Search, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
@@ -79,6 +79,18 @@ function RolesPage() {
       const { data, error } = await supabase.from("custom_roles").select("*").order("name");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: allProfiles = [] } = useQuery({
+    queryKey: ["all-profiles-for-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, telegram_handle, telegram_user_id")
+        .order("display_name");
+      if (error) return [];
+      return data || [];
     },
   });
 
@@ -440,6 +452,7 @@ function RolesPage() {
                   key={group.id}
                   group={group}
                   allRoles={roles}
+                  allProfiles={allProfiles}
                   onUpdated={() => {
                     refetchGroups();
                     qc.invalidateQueries({ queryKey: ["admin-telegram-groups"] });
@@ -455,6 +468,7 @@ function RolesPage() {
       {addManualGroupOpen && (
         <AddTelegramGroupDialog
           allRoles={roles}
+          allProfiles={allProfiles}
           onClose={() => {
             setAddManualGroupOpen(false);
             refetchGroups();
@@ -468,14 +482,20 @@ function RolesPage() {
 function TelegramGroupCard({
   group,
   allRoles,
+  allProfiles = [],
   onUpdated,
 }: {
   group: any;
   allRoles: any[];
+  allProfiles?: any[];
   onUpdated: () => void;
 }) {
   const qc = useQueryClient();
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(group.allowed_role_ids || []);
+  const [exceptions, setExceptions] = useState<string[]>(
+    group.allowedExceptions || group.allowed_exceptions || group.allowed_handles || [],
+  );
+  const [newExceptionInput, setNewExceptionInput] = useState("");
   const [isEditingRoles, setIsEditingRoles] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showBotPerms, setShowBotPerms] = useState(false);
@@ -508,13 +528,13 @@ function TelegramGroupCard({
   });
 
   const updateRolesMutation = useMutation({
-    mutationFn: async (roleIds: string[]) => {
+    mutationFn: async ({ roleIds, allowedExceptions }: { roleIds: string[]; allowedExceptions: string[] }) => {
       return await updateTelegramGroupRoles({
-        data: { groupId: group.id, allowedRoleIds: roleIds },
+        data: { groupId: group.id, allowedRoleIds: roleIds, allowedExceptions },
       });
     },
     onSuccess: () => {
-      toast.success("Ruoli abilitati per il gruppo aggiornati!");
+      toast.success("Ruoli ed eccezioni abilitate per il gruppo aggiornati!");
       setIsEditingRoles(false);
       onUpdated();
       qc.invalidateQueries({ queryKey: ["admin-telegram-groups"] });
@@ -522,6 +542,19 @@ function TelegramGroupCard({
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const handleAddException = (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (exceptions.some((e) => e.toLowerCase() === trimmed.toLowerCase())) {
+      toast.info(`"${trimmed}" è già presente tra le eccezioni.`);
+      setNewExceptionInput("");
+      return;
+    }
+    setExceptions((prev) => [...prev, trimmed]);
+    setNewExceptionInput("");
+    toast.success(`Aggiunto "${trimmed}" alle eccezioni d'accesso.`);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -790,8 +823,8 @@ function TelegramGroupCard({
             </div>
           )}
 
-          {/* Role Permissions Section */}
-          <div className="space-y-2.5">
+          {/* Role Permissions & Manual Exceptions Section */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Ruoli Abilitati all'Accesso ({selectedRoleIds.length})
@@ -803,7 +836,7 @@ function TelegramGroupCard({
                   onClick={() => setIsEditingRoles(true)}
                   className="text-xs text-amber-400 hover:text-amber-300 h-7"
                 >
-                  <Pencil className="h-3 w-3 mr-1" /> Modifica Ruoli
+                  <Pencil className="h-3 w-3 mr-1" /> Modifica Permessi & Eccezioni
                 </Button>
               ) : (
                 <div className="flex items-center gap-1.5">
@@ -812,6 +845,9 @@ function TelegramGroupCard({
                     size="sm"
                     onClick={() => {
                       setSelectedRoleIds(group.allowed_role_ids || []);
+                      setExceptions(
+                        group.allowedExceptions || group.allowed_exceptions || group.allowed_handles || [],
+                      );
                       setIsEditingRoles(false);
                     }}
                     className="text-xs text-slate-400 h-7"
@@ -820,7 +856,12 @@ function TelegramGroupCard({
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => updateRolesMutation.mutate(selectedRoleIds)}
+                    onClick={() =>
+                      updateRolesMutation.mutate({
+                        roleIds: selectedRoleIds,
+                        allowedExceptions: exceptions,
+                      })
+                    }
                     disabled={updateRolesMutation.isPending}
                     className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-7"
                   >
@@ -847,7 +888,7 @@ function TelegramGroupCard({
                   ))
                 ) : (
                   <span className="text-xs text-slate-500 italic">
-                    Nessun ruolo abilitato (Nessuno può accedere)
+                    Nessun ruolo abilitato (Solo eccezioni o admin)
                   </span>
                 )}
               </div>
@@ -904,6 +945,131 @@ function TelegramGroupCard({
                 </div>
               </div>
             )}
+
+            {/* Manual Exceptions Section (@Handle or Minecraft Nickname) */}
+            <div className="space-y-2.5 pt-3 border-t border-slate-800/80">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Accesso Manuale Utenti / Nickname ({exceptions.length})</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Puoi autorizzare manualmente specifici utenti (inserendo il loro <b>@username Telegram</b> oppure il <b>Nickname Minecraft</b>). Il bot verificherà la corrispondenza ed eviterà di espellerli, bypassando il controllo sui ruoli.
+              </p>
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {exceptions.map((exc) => (
+                  <Badge
+                    key={exc}
+                    className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs px-2.5 py-1 flex items-center gap-1.5"
+                  >
+                    {exc.startsWith("@") ? (
+                      <AtSign className="h-3 w-3 text-sky-400 shrink-0" />
+                    ) : (
+                      <Gamepad2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                    )}
+                    <span className="font-mono">{exc}</span>
+                    {isEditingRoles && (
+                      <button
+                        type="button"
+                        onClick={() => setExceptions(exceptions.filter((e) => e !== exc))}
+                        className="ml-1 text-slate-400 hover:text-rose-400 focus:outline-none"
+                        title="Rimuovi eccezione"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+                {exceptions.length === 0 && (
+                  <span className="text-xs text-slate-500 italic">
+                    Nessuna eccezione manuale impostata per questo gruppo.
+                  </span>
+                )}
+              </div>
+
+              {isEditingRoles && (
+                <div className="p-3 bg-[#0a0b10] border border-slate-800 rounded-xl space-y-3 mt-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-300 font-semibold">
+                      Aggiungi un'eccezione manuale:
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newExceptionInput}
+                        onChange={(e) => setNewExceptionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddException(newExceptionInput);
+                          }
+                        }}
+                        placeholder="es. @username_telegram oppure NicknameMinecraft"
+                        className="bg-slate-900 border-slate-800 text-xs text-white"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleAddException(newExceptionInput)}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Aggiungi
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Quick selection list from registered site profiles */}
+                  {allProfiles && allProfiles.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                        <Search className="h-3 w-3 text-sky-400" /> Seleziona un utente registrato sul sito:
+                      </span>
+                      <div className="max-h-32 overflow-y-auto border border-slate-800/80 rounded-lg p-2 bg-slate-950/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {allProfiles.map((p: any) => {
+                          const tg = p.telegram_handle ? `@${p.telegram_handle.replace("@", "")}` : null;
+                          const mc = p.username || p.display_name;
+                          const targetVal = tg || mc;
+
+                          const isAdded = exceptions.some((e) => {
+                            const cleanE = e.toLowerCase().replace("@", "");
+                            const cleanTg = tg ? tg.toLowerCase().replace("@", "") : "";
+                            const cleanMc = mc ? mc.toLowerCase() : "";
+                            return cleanE === cleanTg || cleanE === cleanMc;
+                          });
+
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              disabled={isAdded}
+                              onClick={() => {
+                                if (targetVal) handleAddException(targetVal);
+                              }}
+                              className={`text-left text-xs p-1.5 rounded flex items-center justify-between border transition-colors ${
+                                isAdded
+                                  ? "bg-slate-900/40 border-slate-800/50 text-slate-600 cursor-not-allowed"
+                                  : "bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/40 hover:text-white"
+                              }`}
+                            >
+                              <div className="truncate pr-1">
+                                <div className="font-semibold text-slate-200">{mc}</div>
+                                {tg && <div className="text-[10px] text-sky-400 font-mono">{tg}</div>}
+                              </div>
+                              {isAdded ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              ) : (
+                                <Plus className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Member list section if expanded */}
@@ -1099,11 +1265,21 @@ function TelegramGroupCard({
   );
 }
 
-function AddTelegramGroupDialog({ allRoles, onClose }: { allRoles: any[]; onClose: () => void }) {
+function AddTelegramGroupDialog({
+  allRoles,
+  allProfiles = [],
+  onClose,
+}: {
+  allRoles: any[];
+  allProfiles?: any[];
+  onClose: () => void;
+}) {
   const qc = useQueryClient();
   const [chatId, setChatId] = useState("");
   const [title, setTitle] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(["crole-admin"]);
+  const [exceptions, setExceptions] = useState<string[]>([]);
+  const [manualInput, setManualInput] = useState("");
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -1112,11 +1288,13 @@ function AddTelegramGroupDialog({ allRoles, onClose }: { allRoles: any[]; onClos
           chatId,
           title: title || `Gruppo ${chatId}`,
           allowedRoleIds: selectedRoleIds,
+          allowedExceptions: exceptions,
         },
       });
     },
     onSuccess: () => {
       toast.success("Gruppo Telegram registrato con successo!");
+      qc.invalidateQueries({ queryKey: ["admin-telegram-groups"] });
       qc.invalidateQueries({ queryKey: ["telegram_groups"] });
       onClose();
     },
@@ -1129,9 +1307,20 @@ function AddTelegramGroupDialog({ allRoles, onClose }: { allRoles: any[]; onClos
     );
   };
 
+  const handleAddException = (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (exceptions.some((e) => e.toLowerCase() === trimmed.toLowerCase())) {
+      setManualInput("");
+      return;
+    }
+    setExceptions((prev) => [...prev, trimmed]);
+    setManualInput("");
+  };
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg bg-[#0f111a] border-slate-800 text-white">
+      <DialogContent className="max-w-lg bg-[#0f111a] border-slate-800 text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <Send className="h-5 w-5 text-sky-400" />
@@ -1173,7 +1362,7 @@ function AddTelegramGroupDialog({ allRoles, onClose }: { allRoles: any[]; onClos
 
           <div className="space-y-2">
             <Label className="text-slate-300">Ruoli Abilitati all'Accesso</Label>
-            <div className="grid grid-cols-2 gap-2 p-3 bg-slate-900 border border-slate-800 rounded-xl max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 p-3 bg-slate-900 border border-slate-800 rounded-xl max-h-40 overflow-y-auto">
               <label className="flex items-center gap-2 text-xs text-amber-300 font-semibold cursor-pointer">
                 <input
                   type="checkbox"
@@ -1198,6 +1387,62 @@ function AddTelegramGroupDialog({ allRoles, onClose }: { allRoles: any[]; onClos
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* Optional manual exceptions on creation */}
+          <div className="space-y-2">
+            <Label className="text-slate-300 flex items-center justify-between">
+              <span>Eccezioni Accesso Manuale (@handle o Nickname Minecraft)</span>
+              <span className="text-[10px] text-slate-500 font-normal">Opzionale</span>
+            </Label>
+
+            <div className="flex gap-2">
+              <Input
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddException(manualInput);
+                  }
+                }}
+                placeholder="es. @username_telegram oppure NicknameMinecraft"
+                className="bg-slate-900 border-slate-800 text-xs text-white"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleAddException(manualInput)}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Aggiungi
+              </Button>
+            </div>
+
+            {exceptions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {exceptions.map((exc) => (
+                  <Badge
+                    key={exc}
+                    className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs px-2.5 py-1 flex items-center gap-1.5"
+                  >
+                    {exc.startsWith("@") ? (
+                      <AtSign className="h-3 w-3 text-sky-400 shrink-0" />
+                    ) : (
+                      <Gamepad2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                    )}
+                    <span className="font-mono">{exc}</span>
+                    <button
+                      type="button"
+                      onClick={() => setExceptions(exceptions.filter((e) => e !== exc))}
+                      className="ml-1 text-slate-400 hover:text-rose-400 focus:outline-none"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0 mt-4">

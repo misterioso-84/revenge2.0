@@ -52,7 +52,6 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/cittadini", label: "Cittadini", icon: Users },
-  { to: "/candidature", label: "Candidature", icon: ClipboardList },
   { to: "/serate", label: "Serate", icon: CalendarDays },
   { to: "/conversioni", label: "Conversioni", icon: ArrowLeftRight },
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },

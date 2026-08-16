@@ -105,6 +105,7 @@ export const listTelegramGroups = createServerFn({ method: "GET" })
       return {
         ...g,
         allowedRoles,
+        allowedExceptions: g.allowed_exceptions || g.allowed_handles || [],
         botPermissions: null, // Checked on-demand via checkGroupBotPermissionsFn to prevent rate-limits & delays
         memberCount: groupMembers.filter((m: any) => m.status === "member").length,
         members: groupMembers,
@@ -145,19 +146,27 @@ export const checkGroupBotPermissionsFn = createServerFn({ method: "POST" })
     return { groupId: targetGroupId, ...permissions };
   });
 
-// 2. Update allowed roles for a Telegram group
+// 2. Update allowed roles and manual exceptions for a Telegram group
 export const updateTelegramGroupRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { groupId: string; allowedRoleIds: string[] }) => d)
+  .inputValidator(
+    (d: { groupId: string; allowedRoleIds: string[]; allowedExceptions?: string[] }) => d,
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runDaily1700TelegramAudit } = await import("@/lib/telegram.server");
 
+    const cleanExceptions = (data.allowedExceptions || [])
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
     const { error } = await supabaseAdmin
       .from("telegram_groups")
       .update({
         allowed_role_ids: data.allowedRoleIds,
+        allowed_exceptions: cleanExceptions,
+        allowed_handles: cleanExceptions,
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.groupId);
@@ -177,7 +186,14 @@ export const updateTelegramGroupRoles = createServerFn({ method: "POST" })
 // 3. Register or manually add a Telegram group (if admin has chat_id and title)
 export const registerTelegramGroupManual = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { chatId: string | number; title: string; allowedRoleIds?: string[] }) => d)
+  .inputValidator(
+    (d: {
+      chatId: string | number;
+      title: string;
+      allowedRoleIds?: string[];
+      allowedExceptions?: string[];
+    }) => d,
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -207,6 +223,9 @@ export const registerTelegramGroupManual = createServerFn({ method: "POST" })
     const id = `tgroup-${Math.abs(numChatId)}`;
     const allowedRoles =
       data.allowedRoleIds && data.allowedRoleIds.length > 0 ? data.allowedRoleIds : ["crole-admin"];
+    const cleanExceptions = (data.allowedExceptions || [])
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
     const { error } = await supabaseAdmin.from("telegram_groups").upsert({
       id,
@@ -214,6 +233,8 @@ export const registerTelegramGroupManual = createServerFn({ method: "POST" })
       title: chatTitle || `Gruppo ${numChatId}`,
       type: "supergroup",
       allowed_role_ids: allowedRoles,
+      allowed_exceptions: cleanExceptions,
+      allowed_handles: cleanExceptions,
       registered_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_active: true,
@@ -501,14 +522,11 @@ export const getUserTelegramGroups = createServerFn({ method: "GET" })
       ? profile.telegram_handle.toLowerCase().replace("@", "")
       : "";
 
-    const userGroups = (allGroups || []).filter((g: any) => {
-      if (isAdmin) return true;
-      const allowed = g.allowed_role_ids || [];
-      if (allowed.includes("admin") || allowed.includes("crole-admin")) {
-        if (isAdmin) return true;
-      }
-      return userCustomRoleIds.some((cId: string) => allowed.includes(cId));
-    });
+    const { isUserOrHandleAuthorizedForGroup } = await import("@/lib/telegram.server");
+
+    const userGroups = (allGroups || []).filter((g: any) =>
+      isUserOrHandleAuthorizedForGroup(g, profile, userCustomRoleIds, isAdmin),
+    );
 
     return userGroups.map((g: any) => {
       // Check if user is recorded as member in this group
@@ -615,15 +633,16 @@ export const generateGroupInviteLink = createServerFn({ method: "POST" })
 
     const isAdmin = (userRoles || []).some((r: any) => r.role === "admin");
     const userCustomRoleIds = (customRoles || []).map((cr: any) => cr.custom_role_id);
-    const allowed = group.allowed_role_ids || [];
 
-    const isAllowed =
-      isAdmin ||
-      (allowed.includes("admin") && isAdmin) ||
-      userCustomRoleIds.some((cId: string) => allowed.includes(cId));
+    const isAllowed = isUserOrHandleAuthorizedForGroup(
+      group,
+      profile,
+      userCustomRoleIds,
+      isAdmin,
+    );
 
     if (!isAllowed) {
-      throw new Error("Non disponi dei ruoli o permessi necessari per accedere a questo gruppo.");
+      throw new Error("Non disponi dei ruoli o eccezioni necessarie per accedere a questo gruppo.");
     }
 
     const userName = profile?.display_name || profile?.username || "Utente";
