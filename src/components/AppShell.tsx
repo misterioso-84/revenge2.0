@@ -60,6 +60,7 @@ const NAV: NavItem[] = [
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
   { to: "/stipendi", label: "Stipendi & Payroll", icon: Banknote },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
+  { to: "/messaggi-telegram", label: "Messaggi Telegram", icon: Send },
   { to: "/attivita", label: "Registro Attività", icon: History, adminOnly: true },
   { to: "/utenti", label: "Utenti", icon: UserCog, adminOnly: true },
   { to: "/ruoli", label: "Ruoli & Permessi", icon: ShieldCheck, adminOnly: true },
@@ -203,6 +204,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
     if (n.to === "/congedi") {
       return true; // accessible to any logged in employee
+    }
+    if (n.to === "/messaggi-telegram") {
+      return (
+        isAdmin ||
+        permissions.includes("telegram.send_message") ||
+        permissions.includes("ruoli.gestisci") ||
+        permissions.includes("utenti.gestisci")
+      );
     }
     return true;
   }).map((n) => {

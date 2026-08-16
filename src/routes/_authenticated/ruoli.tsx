@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, isRedirect, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ import {
   ExternalLink,
   MessageSquare,
   Sparkles,
+  Crown,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { toast } from "sonner";
@@ -67,11 +68,13 @@ export const Route = createFileRoute("/_authenticated/ruoli")({
 
 function RolesPage() {
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"roles" | "telegram">("roles");
+  const [activeTab, setActiveTab] = useState<"roles" | "reparti" | "telegram">("roles");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [isRepartoDialog, setIsRepartoDialog] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<any | null>(null);
   const [addManualGroupOpen, setAddManualGroupOpen] = useState(false);
+  const [managingRepartoMembers, setManagingRepartoMembers] = useState<any | null>(null);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["custom-roles"],
@@ -93,6 +96,18 @@ function RolesPage() {
       return data || [];
     },
   });
+
+  const { data: userCustomRoles = [] } = useQuery({
+    queryKey: ["user-custom-roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_custom_roles").select("*");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  const baseRoles = (roles || []).filter((r: any) => !r.is_reparto);
+  const reparti = (roles || []).filter((r: any) => r.is_reparto === true);
 
   const {
     data: telegramGroups = [],
@@ -154,30 +169,46 @@ function RolesPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
         <button
+          type="button"
           onClick={() => setActiveTab("roles")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
             activeTab === "roles"
               ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20"
               : "bg-[#12141c] text-slate-400 hover:text-white border border-slate-800"
           }`}
         >
           <ShieldCheck className="h-4 w-4" />
-          Ruoli & Permessi Sito
+          Ruoli Base Sito ({baseRoles.length})
         </button>
+
         <button
+          type="button"
+          onClick={() => setActiveTab("reparti")}
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+            activeTab === "reparti"
+              ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
+              : "bg-[#12141c] text-slate-400 hover:text-white border border-slate-800"
+          }`}
+        >
+          <Sparkles className="h-4 w-4 text-purple-300" />
+          Reparti & Extrapex ({reparti.length})
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("telegram")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all relative ${
+          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all relative ${
             activeTab === "telegram"
-              ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20"
+              ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20"
               : "bg-[#12141c] text-slate-400 hover:text-white border border-slate-800"
           }`}
         >
           <Send className="h-4 w-4" />
           Gruppi Telegram & Bot
           {telegramGroups.length > 0 && (
-            <span className="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] px-1.5 py-0.2 rounded-full ml-1">
+            <span className="bg-sky-950 text-sky-300 border border-sky-500/30 text-[10px] px-1.5 py-0.2 rounded-full ml-1 font-mono">
               {telegramGroups.length}
             </span>
           )}
@@ -189,11 +220,12 @@ function RolesPage() {
           {/* Control Header Box */}
           <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider">
-                RUOLI & PERMESSI
+              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-400" />
+                RUOLI BASE SITO
               </h2>
               <p className="text-xs text-slate-400">
-                Crea e gestisci i ruoli personalizzati con permessi e colori identificativi
+                Crea e gestisci i ruoli principali della gerarchia della Ciurma
               </p>
             </div>
 
@@ -201,22 +233,23 @@ function RolesPage() {
               className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 w-full sm:w-auto"
               onClick={() => {
                 setEditing(null);
+                setIsRepartoDialog(false);
                 setOpen(true);
               }}
             >
-              <Plus className="h-4 w-4 mr-1.5" /> Nuovo ruolo
+              <Plus className="h-4 w-4 mr-1.5" /> Nuovo ruolo base
             </Button>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {roles.length === 0 && (
-              <Card className="md:col-span-2">
-                <CardContent className="text-center text-muted-foreground py-8">
-                  Nessun ruolo personalizzato
+            {baseRoles.length === 0 && (
+              <Card className="md:col-span-2 bg-[#12141c] border-slate-800">
+                <CardContent className="text-center text-slate-400 py-8">
+                  Nessun ruolo base configurato.
                 </CardContent>
               </Card>
             )}
-            {roles.map((r: any) => (
+            {baseRoles.map((r: any) => (
               <Card key={r.id} className="relative overflow-hidden border border-slate-800">
                 <div
                   className="h-1.5 w-full"
@@ -274,47 +307,156 @@ function RolesPage() {
               </Card>
             ))}
           </div>
+        </>
+      ) : activeTab === "reparti" ? (
+        <>
+          {/* REPARTI & EXTRAPEX TAB */}
+          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                REPARTI & EXTRAPEX
+              </h2>
+              <p className="text-xs text-slate-400">
+                I reparti (extrapex) concedono permessi aggiuntivi cumulativi oltre al ruolo base dell'utente e sono visibili nella pagina della Ciurma.
+              </p>
+            </div>
 
-          {/* Dialog for confirming custom role deletion */}
-          {roleToDelete && (
-            <Dialog open={!!roleToDelete} onOpenChange={() => setRoleToDelete(null)}>
-              <DialogContent className="max-w-md bg-[#12141c] border-slate-800 text-white">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-rose-400">
-                    <Trash2 className="h-5 w-5" />
-                    Elimina Ruolo Personalizzato
-                  </DialogTitle>
-                  <DialogDescription className="text-slate-400 text-sm">
-                    Sei sicuro di voler eliminare il ruolo <b>"{roleToDelete.name}"</b>? Questa
-                    azione rimuoverà i relativi permessi associati agli utenti.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="gap-2 sm:gap-0 mt-3">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setRoleToDelete(null)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    Annulla
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={del.isPending}
-                    onClick={() => {
-                      del.mutate(roleToDelete.id, {
-                        onSuccess: () => setRoleToDelete(null),
-                      });
-                    }}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
-                  >
-                    {del.isPending ? "Eliminazione..." : "Conferma ed Elimina"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+            <Button
+              className="bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-purple-500/20 w-full sm:w-auto"
+              onClick={() => {
+                setEditing(null);
+                setIsRepartoDialog(true);
+                setOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Nuovo Reparto (Extrapex)
+            </Button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {reparti.length === 0 && (
+              <Card className="md:col-span-2 bg-[#12141c] border-slate-800">
+                <CardContent className="text-center text-slate-400 py-10 space-y-2">
+                  <Sparkles className="h-8 w-8 text-purple-400 mx-auto opacity-80" />
+                  <div className="font-bold text-white text-sm">Nessun Reparto / Extrapex Creato</div>
+                  <p className="text-xs max-w-sm mx-auto text-slate-400">
+                    Crea reparti speciali come "Sicurezza", "Eventi" o "Cassa" per assegnare mansioni e permessi extra allo staff.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {reparti.map((rep: any) => {
+              const assignedUserLinks = (userCustomRoles || []).filter(
+                (ucr: any) => ucr.custom_role_id === rep.id,
+              );
+              const assignedProfiles = (allProfiles || []).filter((p: any) =>
+                assignedUserLinks.some((link: any) => link.user_id === p.id),
+              );
+
+              return (
+                <Card key={rep.id} className="relative overflow-hidden border border-purple-500/30 bg-[#12141c] text-white">
+                  <div
+                    className="h-1.5 w-full"
+                    style={{ backgroundColor: rep.staff_color || "#8b5cf6" }}
+                  />
+                  <CardContent className="pt-5 space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-lg text-white">{rep.name}</h3>
+                          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-[10px] font-semibold">
+                            Extrapex
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">{rep.description ?? "Nessuna descrizione"}</p>
+                      </div>
+
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(rep);
+                            setIsRepartoDialog(true);
+                            setOpen(true);
+                          }}
+                          className="hover:bg-slate-800 text-slate-300"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setRoleToDelete(rep)}
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Permissions Badges */}
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80">
+                        Permessi Aggiuntivi:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {(rep.permissions ?? []).length === 0 && (
+                          <span className="text-xs text-slate-500 italic">Nessun permesso aggiuntivo</span>
+                        )}
+                        {(rep.permissions ?? []).map((p: string) => (
+                          <Badge key={p} className="text-xs bg-purple-500/10 text-purple-200 border-purple-500/20">
+                            + {PERMISSIONS.find((x) => x.key === p)?.label ?? p}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Assigned Members Section */}
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Membri Assegnati ({assignedProfiles.length}):
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {assignedProfiles.length === 0 ? (
+                            <span className="text-xs text-slate-500 italic">Nessun membro assegnato</span>
+                          ) : (
+                            assignedProfiles.slice(0, 5).map((p: any) => (
+                              <Badge key={p.id} className="text-[10px] bg-slate-900 text-slate-200 border-slate-800 flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                                {p.display_name || p.username}
+                              </Badge>
+                            ))
+                          )}
+                          {assignedProfiles.length > 5 && (
+                            <Badge className="text-[10px] bg-slate-900 text-slate-400 border-slate-800">
+                              +{assignedProfiles.length - 5} altri
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setManagingRepartoMembers(rep)}
+                        className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 text-xs shrink-0 font-bold"
+                      >
+                        <UserPlus className="h-3.5 w-3.5 mr-1" />
+                        Gestisci Membri
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </>
       ) : (
+        /* Telegram Groups Management Tab */
         /* Telegram Groups Management Tab */
         <div className="space-y-6">
           {/* Header Controls */}
@@ -337,6 +479,15 @@ function RolesPage() {
             </div>
 
             <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+              <Link to="/messaggi-telegram">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs gap-1.5 shadow-md shadow-sky-500/20"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Invio Messaggi Bot
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"
@@ -1468,12 +1619,25 @@ function AddTelegramGroupDialog({
   );
 }
 
-function RoleDialog({ role, onClose }: any) {
+function RoleDialog({
+  role,
+  defaultIsReparto = false,
+  onClose,
+}: {
+  role?: any;
+  defaultIsReparto?: boolean;
+  onClose: () => void;
+}) {
   const qc = useQueryClient();
   const [perms, setPerms] = useState<string[]>(role?.permissions ?? []);
   const [showInStaff, setShowInStaff] = useState<boolean>(role?.show_in_staff_list ?? true);
   const [staffWeight, setStaffWeight] = useState<number>(role?.staff_weight ?? 50);
-  const [staffColor, setStaffColor] = useState<string>(role?.staff_color ?? "#3b82f6");
+  const [staffColor, setStaffColor] = useState<string>(
+    role?.staff_color ?? (defaultIsReparto || role?.is_reparto ? "#8b5cf6" : "#3b82f6"),
+  );
+  const [isReparto, setIsReparto] = useState<boolean>(
+    role ? Boolean(role.is_reparto) : defaultIsReparto,
+  );
 
   const save = useMutation({
     mutationFn: async (v: any) => {
@@ -1484,6 +1648,7 @@ function RoleDialog({ role, onClose }: any) {
         show_in_staff_list: showInStaff,
         staff_weight: Number(staffWeight) || 50,
         staff_color: staffColor || "#3b82f6",
+        is_reparto: isReparto,
       };
       if (role) {
         const { error } = await supabase.from("custom_roles").update(payload).eq("id", role.id);
@@ -1495,7 +1660,7 @@ function RoleDialog({ role, onClose }: any) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom-roles"] });
-      toast.success("Salvato");
+      toast.success(isReparto ? "Reparto salvato" : "Ruolo salvato");
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -1503,9 +1668,21 @@ function RoleDialog({ role, onClose }: any) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg bg-[#12141c] border-slate-800 text-white">
         <DialogHeader>
-          <DialogTitle>{role ? "Modifica ruolo" : "Nuovo ruolo"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {isReparto ? (
+              <>
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                {role ? "Modifica Reparto / Extrapex" : "Nuovo Reparto (Extrapex)"}
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="h-5 w-5 text-amber-400" />
+                {role ? "Modifica Ruolo Base" : "Nuovo Ruolo Base"}
+              </>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <form
           id="role-form"
@@ -1515,14 +1692,49 @@ function RoleDialog({ role, onClose }: any) {
             save.mutate(Object.fromEntries(new FormData(e.currentTarget)));
           }}
         >
-          <div>
-            <Label>Nome Ruolo *</Label>
-            <Input name="name" required defaultValue={role?.name ?? ""} />
+          {/* Reparto Toggle */}
+          <div className="p-3 border border-slate-800 bg-[#0a0b10] rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                Tipo di Ruolo / Permesso:
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {isReparto
+                  ? "Reparto (Extrapex): Permessi cumulativi extra oltre al ruolo base."
+                  : "Ruolo Base: Ruolo principale della gerarchia della Ciurma."}
+              </p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={isReparto}
+                onChange={(e) => setIsReparto(e.target.checked)}
+                className="rounded text-purple-500 h-4 w-4"
+              />
+              <span className="text-xs font-bold text-purple-300">È un Reparto</span>
+            </label>
           </div>
 
           <div>
-            <Label>Descrizione</Label>
-            <Textarea name="description" rows={2} defaultValue={role?.description ?? ""} />
+            <Label className="text-slate-300">Nome {isReparto ? "Reparto" : "Ruolo"} *</Label>
+            <Input
+              name="name"
+              required
+              defaultValue={role?.name ?? ""}
+              placeholder={isReparto ? "es. Sicurezza, Eventi, Cassa" : "es. Capitano, Operatore"}
+              className="bg-slate-900 border-slate-800 text-white"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-300">Descrizione</Label>
+            <Textarea
+              name="description"
+              rows={2}
+              defaultValue={role?.description ?? ""}
+              placeholder={isReparto ? "Descrivi i compiti e permessi di questo reparto..." : "Descrizione del ruolo..."}
+              className="bg-slate-900 border-slate-800 text-white"
+            />
           </div>
 
           {/* Configurazione "La nostra Ciurma" (Staff List) */}
@@ -1535,41 +1747,41 @@ function RoleDialog({ role, onClose }: any) {
                   onChange={(e) => setShowInStaff(e.target.checked)}
                   className="rounded text-amber-500"
                 />
-                ⚓ Mostra membri di questo ruolo nella Ciurma (Lista Staff)
+                ⚓ Mostra {isReparto ? "questo reparto" : "questo ruolo"} nella Ciurma (Lista Staff)
               </label>
             </div>
 
             {showInStaff && (
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <Label className="text-xs">Peso Gerarchico (Ordina lista)</Label>
+                  <Label className="text-xs text-slate-300">Peso Ordine Lista (0-100)</Label>
                   <Input
                     type="number"
                     min={0}
                     max={100}
                     value={staffWeight}
                     onChange={(e) => setStaffWeight(Number(e.target.value))}
-                    className="bg-background"
+                    className="bg-slate-900 border-slate-800 text-white"
                   />
-                  <span className="text-[10px] text-muted-foreground">
-                    100 = Capitano, 50 = Operatore
+                  <span className="text-[10px] text-slate-400">
+                    Priorità di visualizzazione nella lista della Ciurma
                   </span>
                 </div>
 
                 <div>
-                  <Label className="text-xs">Colore distintivo Ruolo</Label>
+                  <Label className="text-xs text-slate-300">Colore Distintivo</Label>
                   <div className="flex gap-2 items-center">
                     <Input
                       type="color"
                       value={staffColor}
                       onChange={(e) => setStaffColor(e.target.value)}
-                      className="w-10 h-9 p-1 bg-background cursor-pointer"
+                      className="w-10 h-9 p-1 bg-slate-900 border-slate-800 cursor-pointer"
                     />
                     <Input
                       type="text"
                       value={staffColor}
                       onChange={(e) => setStaffColor(e.target.value)}
-                      className="font-mono text-xs bg-background uppercase"
+                      className="font-mono text-xs bg-slate-900 border-slate-800 text-white uppercase"
                     />
                   </div>
                 </div>
@@ -1578,12 +1790,12 @@ function RoleDialog({ role, onClose }: any) {
           </div>
 
           <div>
-            <Label>Permessi</Label>
-            <div className="grid grid-cols-1 gap-1.5 mt-2 max-h-56 overflow-y-auto border border-border rounded-md p-3">
+            <Label className="text-slate-300">Permessi {isReparto ? "Aggiuntivi (Extrapex)" : "Ruolo"}</Label>
+            <div className="grid grid-cols-1 gap-1.5 mt-2 max-h-56 overflow-y-auto border border-slate-800 bg-[#0a0b10] rounded-md p-3">
               {PERMISSIONS.map((p) => {
                 const checked = perms.includes(p.key);
                 return (
-                  <label key={p.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label key={p.key} className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer hover:text-white">
                     <input
                       type="checkbox"
                       checked={checked}
@@ -1592,9 +1804,10 @@ function RoleDialog({ role, onClose }: any) {
                           e.target.checked ? [...cur, p.key] : cur.filter((x) => x !== p.key),
                         )
                       }
+                      className="rounded text-purple-500"
                     />
                     {p.label}
-                    <span className="text-xs text-muted-foreground ml-auto font-mono">{p.key}</span>
+                    <span className="text-xs text-slate-500 ml-auto font-mono">{p.key}</span>
                   </label>
                 );
               })}
@@ -1602,11 +1815,16 @@ function RoleDialog({ role, onClose }: any) {
           </div>
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">
             Annulla
           </Button>
-          <Button form="role-form" type="submit" disabled={save.isPending}>
-            Salva Ruolo
+          <Button
+            form="role-form"
+            type="submit"
+            disabled={save.isPending}
+            className={isReparto ? "bg-purple-600 hover:bg-purple-500 text-white font-bold" : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"}
+          >
+            {save.isPending ? "Salvataggio..." : isReparto ? "Salva Reparto" : "Salva Ruolo"}
           </Button>
         </DialogFooter>
       </DialogContent>

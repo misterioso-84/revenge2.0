@@ -477,10 +477,13 @@ function LandingPage() {
   const registerFn = useServerFn(registerPublicUser);
   const getStaffListFn = useServerFn(getPublicStaffList);
 
-  const { data: staffList = [] } = useQuery({
+  const { data: rawStaffData } = useQuery({
     queryKey: ["public-staff-list"],
     queryFn: () => getStaffListFn(),
   });
+  const staffList = Array.isArray(rawStaffData)
+    ? rawStaffData
+    : rawStaffData?.staffMembers || [];
 
   // Modals state
   const [loginOpen, setLoginOpen] = useState(false);

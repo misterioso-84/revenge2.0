@@ -490,6 +490,12 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
       });
     }
 
+    // Separate base roles and reparti (extrapex)
+    const baseRoles = assignedRoles.filter((r: any) => !r.is_reparto);
+    const assignedReparti = assignedRoles.filter(
+      (r: any) => r.is_reparto === true && r.show_in_staff_list === true,
+    );
+
     // Filter by roles that have show_in_staff_list === true
     const visibleRoles = assignedRoles.filter((r: any) => r && r.show_in_staff_list === true);
 
@@ -498,9 +504,18 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
       continue;
     }
 
-    // Find the highest weight role among their visible roles
-    visibleRoles.sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
-    const topRole = visibleRoles[0];
+    // Find the highest weight base role (or top role) for primary title
+    const topRoleCandidates = baseRoles.filter((r: any) => r.show_in_staff_list === true);
+    if (topRoleCandidates.length === 0) {
+      topRoleCandidates.push(...visibleRoles);
+    }
+    topRoleCandidates.sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
+    const topRole = topRoleCandidates[0] || {
+      name: "Staff",
+      id: "default",
+      staff_weight: 50,
+      staff_color: "#3b82f6",
+    };
 
     // Clean and format Telegram handle
     let formattedTg = p.telegram_handle ? String(p.telegram_handle).trim() : null;
@@ -517,11 +532,50 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
       roleId: topRole.id,
       staffWeight: topRole.staff_weight ?? 50,
       staffColor: topRole.staff_color || "#3b82f6",
+      reparti: assignedReparti.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        staffColor: r.staff_color || "#8b5cf6",
+        staffWeight: r.staff_weight ?? 50,
+      })),
+      assignedRoles: assignedRoles.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        isReparto: !!r.is_reparto,
+        showInStaffList: r.show_in_staff_list ?? true,
+        staffColor: r.staff_color || "#3b82f6",
+        staffWeight: r.staff_weight ?? 50,
+      })),
     });
   }
 
   // Sort descending by staff weight (highest weight = top of hierarchy)
-  return staffMembers.sort((a, b) => b.staffWeight - a.staffWeight);
+  const sortedStaff = staffMembers.sort((a, b) => b.staffWeight - a.staffWeight);
+
+  // Group staff members by active Reparti (extrapex) with show_in_staff_list === true
+  const repartiList = (allCustomRoles || [])
+    .filter((cr: any) => cr && cr.is_reparto === true && cr.show_in_staff_list === true)
+    .map((rep: any) => {
+      const members = sortedStaff.filter((m: any) =>
+        m.reparti.some((r: any) => r.id === rep.id),
+      );
+      return {
+        id: rep.id,
+        name: rep.name,
+        description: rep.description,
+        staffColor: rep.staff_color || "#8b5cf6",
+        staffWeight: rep.staff_weight ?? 50,
+        permissions: rep.permissions || [],
+        members,
+      };
+    })
+    .sort((a, b) => b.staffWeight - a.staffWeight);
+
+  return {
+    staffMembers: sortedStaff,
+    repartiList,
+  };
 });
 
 export const syncUserSession = createServerFn({ method: "POST" })

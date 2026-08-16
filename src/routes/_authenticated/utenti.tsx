@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -53,6 +54,8 @@ import {
   Power,
   LogOut,
   Radio,
+  Crown,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -1203,44 +1206,108 @@ function ResetDialog({ user, onClose, onSubmit }: any) {
 
 function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
   const assignedIds = new Set(user.custom_roles?.map((r: any) => r.id) ?? []);
+  const baseRoles = (customRoles || []).filter((r: any) => !r.is_reparto);
+  const reparti = (customRoles || []).filter((r: any) => r.is_reparto === true);
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-md bg-[#12141c] border-slate-800 text-white">
         <DialogHeader>
-          <DialogTitle>Ruoli di {user.username}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-amber-400" />
+            Ruoli & Reparti di {user.username}
+          </DialogTitle>
+          <DialogDescription className="text-slate-400 text-xs">
+            Assegna un ruolo base o i reparti (extrapex) per concedere permessi cumulativi all'utente.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {customRoles.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Nessun ruolo personalizzato. Creane uno in "Ruoli & Permessi".
-            </p>
-          )}
-          {customRoles.map((r: any) => {
-            const checked = assignedIds.has(r.id);
-            return (
-              <label
-                key={r.id}
-                className="flex items-start gap-3 p-3 rounded-md border border-border cursor-pointer hover:bg-card/60"
-              >
-                <input
-                  type="checkbox"
-                  defaultChecked={checked}
-                  onChange={(e) => onToggle(r.id, e.target.checked)}
-                  className="mt-1"
-                />
-                <div>
-                  <div className="font-medium">{r.name}</div>
-                  <div className="text-xs text-muted-foreground">{r.description ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {(r.permissions ?? []).length} permessi
-                  </div>
-                </div>
-              </label>
-            );
-          })}
+
+        <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-1">
+          {/* Ruoli Base Section */}
+          <div className="space-y-2">
+            <div className="text-xs font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5" /> Ruoli Base Sito
+            </div>
+            {baseRoles.length === 0 ? (
+              <p className="text-xs text-slate-500 italic">Nessun ruolo base disponibile.</p>
+            ) : (
+              baseRoles.map((r: any) => {
+                const checked = assignedIds.has(r.id);
+                return (
+                  <label
+                    key={r.id}
+                    className="flex items-start gap-3 p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      defaultChecked={checked}
+                      onChange={(e) => onToggle(r.id, e.target.checked)}
+                      className="mt-1 rounded text-amber-500"
+                    />
+                    <div>
+                      <div className="font-semibold text-sm text-slate-200 flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: r.staff_color || "#f59e0b" }}
+                        />
+                        {r.name}
+                      </div>
+                      <div className="text-xs text-slate-400">{r.description ?? "—"}</div>
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
+
+          {/* Reparti & Extrapex Section */}
+          <div className="space-y-2 pt-2 border-t border-slate-800">
+            <div className="text-xs font-extrabold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" /> Reparti & Extrapex
+            </div>
+            {reparti.length === 0 ? (
+              <p className="text-xs text-slate-500 italic">Nessun reparto (extrapex) configurato.</p>
+            ) : (
+              reparti.map((r: any) => {
+                const checked = assignedIds.has(r.id);
+                return (
+                  <label
+                    key={r.id}
+                    className="flex items-start gap-3 p-2.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      defaultChecked={checked}
+                      onChange={(e) => onToggle(r.id, e.target.checked)}
+                      className="mt-1 rounded text-purple-500"
+                    />
+                    <div>
+                      <div className="font-semibold text-sm text-purple-200 flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: r.staff_color || "#8b5cf6" }}
+                        />
+                        {r.name}
+                        <Badge className="text-[9px] bg-purple-500/20 text-purple-300 border-purple-500/30">
+                          Extrapex
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-slate-400">{r.description ?? "—"}</div>
+                      <div className="text-[10px] text-purple-300/80 mt-0.5">
+                        +{(r.permissions ?? []).length} permessi extra
+                      </div>
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
         </div>
+
         <DialogFooter>
-          <Button onClick={onClose}>Chiudi</Button>
+          <Button onClick={onClose} className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+            Chiudi
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

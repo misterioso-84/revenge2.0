@@ -675,3 +675,162 @@ export const generateGroupInviteLink = createServerFn({ method: "POST" })
       expiresIn: "48 ore (Monouso)",
     };
   });
+
+async function assertTelegramSender(ctx: { supabase: any; userId: string }) {
+  const { data: profile } = await ctx.supabase
+    .from("profiles")
+    .select("role, username")
+    .eq("id", ctx.userId)
+    .maybeSingle();
+
+  const { data: userRoles } = await ctx.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", ctx.userId);
+
+  const { data: customRoles } = await ctx.supabase
+    .from("user_custom_roles")
+    .select("custom_role_id, custom_roles(permissions)")
+    .eq("user_id", ctx.userId);
+
+  const isRoleAdmin = (userRoles || []).some(
+    (r: any) => r.role === "admin" || r.role === "gestore" || r.role === "capitano",
+  );
+  const isProfileAdmin =
+    profile?.role === "admin" ||
+    profile?.role === "gestore" ||
+    profile?.username?.toLowerCase() === "admin" ||
+    profile?.username?.toLowerCase() === "giuse84pro";
+
+  const hasPermInCustomRole = (customRoles || []).some((cr: any) => {
+    const perms = cr.custom_roles?.permissions || [];
+    return (
+      perms.includes("telegram.send_message") ||
+      perms.includes("ruoli.gestisci") ||
+      perms.includes("utenti.gestisci")
+    );
+  });
+
+  if (isRoleAdmin || isProfileAdmin || hasPermInCustomRole) {
+    return;
+  }
+
+  const { data: rpcAdmin } = await ctx.supabase.rpc("is_admin", { _user_id: ctx.userId });
+  if (rpcAdmin) return;
+
+  const { data: userPerms } = await ctx.supabase.rpc("user_permissions", { _user_id: ctx.userId });
+  if (
+    Array.isArray(userPerms) &&
+    (userPerms.includes("telegram.send_message") ||
+      userPerms.includes("ruoli.gestisci") ||
+      userPerms.includes("utenti.gestisci"))
+  ) {
+    return;
+  }
+
+  throw new Error("Permesso negato: non disponi dell'autorizzazione per inviare messaggi nei gruppi Telegram.");
+}
+
+// List registered active Telegram groups available for sending messages
+export const listBotTelegramGroups = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertTelegramSender(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: groups, error } = await supabaseAdmin
+      .from("telegram_groups")
+      .select("id, chat_id, title, type, invite_link, is_active, registered_at")
+      .eq("is_active", true)
+      .order("title", { ascending: true });
+
+    if (error) throw error;
+    return groups || [];
+  });
+
+// Send broadcast message to selected Telegram groups with rich HTML formatting and optional buttons
+export const sendBroadcastTelegramMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      chatIds: (string | number)[];
+      text: string;
+      buttons?: { text: string; url: string }[];
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await assertTelegramSender(context);
+    const { sendTelegramMessage } = await import("@/lib/telegram.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!data.chatIds || data.chatIds.length === 0) {
+      throw new Error("Seleziona almeno un gruppo o canale Telegram destinatario.");
+    }
+
+    if (!data.text || data.text.trim().length === 0) {
+      throw new Error("Il testo del messaggio non può essere vuoto.");
+    }
+
+    let replyMarkup: any = undefined;
+    if (data.buttons && data.buttons.length > 0) {
+      const validButtons = data.buttons
+        .filter((b) => b.text.trim() && b.url.trim())
+        .map((b) => [{ text: b.text.trim(), url: b.url.trim() }]);
+      if (validButtons.length > 0) {
+        replyMarkup = { inline_keyboard: validButtons };
+      }
+    }
+
+    const results: { chatId: string | number; title: string; success: boolean; error?: string }[] = [];
+
+    const { data: groups } = await supabaseAdmin
+      .from("telegram_groups")
+      .select("chat_id, title")
+      .in("chat_id", data.chatIds);
+
+    const titleMap = new Map((groups || []).map((g: any) => [String(g.chat_id), g.title]));
+
+    for (const chatId of data.chatIds) {
+      const groupTitle = titleMap.get(String(chatId)) || `Chat ${chatId}`;
+      try {
+        const res = await sendTelegramMessage(chatId, data.text, replyMarkup);
+        if (res && res.ok) {
+          results.push({ chatId, title: groupTitle, success: true });
+        } else {
+          results.push({
+            chatId,
+            title: groupTitle,
+            success: false,
+            error: res?.description || "Errore rifiutato dalle API Telegram.",
+          });
+        }
+      } catch (err: any) {
+        results.push({
+          chatId,
+          title: groupTitle,
+          success: false,
+          error: err?.message || "Errore di connessione con Telegram.",
+        });
+      }
+    }
+
+    // Attempt activity log
+    try {
+      const successCount = results.filter((r) => r.success).length;
+      await supabaseAdmin.from("activity_logs").insert({
+        user_id: context.userId,
+        action: "telegram_broadcast_sent",
+        details: `Inviato messaggio Telegram a ${successCount}/${data.chatIds.length} gruppi.`,
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    return {
+      total: data.chatIds.length,
+      successCount: results.filter((r) => r.success).length,
+      failCount: results.filter((r) => !r.success).length,
+      results,
+    };
+  });
+

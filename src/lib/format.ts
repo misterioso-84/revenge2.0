@@ -67,4 +67,5 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "congedi.gestisci", label: "Approvare o rifiutare richieste di congedo" },
   { key: "candidature.gestisci", label: "Gestire, creare moduli e valutare candidature staff" },
   { key: "candidature.visualizza", label: "Vedere tutte le candidature e risposte inviate" },
+  { key: "telegram.send_message", label: "Inviare messaggi Telegram nei gruppi bot" },
 ];
