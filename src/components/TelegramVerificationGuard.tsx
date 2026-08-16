@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { requestTelegramVerificationCode, verifyTelegramCode } from "@/lib/registration.functions";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,27 @@ export function TelegramVerificationGuard({
   const reqCodeFn = useServerFn(requestTelegramVerificationCode);
   const verifyCodeFn = useServerFn(verifyTelegramCode);
 
-  const [pinCode, setPinCode] = useState("");
-  const [commandText, setCommandText] = useState("");
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const [pinCode, setPinCode] = useState(() => {
+    if (profile?.telegram_code && profile.telegram_code.length === 6) return profile.telegram_code;
+    if (typeof window !== "undefined" && profile?.id) {
+      const saved = localStorage.getItem(`casino_pin_${profile.id}`);
+      if (saved && saved.length === 6) return saved;
+    }
+    return "";
+  });
+  const [commandText, setCommandText] = useState(() => {
+    if (profile?.telegram_code && profile.telegram_code.length === 6)
+      return `/associa ${profile.telegram_code}`;
+    return "";
+  });
   const [botUrl, setBotUrl] = useState("https://t.me/CasinoRevengeBot");
   const [busy, setBusy] = useState(false);
   const [detectedHandle, setDetectedHandle] = useState<string | null>(null);
@@ -26,15 +45,18 @@ export function TelegramVerificationGuard({
   const [isVerified, setIsVerified] = useState(false);
 
   const handleGenerateCode = async (isManual = false) => {
-    if (!profile?.id || busy) return;
+    if (!profile?.id || busy || !isMountedRef.current) return;
     setBusy(true);
     setErrorMessage(null);
     try {
       const res = await reqCodeFn({
         data: {
           userId: profile.id,
+          code: isManual ? undefined : pinCode || undefined,
+          forceNew: isManual,
         },
       });
+      if (!isMountedRef.current) return;
       if (res.code) {
         setPinCode(res.code);
         setCommandText(`/associa ${res.code}`);
@@ -49,31 +71,36 @@ export function TelegramVerificationGuard({
         toast.success("Nuovo codice /associa generato!");
       }
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setErrorMessage(err.message || "Errore nella generazione del codice Telegram.");
       if (isManual) {
         toast.error(err.message || "Errore nella generazione del codice Telegram.");
       }
     } finally {
-      setBusy(false);
+      if (isMountedRef.current) {
+        setBusy(false);
+      }
     }
   };
 
-  // Generate code only once on initial mount if not already present
+  // Sync / ensure code is registered on server once on initial mount
   useEffect(() => {
-    if (!profile?.id || pinCode || isVerified) return;
+    if (!profile?.id || isVerified) return;
     handleGenerateCode(false);
-  }, [profile?.id]);
+  }, [profile?.id, isVerified]);
 
   const copyToClipboard = () => {
     if (!commandText) return;
     navigator.clipboard.writeText(commandText);
     setCopied(true);
     toast.success("Comando copiato negli appunti! Incollalo su Telegram.");
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+      if (isMountedRef.current) setCopied(false);
+    }, 2000);
   };
 
   const handleVerifyFromBot = async (silent = false) => {
-    if (!pinCode.trim() || !profile?.id || isVerified) return;
+    if (!pinCode.trim() || !profile?.id || isVerified || !isMountedRef.current) return;
     if (!silent) setBusy(true);
     try {
       const res = await verifyCodeFn({
@@ -82,6 +109,8 @@ export function TelegramVerificationGuard({
           userId: profile.id,
         },
       });
+
+      if (!isMountedRef.current) return;
 
       if (res.handle) {
         setIsVerified(true);
@@ -95,6 +124,7 @@ export function TelegramVerificationGuard({
         }, 1200);
       }
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       if (err.message && err.message.includes("già stato collegato")) {
         setErrorMessage(err.message);
       }
@@ -102,7 +132,7 @@ export function TelegramVerificationGuard({
         toast.error(err.message || "Invia prima il comando al Bot Telegram, poi riprova.");
       }
     } finally {
-      if (!silent) setBusy(false);
+      if (!silent && isMountedRef.current) setBusy(false);
     }
   };
 

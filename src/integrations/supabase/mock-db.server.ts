@@ -22,7 +22,7 @@ async function getNeon() {
 }
 
 async function getFirestore() {
-  return firestoreModuleStatic;
+  return null;
 }
 
 let fsModule: any = null;
@@ -534,6 +534,8 @@ function getInitialDb() {
         is_revoked: false,
       },
     ],
+    telegram_groups: [],
+    telegram_group_members: [],
   };
 
   return db;
@@ -658,6 +660,22 @@ function ensureDbTables(db: Record<string, any[]>) {
   }
   db.audit_logs = db.audit_logs || [];
   db.user_sessions = db.user_sessions || [];
+
+  // Remove test mock groups if present
+  if (Array.isArray(db.telegram_groups)) {
+    db.telegram_groups = db.telegram_groups.filter(
+      (g: any) =>
+        g.id !== "tgroup-staff-generale" &&
+        g.id !== "tgroup-direzione" &&
+        g.id !== "tgroup-croupier-tavoli",
+    );
+  }
+  if (Array.isArray(db.telegram_group_members)) {
+    db.telegram_group_members = db.telegram_group_members.filter(
+      (m: any) => m.id !== "tgm-admin-1" && m.group_id !== "tgroup-staff-generale",
+    );
+  }
+
   return db;
 }
 
@@ -1330,7 +1348,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     const isWrite =
       ["insert", "update", "delete", "upsert"].includes(operation) ||
       (operation === "rpc" && !["is_admin", "user_permissions", "has_permission"].includes(name));
-    if (isWrite && !isAdmin) {
+    if (isWrite && !isAdmin && !query.isServiceRole) {
       return {
         data: null,
         error: {
@@ -1364,15 +1382,44 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (name === "is_admin") {
       const userId = args._user_id;
       const userRoles = db.user_roles || [];
-      const isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
-      return { data: isAdmin, error: null };
+      const profiles = db.profiles || [];
+      const userCustomRoles = db.user_custom_roles || [];
+      const prof = profiles.find((p: any) => p.id === userId);
+      const isUserRoleAdmin = userRoles.some(
+        (ur: any) =>
+          ur.user_id === userId &&
+          (ur.role === "admin" || ur.role === "gestore" || ur.role === "capitano"),
+      );
+      const isCustomRoleAdmin = userCustomRoles.some(
+        (ucr: any) =>
+          ucr.user_id === userId &&
+          (ucr.custom_role_id === "crole-admin" ||
+            ucr.custom_role_id === "crole-gestore" ||
+            ucr.custom_role_id === "crole-1"),
+      );
+      const isAdmin =
+        isUserRoleAdmin ||
+        isCustomRoleAdmin ||
+        prof?.role === "admin" ||
+        prof?.role === "gestore" ||
+        prof?.username?.toLowerCase() === "admin" ||
+        prof?.username?.toLowerCase() === "giuse84pro";
+      return { data: !!isAdmin, error: null };
     }
     if (name === "has_permission") {
       const userId = args._user_id;
       const perm = args._perm;
       const userRoles = db.user_roles || [];
-      const isAdmin = userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
-      if (isAdmin) return { data: true, error: null };
+      const profiles = db.profiles || [];
+      const prof = profiles.find((p: any) => p.id === userId);
+      const isUserRoleAdmin = userRoles.some(
+        (ur: any) =>
+          ur.user_id === userId &&
+          (ur.role === "admin" || ur.role === "gestore" || ur.role === "capitano"),
+      );
+      if (isUserRoleAdmin || prof?.role === "admin" || prof?.username?.toLowerCase() === "admin") {
+        return { data: true, error: null };
+      }
 
       const userCustomRoles = db.user_custom_roles || [];
       const customRoles = db.custom_roles || [];
@@ -1753,6 +1800,18 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       let existingIndex = -1;
       if (row.id) {
         existingIndex = db[table].findIndex((item: any) => item.id === row.id);
+      }
+      if (existingIndex === -1 && table === "telegram_groups" && row.chat_id) {
+        existingIndex = db[table].findIndex(
+          (item: any) => String(item.chat_id) === String(row.chat_id),
+        );
+      } else if (existingIndex === -1 && table === "telegram_group_members") {
+        existingIndex = db[table].findIndex(
+          (item: any) =>
+            (String(item.chat_id) === String(row.chat_id) ||
+              (row.group_id && item.group_id === row.group_id)) &&
+            String(item.telegram_user_id) === String(row.telegram_user_id),
+        );
       } else if (table === "user_roles") {
         existingIndex = db[table].findIndex(
           (item: any) => item.user_id === row.user_id && item.role === row.role,

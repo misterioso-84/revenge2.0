@@ -144,6 +144,22 @@ export const registerPublicUser = createServerFn({ method: "POST" })
       formattedTelegram = `@${formattedTelegram}`;
     }
 
+    // Telegram Handle Uniqueness Check: Strict max 1 @ per user
+    if (formattedTelegram) {
+      const duplicateTelegram = (existingProfiles || []).find(
+        (p: any) =>
+          p.telegram_connected &&
+          p.telegram_handle &&
+          p.telegram_handle.trim().toLowerCase().replace("@", "") ===
+            formattedTelegram.toLowerCase().replace("@", ""),
+      );
+      if (duplicateTelegram) {
+        throw new Error(
+          `Questo account Telegram (${formattedTelegram}) è già stato collegato all'account ${duplicateTelegram.display_name || duplicateTelegram.username}. Un utente può avere al massimo 1 solo account collegato a Telegram. Usa prima /scollega dal Bot Telegram.`,
+        );
+      }
+    }
+
     // 4. Create auth user
     const email = `${cleanNick}@revenge.local`;
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
@@ -187,7 +203,9 @@ export const registerPublicUser = createServerFn({ method: "POST" })
   });
 
 export const requestTelegramVerificationCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId?: string; telegramHandle?: string }) => d)
+  .inputValidator(
+    (d: { userId?: string; telegramHandle?: string; forceNew?: boolean; code?: string }) => d,
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getTelegramBotInfo, fetchTelegramUpdates, registerPendingCode } =
@@ -196,8 +214,31 @@ export const requestTelegramVerificationCode = createServerFn({ method: "POST" }
     // Flush any pending updates
     await fetchTelegramUpdates().catch(() => {});
 
-    // Generate random 6-digit verification PIN
-    const generatedCode = String(Math.floor(100000 + Math.random() * 900000));
+    let generatedCode = "";
+
+    // Reuse existing code if valid and forceNew was not explicitly requested
+    if (data.code && data.code.length === 6 && !data.forceNew) {
+      generatedCode = data.code;
+    } else if (data.userId && !data.forceNew) {
+      try {
+        const { data: prof } = await supabaseAdmin
+          .from("profiles")
+          .select("telegram_code")
+          .eq("id", data.userId)
+          .maybeSingle();
+        if (prof?.telegram_code && prof.telegram_code.length === 6) {
+          generatedCode = prof.telegram_code;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!generatedCode) {
+      // Generate random 6-digit verification PIN
+      generatedCode = String(Math.floor(100000 + Math.random() * 900000));
+    }
+
     const commandText = `/associa ${generatedCode}`;
 
     // Register code in server pending store
@@ -215,7 +256,7 @@ export const requestTelegramVerificationCode = createServerFn({ method: "POST" }
 
     const botInfo = await getTelegramBotInfo();
     const botUsername = botInfo?.username || "CasinoRevengeBot";
-    const botUrl = `https://t.me/${botUsername}`;
+    const botUrl = `https://t.me/${botUsername}?start=${generatedCode}`;
 
     const botReply = `Invia il seguente comando al Bot Telegram Ufficiale (@${botUsername}):\n\n${commandText}`;
 
@@ -286,7 +327,7 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
     await fetchTelegramUpdates();
 
     // Look up cached verification by PIN code
-    const verification = getCachedCodeVerification(cleanCode);
+    const verification = await getCachedCodeVerification(cleanCode);
 
     let realHandle = verification?.handle;
 
@@ -374,6 +415,23 @@ export const updateTelegramHandle = createServerFn({ method: "POST" })
     let formatted = data.telegramHandle.trim();
     if (!formatted.startsWith("@")) {
       formatted = `@${formatted}`;
+    }
+
+    // Check duplicate handle
+    const targetUserId = data.userId;
+    const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
+    const duplicate = (allProfiles || []).find(
+      (p: any) =>
+        p.telegram_connected &&
+        p.id !== targetUserId &&
+        p.telegram_handle &&
+        p.telegram_handle.trim().toLowerCase().replace("@", "") ===
+          formatted.toLowerCase().replace("@", ""),
+    );
+    if (duplicate) {
+      throw new Error(
+        `Questo account Telegram (${formatted}) è già stato collegato all'account ${duplicate.display_name || duplicate.username}. Un utente può avere al massimo 1 solo account collegato a Telegram.`,
+      );
     }
 
     const { error } = await supabaseAdmin

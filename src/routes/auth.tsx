@@ -33,19 +33,23 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    let active = true;
     checkUsers()
-      .then((r) => setBootstrapMode(!r.hasUser))
-      .catch(() => setBootstrapMode(false));
-  }, [checkUsers, mounted]);
+      .then((r) => {
+        if (active) setBootstrapMode(!r.hasUser);
+      })
+      .catch(() => {
+        if (active) setBootstrapMode(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [checkUsers]);
 
   useEffect(() => {
-    if (!mounted) return;
+    let active = true;
     supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
       if (data.session?.user?.id) {
         const [{ data: prof }, { data: roles }] = await Promise.all([
           supabase
@@ -55,6 +59,7 @@ function AuthPage() {
             .maybeSingle(),
           supabase.from("user_roles").select("role").eq("user_id", data.session.user.id),
         ]);
+        if (!active) return;
         const isEmployeeOrAdmin =
           prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
         if (isEmployeeOrAdmin) {
@@ -64,7 +69,10 @@ function AuthPage() {
         }
       }
     });
-  }, [navigate, mounted]);
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

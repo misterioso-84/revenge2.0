@@ -44,16 +44,22 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (!isMounted) return;
       setSession(s);
       setUser(s?.user ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   // Sync active user session with server & Cloudflare headers
@@ -120,6 +126,7 @@ export function useAuth() {
   }, [user]);
 
   useEffect(() => {
+    let isMounted = true;
     if (!user) {
       setProfile(null);
       setIsAdmin(false);
@@ -156,6 +163,9 @@ export function useAuth() {
           .order("created_at", { ascending: false }),
         supabase.from("leave_requests").select("*").eq("user_id", user.id).eq("status", "approved"),
       ]);
+
+      if (!isMounted) return;
+
       setProfile(p as Profile | null);
       setIsAdmin(!!roles?.some((r: { role: string }) => r.role === "admin"));
       setPermissions((perms as string[] | null) ?? []);
@@ -185,6 +195,10 @@ export function useAuth() {
       });
       setActiveLeave(activeLv || null);
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   return {

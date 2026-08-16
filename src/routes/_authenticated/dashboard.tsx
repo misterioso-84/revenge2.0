@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,8 +29,14 @@ import {
   Gavel,
   FileText,
   CheckCircle2,
+  Send,
+  ExternalLink,
+  Copy,
+  MessageSquare,
+  QrCode,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
+import { getUserTelegramGroups, generateGroupInviteLink } from "@/lib/telegram-groups.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -144,7 +150,7 @@ function DashboardPage() {
         .select("*")
         .eq("id", "global")
         .maybeSingle();
-      return data;
+      return data ?? null;
     },
   });
 
@@ -183,6 +189,7 @@ function DashboardPage() {
   });
 
   const displayName = profile?.display_name || profile?.username || "Collaboratore";
+  const [allGroupsJoined, setAllGroupsJoined] = useState(false);
 
   // Filter features based on user permissions or admin status
   const visibleFeatures = FEATURES.filter((f) => {
@@ -246,6 +253,11 @@ function DashboardPage() {
 
       {/* Fascicolo Sanzioni / Situazione Disciplinare */}
       <PersonalDisciplinaryStatus userSanctions={userSanctions} />
+
+      {/* Gruppi Telegram & Canali Staff Riservati (Normal position if pending) */}
+      {!allGroupsJoined && (
+        <TelegramStaffGroupsSection profile={profile} onAllJoinedChange={setAllGroupsJoined} />
+      )}
 
       {/* Features Section */}
       <div className="space-y-6">
@@ -336,6 +348,11 @@ function DashboardPage() {
           })}
         </div>
       </div>
+
+      {/* Gruppi Telegram & Canali Staff Riservati (Moved to bottom if user is inside ALL groups) */}
+      {allGroupsJoined && (
+        <TelegramStaffGroupsSection profile={profile} onAllJoinedChange={setAllGroupsJoined} />
+      )}
 
       {isAdmin && (
         <Card className="border-amber-500/30 bg-amber-500/5 max-w-2xl">
@@ -602,6 +619,299 @@ function PersonalDisciplinaryStatus({ userSanctions }: { userSanctions: any[] })
             </div>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TelegramStaffGroupsSection({
+  profile,
+  onAllJoinedChange,
+}: {
+  profile: any;
+  onAllJoinedChange?: (allJoined: boolean) => void;
+}) {
+  const [generatedLinks, setGeneratedLinks] = useState<Record<string, string>>({});
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+
+  const {
+    data: groupsData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["user-telegram-groups", profile?.id],
+    queryFn: async () => {
+      return await getUserTelegramGroups();
+    },
+    enabled: !!profile?.id,
+    staleTime: 30000,
+  });
+
+  const groups: any[] = Array.isArray(groupsData) ? groupsData : (groupsData as any)?.groups || [];
+  const telegramUsername =
+    profile?.telegram_username ||
+    profile?.telegram_handle ||
+    (groupsData as any)?.userTelegramUsername;
+  const isTelegramLinked = !!profile?.telegram_connected || !!telegramUsername;
+
+  const allGroupsJoined =
+    groups.length > 0 && groups.every((grp: any) => grp.isMember || grp.isInside);
+
+  useEffect(() => {
+    if (onAllJoinedChange) {
+      onAllJoinedChange(allGroupsJoined);
+    }
+  }, [allGroupsJoined, onAllJoinedChange]);
+
+  const generateMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      setGeneratingFor(groupId);
+      return await generateGroupInviteLink({ data: { groupId } });
+    },
+    onSuccess: (res, groupId) => {
+      if (res?.inviteLink) {
+        setGeneratedLinks((prev) => ({ ...prev, [groupId]: res.inviteLink }));
+        toast.success("Link d'invito Telegram generato con successo!");
+      }
+      setGeneratingFor(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Errore nella generazione del link d'invito");
+      setGeneratingFor(null);
+    },
+  });
+
+  const copyLink = async (link: string) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = link;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("Link copiato negli appunti!");
+    } catch {
+      toast.info(`Link d'invito: ${link}`);
+    }
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (groups.length === 0 && !isTelegramLinked) {
+    return null;
+  }
+
+  return (
+    <Card className="border-sky-500/30 bg-gradient-to-br from-sky-950/20 via-slate-900/60 to-slate-950/80 shadow-lg relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+      <CardHeader className="pb-3 border-b border-sky-500/10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+              <Send className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                Gruppi Telegram Staff & Canali Riservati
+                <Badge
+                  variant="outline"
+                  className="border-sky-500/30 text-sky-400 bg-sky-500/10 text-[10px]"
+                >
+                  {groups.length}{" "}
+                  {groups.length === 1 ? "gruppo accessibile" : "gruppi accessibili"}
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-400">
+                In base ai tuoi ruoli sul portale hai diritto ad accedere ai seguenti gruppi
+                Telegram.
+              </CardDescription>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isTelegramLinked ? (
+              <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/30 text-xs px-2.5 py-1">
+                <Check className="h-3 w-3 mr-1 text-emerald-400" />@
+                {telegramUsername.replace("@", "")}
+              </Badge>
+            ) : (
+              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs px-2.5 py-1">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Telegram non collegato
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-4 space-y-4">
+        {allGroupsJoined && (
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-3 text-xs text-emerald-200">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="font-bold text-emerald-300 text-sm">
+                ✅ Accesso Completo: Sei presente in tutti i gruppi Telegram abilitati!
+              </p>
+              <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                Risulti già all'interno di tutti i gruppi riservati ai tuoi ruoli. Disponi
+                dell'autorizzazione e di tutti i permessi operativi attivi.
+              </p>
+            </div>
+          </div>
+        )}
+        {!isTelegramLinked && (
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3 text-xs text-amber-200">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">
+                Collega il tuo account Telegram per l'accesso automatico
+              </p>
+              <p className="text-[11px] text-amber-300/80 mt-0.5">
+                Il Bot Telegram verificherà la tua identità (tramite il tuo{" "}
+                <strong>@username</strong>) non appena entrerai nel gruppo. Se il tuo username non è
+                registrato sul tuo profilo, potresti non essere riconosciuto.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {groups.length === 0 ? (
+          <p className="text-xs text-slate-400 italic py-2">
+            Al momento non sei abilitato a nessun gruppo Telegram in base ai tuoi ruoli correnti.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {groups.map((grp: any) => {
+              const inviteLink = generatedLinks[grp.id] || grp.lastInviteLink;
+              const isMember = grp.isMember || grp.isInside;
+
+              return (
+                <div
+                  key={grp.id}
+                  className={`p-4 rounded-xl border transition-all ${
+                    isMember
+                      ? "bg-slate-900/70 border-emerald-500/30"
+                      : "bg-slate-900/90 border-slate-800 hover:border-sky-500/40"
+                  } flex flex-col justify-between gap-3`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                          {grp.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          ID: {grp.chat_id}
+                        </p>
+                      </div>
+                      {isMember ? (
+                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] uppercase font-bold shrink-0">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Membro Verificato
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/30 text-amber-400 bg-amber-500/10 text-[10px] shrink-0"
+                        >
+                          Non ancora dentro
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="mt-2 text-[11px] text-slate-400">
+                      {isMember ? (
+                        <p className="text-emerald-400/90 font-medium">
+                          ✅ Sei già presente nel gruppo con il tuo account Telegram. L'accesso è
+                          attivo e verificato.
+                        </p>
+                      ) : (
+                        <p>
+                          Genera un link monouso personale per entrare. Una volta entrato, il bot ti
+                          confermerà automaticamente e l'accesso risulterà registrato.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-2">
+                    {/* If user is ALREADY A MEMBER: no invite generation is allowed under any circumstances */}
+                    {isMember ? (
+                      <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold text-emerald-300">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span>Accesso Confermato · Sei già nel gruppo</span>
+                      </div>
+                    ) : (
+                      <>
+                        {inviteLink ? (
+                          <div className="p-2 bg-slate-950/80 border border-sky-500/20 rounded-lg flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-mono text-sky-300 truncate select-all">
+                              {inviteLink}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-slate-300 hover:text-white"
+                                onClick={() => copyLink(inviteLink)}
+                                title="Copia link"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                              <a
+                                href={inviteLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-7 px-2 text-[11px] font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-md transition-colors"
+                              >
+                                Entra <ExternalLink className="h-3 w-3 ml-1" />
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full border-sky-500/40 text-sky-300 hover:bg-sky-500/15 hover:text-sky-200 text-xs h-8"
+                            disabled={generatingFor === grp.id}
+                            onClick={() => generateMutation.mutate(grp.id)}
+                          >
+                            <Send className="h-3.5 w-3.5 mr-1.5" />
+                            {generatingFor === grp.id
+                              ? "Generazione in corso..."
+                              : "Genera Link di Invito"}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl text-[11px] text-slate-400 flex items-center justify-between gap-2">
+          <span>
+            💡 <em>Controllo automatico:</em> Ogni giorno alle <strong>17:00</strong> il sistema
+            verifica automaticamente la corrispondenza tra i ruoli e la presenza nei gruppi
+            Telegram. Se perdi il ruolo o lasci lo staff, verrai rimosso dai gruppi associati.
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-[10px] h-6 px-2 text-slate-400 hover:text-white shrink-0"
+            onClick={() => refetch()}
+          >
+            Aggiorna stato
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

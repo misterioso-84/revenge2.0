@@ -200,6 +200,8 @@ export const setUserAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { syncUserTelegramGroupAccess } = await import("@/lib/telegram.server");
+
     if (data.admin) {
       await supabaseAdmin.from("user_roles").upsert({ user_id: data.userId, role: "admin" });
     } else {
@@ -211,6 +213,13 @@ export const setUserAdmin = createServerFn({ method: "POST" })
         .eq("user_id", data.userId)
         .eq("role", "admin");
     }
+
+    try {
+      syncUserTelegramGroupAccess(data.userId).catch(() => {});
+    } catch (e) {
+      // ignore
+    }
+
     return { ok: true };
   });
 
@@ -256,6 +265,8 @@ export const assignCustomRole = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { syncUserTelegramGroupAccess } = await import("@/lib/telegram.server");
+
     if (data.assign) {
       await supabaseAdmin
         .from("user_custom_roles")
@@ -267,6 +278,13 @@ export const assignCustomRole = createServerFn({ method: "POST" })
         .eq("user_id", data.userId)
         .eq("custom_role_id", data.customRoleId);
     }
+
+    try {
+      syncUserTelegramGroupAccess(data.userId).catch(() => {});
+    } catch (e) {
+      // ignore
+    }
+
     return { ok: true };
   });
 

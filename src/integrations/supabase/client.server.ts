@@ -110,6 +110,7 @@ class MockPostgrestServerBuilder {
       updateData: this.updateData,
       isMaybeSingle: this.isMaybeSingle,
       isSingle: this.isSingle,
+      isServiceRole: true,
     });
   }
 
@@ -166,7 +167,7 @@ class MockSupabaseServerClient {
   }
 
   async rpc(name: string, args: any) {
-    return queryMockDb({ operation: "rpc", name, args });
+    return queryMockDb({ operation: "rpc", name, args, isServiceRole: true });
   }
 }
 

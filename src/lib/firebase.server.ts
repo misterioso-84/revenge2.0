@@ -20,18 +20,34 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
   try {
     return await loadDbFromFirestoreInternal(false);
   } catch (err: any) {
+    if (
+      err?.message?.includes("Quota limit exceeded") ||
+      err?.message?.includes("does not exist")
+    ) {
+      console.warn("[Firestore Database] Skipped loading due to quota or DB existence limits.");
+      return null;
+    }
     console.warn(
       "[Firestore Database] Failed to load using custom database ID, trying default database...",
-      err,
+      err?.message || err,
     );
     try {
       return await loadDbFromFirestoreInternal(true);
-    } catch (defaultErr) {
+    } catch (defaultErr: any) {
+      if (
+        defaultErr?.message?.includes("Quota limit exceeded") ||
+        defaultErr?.message?.includes("does not exist")
+      ) {
+        console.warn(
+          "[Firestore Database] Skipped loading from default DB due to quota or existence limits.",
+        );
+        return null;
+      }
       console.error(
         "[Firestore Database] Failed to load from default database as well:",
-        defaultErr,
+        defaultErr?.message || defaultErr,
       );
-      throw defaultErr;
+      return null; // Return null instead of throwing to prevent app crash
     }
   }
 }
@@ -65,14 +81,33 @@ export async function saveDbToFirestore(data: Record<string, any[]>) {
   try {
     await saveDbToFirestoreInternal(data, false);
   } catch (err: any) {
+    if (
+      err?.message?.includes("Quota limit exceeded") ||
+      err?.message?.includes("does not exist")
+    ) {
+      console.warn("[Firestore Database] Skipped saving due to quota or DB existence limits.");
+      return;
+    }
     console.warn(
       "[Firestore Database] Failed to save using custom database ID, trying default database...",
-      err,
+      err?.message || err,
     );
     try {
       await saveDbToFirestoreInternal(data, true);
-    } catch (defaultErr) {
-      console.error("[Firestore Database] Failed to save to default database as well:", defaultErr);
+    } catch (defaultErr: any) {
+      if (
+        defaultErr?.message?.includes("Quota limit exceeded") ||
+        defaultErr?.message?.includes("does not exist")
+      ) {
+        console.warn(
+          "[Firestore Database] Skipped saving to default DB due to quota or existence limits.",
+        );
+        return;
+      }
+      console.error(
+        "[Firestore Database] Failed to save to default database as well:",
+        defaultErr?.message || defaultErr,
+      );
     }
   }
 }

@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         .select("*")
         .eq("id", "global")
         .maybeSingle();
-      return data;
+      return data ?? null;
     },
     refetchInterval: 60000,
   });

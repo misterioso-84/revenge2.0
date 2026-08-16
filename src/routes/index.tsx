@@ -534,6 +534,7 @@ function LandingPage() {
           setRegStep(data.regStep);
           if (data.regNickname) setRegNickname(data.regNickname);
           if (data.eligibleData) setEligibleData(data.eligibleData);
+          if (data.regTelegramCode) setRegTelegramCode(data.regTelegramCode);
           if (data.regTelegramHandle) setRegTelegramHandle(data.regTelegramHandle);
           setRegisterOpen(true);
         }
@@ -552,16 +553,17 @@ function LandingPage() {
           regStep,
           regNickname,
           eligibleData,
+          regTelegramCode,
           regTelegramHandle,
         }),
       );
     }
-  }, [regStep, regNickname, eligibleData, regTelegramHandle]);
+  }, [regStep, regNickname, eligibleData, regTelegramCode, regTelegramHandle]);
 
   // Auto-generate Telegram code when reaching Step 2 if not present
   useEffect(() => {
     if (registerOpen && regStep === 2 && !regTelegramCode && !regBusy) {
-      handleRegStartBot();
+      handleRegStartBot(false);
     }
   }, [registerOpen, regStep, regTelegramCode, regBusy]);
 
@@ -575,11 +577,14 @@ function LandingPage() {
         });
         if (res.handle) {
           setRegTelegramHandle(res.handle);
+          setRegError(null);
           toast.success(`✅ Account Telegram ${res.handle} collegato!`);
           setRegStep(3);
         }
-      } catch {
-        // Silent catch during background polling
+      } catch (err: any) {
+        if (err.message && err.message.includes("già stato collegato")) {
+          setRegError(err.message);
+        }
       }
     }, 2500);
     return () => clearInterval(interval);
@@ -644,24 +649,31 @@ function LandingPage() {
     }
   };
 
-  const handleRegStartBot = async () => {
+  const handleRegStartBot = async (forceNew = true) => {
     setRegBusy(true);
+    setRegError(null);
     try {
-      if (regTelegramCode) {
+      if (forceNew && regTelegramCode) {
         cancelTelegramCodeFn({ data: { code: regTelegramCode } }).catch(() => {});
         setRegTelegramCode("");
       }
       const res = await reqTelegramCodeFn({
-        data: {},
+        data: {
+          code: forceNew ? undefined : regTelegramCode,
+          forceNew,
+        },
       });
       if (res.code) {
         setRegTelegramCode(res.code);
       }
       setRegBotMessage(res.botMessage);
-      toast.success(
-        `Comando ${res.commandText || `/associa ${res.code}`} generato! Incollalo nel Bot Telegram.`,
-      );
+      if (forceNew) {
+        toast.success(
+          `Comando ${res.commandText || `/associa ${res.code}`} generato! Incollalo nel Bot Telegram.`,
+        );
+      }
     } catch (err: any) {
+      setRegError(err.message || "Errore durante la generazione del codice Telegram.");
       toast.error(err.message || "Errore durante la generazione del codice Telegram.");
     } finally {
       setRegBusy(false);
@@ -675,6 +687,7 @@ function LandingPage() {
       return;
     }
     setRegBusy(true);
+    setRegError(null);
     try {
       const res = await verifyTelegramCodeFn({
         data: {
@@ -687,6 +700,7 @@ function LandingPage() {
       toast.success(`Account Telegram ${res.handle} collegato con successo!`);
       setRegStep(3);
     } catch (err: any) {
+      setRegError(err.message || "Comando non ancora inviato al Bot Telegram.");
       toast.error(err.message || "Comando non ancora inviato al Bot Telegram.");
     } finally {
       setRegBusy(false);
@@ -1462,10 +1476,14 @@ function LandingPage() {
               <div className="p-4 bg-slate-950 border border-amber-500/30 rounded-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase">
-                    <Send className="h-4 w-4" /> Generazione Comando Bot
+                    <Send className="h-4 w-4" /> Collegamento Telegram Obbligatorio
                   </div>
                   <a
-                    href="https://t.me/CasinoRevengeBot"
+                    href={
+                      regTelegramCode
+                        ? `https://t.me/CasinoRevengeBot?start=${regTelegramCode}`
+                        : "https://t.me/CasinoRevengeBot"
+                    }
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-400 hover:underline"
@@ -1475,58 +1493,80 @@ function LandingPage() {
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Genera il comando di verifica ed invialo in chat a{" "}
-                  <strong>@CasinoRevengeBot</strong>. Il Bot verificherà l'associazione e salverà
-                  automaticamente il tuo username reale.
+                  Per completare la registrazione, associa il tuo account Telegram tramite il Bot
+                  Ufficiale <strong>@CasinoRevengeBot</strong>. È consentito{" "}
+                  <strong>1 solo account</strong> per utente.
                 </p>
 
                 {!regTelegramCode ? (
                   <Button
                     type="button"
-                    onClick={handleRegStartBot}
+                    onClick={() => handleRegStartBot(true)}
                     disabled={regBusy}
                     className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs h-10"
                   >
-                    {regBusy ? "Generazione in corso..." : "🤖 Genera Comando di Associazione"}
+                    {regBusy ? "Generazione in corso..." : "🤖 Genera Codice di Associazione"}
                   </Button>
                 ) : (
-                  <div className="p-3 bg-slate-900 border border-sky-500/40 rounded-xl space-y-2">
-                    <div className="text-[11px] text-sky-300 font-semibold uppercase">
-                      Invia questo comando su Telegram:
-                    </div>
-                    <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-lg border border-slate-800 gap-2">
-                      <code className="text-amber-400 font-mono text-sm font-bold truncate">
-                        /associa {regTelegramCode}
-                      </code>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs text-slate-300 hover:text-white px-2"
-                          onClick={() => {
-                            navigator.clipboard.writeText(`/associa ${regTelegramCode}`);
-                            toast.success("Comando /associa copiato!");
-                          }}
-                        >
-                          Copia
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/20 px-2"
-                          onClick={handleRegStartBot}
-                          disabled={regBusy}
-                          title="Genera un nuovo codice di associazione"
-                        >
-                          🔄 Nuovo
-                        </Button>
+                  <div className="space-y-3">
+                    <a
+                      href={`https://t.me/CasinoRevengeBot?start=${regTelegramCode}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full bg-sky-600 hover:bg-sky-500 text-white font-bold h-11 rounded-xl text-xs shadow-md shadow-sky-600/20 transition-all"
+                    >
+                      <Send className="h-4 w-4" /> 1. APRI BOT TELEGRAM (@CasinoRevengeBot)
+                      <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                    </a>
+
+                    <div className="p-3 bg-slate-900 border border-sky-500/40 rounded-xl space-y-2">
+                      <div className="text-[11px] text-sky-300 font-semibold uppercase">
+                        Oppure invia questo comando in chat:
+                      </div>
+                      <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-lg border border-slate-800 gap-2">
+                        <code className="text-amber-400 font-mono text-sm font-bold truncate">
+                          /associa {regTelegramCode}
+                        </code>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-slate-300 hover:text-white px-2"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`/associa ${regTelegramCode}`);
+                              toast.success("Comando /associa copiato!");
+                            }}
+                          >
+                            Copia
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/20 px-2"
+                            onClick={() => handleRegStartBot(true)}
+                            disabled={regBusy}
+                            title="Genera un nuovo codice di associazione"
+                          >
+                            🔄 Nuovo
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              {regError && (
+                <div className="p-3 bg-rose-500/15 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-start gap-2.5 leading-relaxed">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
+                  <div>
+                    <strong className="block font-bold text-rose-200">Avviso Associazione:</strong>
+                    <p className="mt-0.5">{regError}</p>
+                  </div>
+                </div>
+              )}
 
               {regBotMessage && (
                 <div className="p-3 bg-slate-950 border border-sky-500/40 rounded-xl text-xs font-mono text-sky-200 leading-relaxed whitespace-pre-line shadow-inner">
@@ -1541,7 +1581,7 @@ function LandingPage() {
                   onClick={handleCloseRegisterModal}
                   className="text-red-400 hover:text-red-300 text-xs hover:bg-red-500/10"
                 >
-                  Annulla & Cambia Nick
+                  Annulla
                 </Button>
                 <div className="flex items-center gap-2">
                   <Button
