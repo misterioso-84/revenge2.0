@@ -242,7 +242,7 @@ export const requestTelegramVerificationCode = createServerFn({ method: "POST" }
     const commandText = `/associa ${generatedCode}`;
 
     // Register code in server pending store
-    registerPendingCode(generatedCode, data.userId);
+    await registerPendingCode(generatedCode, data.userId);
 
     // Save code to profile if userId provided
     if (data.userId) {
@@ -278,7 +278,7 @@ export const cancelTelegramVerificationCode = createServerFn({ method: "POST" })
     const { cancelPendingCode } = await import("@/lib/telegram.server");
 
     if (data.code) {
-      cancelPendingCode(data.code);
+      await cancelPendingCode(data.code);
     }
 
     if (data.userId) {

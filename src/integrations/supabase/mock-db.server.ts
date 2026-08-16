@@ -536,6 +536,7 @@ function getInitialDb() {
     ],
     telegram_groups: [],
     telegram_group_members: [],
+    telegram_pending_codes: [],
     maintenance_settings: [
       {
         id: "global",
@@ -1304,9 +1305,30 @@ function matchFilters(item: any, table: string, filters: any[]): boolean {
     }
 
     if (op === "eq") {
-      if (itemVal !== value) return false;
+      if (itemVal !== value) {
+        if (
+          itemVal !== undefined &&
+          itemVal !== null &&
+          value !== undefined &&
+          value !== null &&
+          String(itemVal).trim().toLowerCase() === String(value).trim().toLowerCase()
+        ) {
+          // match despite string/number format
+        } else {
+          return false;
+        }
+      }
     } else if (op === "neq") {
       if (itemVal === value) return false;
+      if (
+        itemVal !== undefined &&
+        itemVal !== null &&
+        value !== undefined &&
+        value !== null &&
+        String(itemVal).trim().toLowerCase() === String(value).trim().toLowerCase()
+      ) {
+        return false;
+      }
     } else if (op === "is") {
       if (value === null) {
         if (itemVal !== null && itemVal !== undefined) return false;
@@ -1420,6 +1442,12 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
 
   // Handle RPCs
   if (operation === "rpc") {
+    if (name === "force_db_reload") {
+      lastLoadedTime = 0; // Expire cache TTL
+      isInitializing = false; // Force re-fetch
+      return { data: null, error: null };
+    }
+
     if (name === "user_permissions") {
       const userId = args._user_id;
       // Get custom roles for user
@@ -1898,6 +1926,13 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         );
       } else if (table === "maintenance_settings") {
         existingIndex = db[table].findIndex((item: any) => item.id === row.id);
+      } else if (table === "telegram_pending_codes") {
+        const targetCode = String(row.code || row.id || "").trim();
+        existingIndex = db[table].findIndex(
+          (item: any) =>
+            String(item.code || item.id || "").trim() === targetCode ||
+            (row.id && String(item.id).trim() === String(row.id).trim()),
+        );
       }
 
       if (existingIndex !== -1) {

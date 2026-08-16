@@ -1267,7 +1267,8 @@ export async function fetchTelegramUpdates() {
                   verified: false,
                   updated_at: new Date().toISOString(),
                 })
-                .match({ chat_id: groupChatId, telegram_user_id: targetUser.id });
+                .eq("chat_id", groupChatId)
+                .eq("telegram_user_id", targetUser.id);
             }
           }
         }
@@ -1936,7 +1937,24 @@ export async function fetchTelegramUpdates() {
           // ignore
         }
 
-        const isValidCode = !!pendingMemoryObj || !!pendingDbObj || !!profileDbObj;
+        let isValidCode = !!pendingMemoryObj || !!pendingDbObj || !!profileDbObj;
+
+        // If code is not found, force a DB reload from Neon and try one more time
+        // This is crucial for Cloudflare Pages serverless where cache might be slightly stale!
+        if (!isValidCode) {
+          try {
+            await supabaseAdmin.rpc("force_db_reload", {});
+            const [{ data: pendD }, { data: profD }] = await Promise.all([
+              supabaseAdmin.from("telegram_pending_codes").select("*").eq("code", code).maybeSingle(),
+              supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
+            ]);
+            pendingDbObj = pendD;
+            profileDbObj = profD;
+            isValidCode = !!pendingDbObj || !!profileDbObj;
+          } catch (e) {
+            // ignore
+          }
+        }
 
         if (isValidCode) {
           const targetUserId =
