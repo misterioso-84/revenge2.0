@@ -1362,9 +1362,45 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       const userRoles = db.user_roles || [];
       const profiles = db.profiles || [];
       const profile = profiles.find((p: any) => p.id === userId);
+      const userCustomRoles = db.user_custom_roles || [];
+      const customRoles = db.custom_roles || [];
+
+      const isUserRoleAdmin = userRoles.some(
+        (ur: any) =>
+          ur.user_id === userId &&
+          (ur.role === "admin" || ur.role === "gestore" || ur.role === "capitano"),
+      );
+      const isCustomRoleAdmin =
+        userCustomRoles.some(
+          (ucr: any) =>
+            ucr.user_id === userId &&
+            (ucr.custom_role_id === "crole-admin" ||
+              ucr.custom_role_id === "crole-gestore" ||
+              ucr.custom_role_id === "crole-1" ||
+              ucr.custom_role_id === "5d7eafafjmu"),
+        ) ||
+        userCustomRoles.some((ucr: any) => {
+          if (ucr.user_id !== userId) return false;
+          const cr = customRoles.find((c: any) => c.id === ucr.custom_role_id);
+          if (!cr) return false;
+          const name = (cr.name || "").toLowerCase();
+          return (
+            name.includes("admin") ||
+            name.includes("capitano") ||
+            name.includes("direzione") ||
+            name.includes("gestore") ||
+            (cr.permissions &&
+              (cr.permissions.includes("utenti.gestisci") ||
+                cr.permissions.includes("ruoli.gestisci")))
+          );
+        });
+
       isAdmin =
         profile?.role === "admin" ||
-        userRoles.some((ur: any) => ur.user_id === userId && ur.role === "admin");
+        profile?.username?.toLowerCase() === "admin" ||
+        profile?.username?.toLowerCase() === "giuse84pro" ||
+        isUserRoleAdmin ||
+        isCustomRoleAdmin;
     }
 
     // Block write operations for non-admins
