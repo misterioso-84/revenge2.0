@@ -582,6 +582,10 @@ export async function syncUserTelegramGroupAccess(userId: string) {
       : "";
 
     for (const group of allGroups || []) {
+      if (group.ignore_checks || group.disable_checks) {
+        continue;
+      }
+
       const hasPermission = isUserOrHandleAuthorizedForGroup(
         group,
         profile,
@@ -704,6 +708,10 @@ export async function runDaily1700TelegramAudit() {
     }
 
     for (const group of groups || []) {
+      if (group.ignore_checks || group.disable_checks) {
+        console.log(`[Telegram Audit] Skipping group "${group.title}" (${group.id}) - controlli ed espulsioni disabilitate.`);
+        continue;
+      }
       const allowedRoles = group.allowed_role_ids || [];
 
       // 1. Check all users who should have access: send reminder if not inside
@@ -1288,7 +1296,9 @@ export async function fetchTelegramUpdates() {
                 matchedProf &&
                 (matchedProf.is_fired === true || matchedProf.has_employee_access === false);
 
-              if (isExplicitlyRevoked || isFiredEmployee) {
+              const isChecksDisabled = !!dbGroup.ignore_checks || !!dbGroup.disable_checks;
+
+              if (!isChecksDisabled && (isExplicitlyRevoked || isFiredEmployee)) {
                 // Unauthorized / revoked user: expel
                 try {
                   await kickTelegramChatMember(groupChatId, targetUser.id);
@@ -1428,7 +1438,9 @@ export async function fetchTelegramUpdates() {
               matchedProf &&
               (matchedProf.is_fired === true || matchedProf.has_employee_access === false);
 
-            if (isExplicitlyRevoked || isFiredEmployee) {
+            const isChecksDisabled = !!dbGroup.ignore_checks || !!dbGroup.disable_checks;
+
+            if (!isChecksDisabled && (isExplicitlyRevoked || isFiredEmployee)) {
               try {
                 await kickTelegramChatMember(groupChatId, newMember.id);
               } catch (e) {

@@ -37,6 +37,7 @@ import {
   Check,
   Info,
   Terminal,
+  Quote,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/messaggi-telegram")({
@@ -65,6 +66,8 @@ function TelegramHTMLRenderer({ html }: { html: string }) {
   let inStrike = false;
   let inCode = false;
   let inPre = false;
+  let inQuote = false;
+  let isQuoteExpandable = false;
   let inSpoiler = false;
   let currentLinkUrl: string | null = null;
   let spoilerCounter = 0;
@@ -133,6 +136,16 @@ function TelegramHTMLRenderer({ html }: { html: string }) {
       inPre = false;
       return;
     }
+    if (lower.startsWith("<blockquote")) {
+      inQuote = true;
+      isQuoteExpandable = lower.includes("expandable");
+      return;
+    }
+    if (lower === "</blockquote>") {
+      inQuote = false;
+      isQuoteExpandable = false;
+      return;
+    }
     if (lower.startsWith("<a ") && lower.includes("href=")) {
       const hrefMatch = part.match(/href=["']([^"']+)["']/i);
       if (hrefMatch) currentLinkUrl = hrefMatch[1];
@@ -175,6 +188,22 @@ function TelegramHTMLRenderer({ html }: { html: string }) {
         <pre className="bg-[#0f1721] text-[#91d7ff] p-2.5 my-1.5 rounded-lg font-mono text-xs overflow-x-auto border border-sky-500/20 whitespace-pre-wrap">
           {node}
         </pre>
+      );
+    }
+    if (inQuote) {
+      node = (
+        <blockquote
+          className={`border-l-4 border-sky-400 pl-2.5 my-1 bg-[#101c28]/90 py-1 pr-2 rounded-r text-slate-200 italic font-sans text-xs ${
+            isQuoteExpandable ? "border-amber-400 bg-amber-950/30" : ""
+          }`}
+        >
+          {isQuoteExpandable && (
+            <span className="text-[10px] text-amber-300 font-mono not-italic block mb-0.5">
+              [Citazione Espandibile]
+            </span>
+          )}
+          {node}
+        </blockquote>
       );
     }
     if (currentLinkUrl) {
@@ -447,12 +476,14 @@ function TelegramMessagesPage() {
               <Send className="h-7 w-7 text-sky-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                Invio Messaggi Gruppi Telegram
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black text-white tracking-tight">
+                  Invio Messaggi Gruppi Telegram
+                </h1>
                 <Badge className="bg-sky-500/10 text-sky-400 border-sky-500/30 font-semibold text-xs">
                   Bot Offizioso
                 </Badge>
-              </h1>
+              </div>
               <p className="text-xs text-slate-400 mt-1">
                 Seleziona i gruppi target, inserisci la formattazione e verifica la preview Telegram prima di inviare.
               </p>
@@ -555,14 +586,14 @@ function TelegramMessagesPage() {
                             className="border-slate-600 data-[state=checked]:bg-sky-500 data-[state=checked]:border-sky-500"
                           />
                           <div>
-                            <p className="text-xs font-semibold text-white flex items-center gap-2">
+                            <div className="text-xs font-semibold text-white flex items-center gap-2">
                               {group.title}
                               {group.type && (
                                 <Badge className="bg-slate-800 text-slate-400 border-slate-700 text-[10px] px-1.5 py-0 uppercase">
                                   {group.type}
                                 </Badge>
                               )}
-                            </p>
+                            </div>
                             <p className="text-[11px] text-slate-500 font-mono">ID: {cIdStr}</p>
                           </div>
                         </div>
@@ -584,7 +615,7 @@ function TelegramMessagesPage() {
                 2. Componi Messaggio Formattato
               </CardTitle>
               <CardDescription className="text-xs text-slate-400">
-                Usa la barra degli strumenti per formattare il testo. Telegram supporta grassetto, corsivo, spoiler e blocchi codice.
+                Usa la barra degli strumenti per formattare il testo. Telegram supporta grassetto, corsivo, citazioni (cita), spoiler e blocchi codice.
               </CardDescription>
             </CardHeader>
 
@@ -652,6 +683,30 @@ function TelegramMessagesPage() {
                   >
                     <EyeOff className="h-3.5 w-3.5" />
                     Spoiler
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyTag("<blockquote>", "</blockquote>")}
+                    className="h-8 px-2.5 bg-slate-900 border-slate-800 text-teal-300 hover:bg-teal-500/10 hover:text-teal-200 text-xs gap-1"
+                    title="Cita / Citazione (<blockquote>)"
+                  >
+                    <Quote className="h-3.5 w-3.5" />
+                    Cita
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyTag("<blockquote expandable>", "</blockquote>")}
+                    className="h-8 px-2.5 bg-slate-900 border-slate-800 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200 text-xs gap-1"
+                    title="Citazione Espandibile (<blockquote expandable>)"
+                  >
+                    <Quote className="h-3.5 w-3.5 text-amber-400" />
+                    Cita Espandibile
                   </Button>
 
                   <Button
@@ -857,12 +912,12 @@ function TelegramMessagesPage() {
                       <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#17212b]" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-                        Casinò Revenge Bot
+                      <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                        <span>Casinò Revenge Bot</span>
                         <Badge className="bg-sky-500/20 text-sky-300 border-none text-[9px] px-1 py-0">
                           bot
                         </Badge>
-                      </h4>
+                      </div>
                       <p className="text-[10px] text-emerald-400 font-medium">online</p>
                     </div>
                   </div>

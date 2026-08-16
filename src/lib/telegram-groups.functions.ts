@@ -106,6 +106,8 @@ export const listTelegramGroups = createServerFn({ method: "GET" })
         ...g,
         allowedRoles,
         allowedExceptions: g.allowed_exceptions || g.allowed_handles || [],
+        ignore_checks: !!g.ignore_checks || !!g.disable_checks,
+        disable_checks: !!g.ignore_checks || !!g.disable_checks,
         botPermissions: null, // Checked on-demand via checkGroupBotPermissionsFn to prevent rate-limits & delays
         memberCount: groupMembers.filter((m: any) => m.status === "member").length,
         members: groupMembers,
@@ -146,11 +148,16 @@ export const checkGroupBotPermissionsFn = createServerFn({ method: "POST" })
     return { groupId: targetGroupId, ...permissions };
   });
 
-// 2. Update allowed roles and manual exceptions for a Telegram group
+// 2. Update allowed roles, manual exceptions, and disable_checks status for a Telegram group
 export const updateTelegramGroupRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { groupId: string; allowedRoleIds: string[]; allowedExceptions?: string[] }) => d,
+    (d: {
+      groupId: string;
+      allowedRoleIds: string[];
+      allowedExceptions?: string[];
+      ignoreChecks?: boolean;
+    }) => d,
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -161,14 +168,21 @@ export const updateTelegramGroupRoles = createServerFn({ method: "POST" })
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
+    const updatePayload: any = {
+      allowed_role_ids: data.allowedRoleIds,
+      allowed_exceptions: cleanExceptions,
+      allowed_handles: cleanExceptions,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (data.ignoreChecks !== undefined) {
+      updatePayload.ignore_checks = !!data.ignoreChecks;
+      updatePayload.disable_checks = !!data.ignoreChecks;
+    }
+
     const { error } = await supabaseAdmin
       .from("telegram_groups")
-      .update({
-        allowed_role_ids: data.allowedRoleIds,
-        allowed_exceptions: cleanExceptions,
-        allowed_handles: cleanExceptions,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", data.groupId);
 
     if (error) throw new Error(error.message);
@@ -181,6 +195,28 @@ export const updateTelegramGroupRoles = createServerFn({ method: "POST" })
     }
 
     return { ok: true };
+  });
+
+// 2b. Quick toggle checks and automated expulsions for a group
+export const toggleTelegramGroupChecks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { groupId: string; ignoreChecks: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error } = await supabaseAdmin
+      .from("telegram_groups")
+      .update({
+        ignore_checks: !!data.ignoreChecks,
+        disable_checks: !!data.ignoreChecks,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.groupId);
+
+    if (error) throw new Error(error.message);
+
+    return { ok: true, ignoreChecks: data.ignoreChecks };
   });
 
 // 3. Register or manually add a Telegram group (if admin has chat_id and title)

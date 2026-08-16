@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +40,7 @@ import { toast } from "sonner";
 import {
   listTelegramGroups,
   updateTelegramGroupRoles,
+  toggleTelegramGroupChecks,
   registerTelegramGroupManual,
   deleteTelegramGroup,
   kickGroupMember,
@@ -46,7 +48,7 @@ import {
   syncTelegramGroupsNow,
   checkGroupBotPermissionsFn,
 } from "@/lib/telegram-groups.functions";
-import { AlertTriangle, XCircle, Shield, Check, Info, AtSign, Gamepad2, X, Search, UserPlus } from "lucide-react";
+import { AlertTriangle, XCircle, Shield, ShieldOff, Check, Info, AtSign, Gamepad2, X, Search, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
@@ -646,6 +648,9 @@ function TelegramGroupCard({
   const [exceptions, setExceptions] = useState<string[]>(
     group.allowedExceptions || group.allowed_exceptions || group.allowed_handles || [],
   );
+  const [ignoreChecks, setIgnoreChecks] = useState<boolean>(
+    !!group.ignore_checks || !!group.disable_checks,
+  );
   const [newExceptionInput, setNewExceptionInput] = useState("");
   const [isEditingRoles, setIsEditingRoles] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
@@ -654,6 +659,26 @@ function TelegramGroupCard({
   const [memberToKick, setMemberToKick] = useState<any | null>(null);
   const [memberToReinstate, setMemberToReinstate] = useState<any | null>(null);
   const [localBotPerms, setLocalBotPerms] = useState<any | null>(group.botPermissions || null);
+
+  const toggleChecksMutation = useMutation({
+    mutationFn: async (newValue: boolean) => {
+      return await toggleTelegramGroupChecks({
+        data: { groupId: group.id, ignoreChecks: newValue },
+      });
+    },
+    onSuccess: (res, newValue) => {
+      setIgnoreChecks(newValue);
+      toast.success(
+        newValue
+          ? "Controlli ed espulsioni disabilitate per questo gruppo."
+          : "Controlli ed espulsioni riattivate per questo gruppo.",
+      );
+      onUpdated();
+      qc.invalidateQueries({ queryKey: ["admin-telegram-groups"] });
+      qc.invalidateQueries({ queryKey: ["telegram-groups"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const checkPermsMutation = useMutation({
     mutationFn: async () => {
@@ -679,13 +704,21 @@ function TelegramGroupCard({
   });
 
   const updateRolesMutation = useMutation({
-    mutationFn: async ({ roleIds, allowedExceptions }: { roleIds: string[]; allowedExceptions: string[] }) => {
+    mutationFn: async ({
+      roleIds,
+      allowedExceptions,
+      ignoreChecks,
+    }: {
+      roleIds: string[];
+      allowedExceptions: string[];
+      ignoreChecks?: boolean;
+    }) => {
       return await updateTelegramGroupRoles({
-        data: { groupId: group.id, allowedRoleIds: roleIds, allowedExceptions },
+        data: { groupId: group.id, allowedRoleIds: roleIds, allowedExceptions, ignoreChecks },
       });
     },
     onSuccess: () => {
-      toast.success("Ruoli ed eccezioni abilitate per il gruppo aggiornati!");
+      toast.success("Impostazioni, ruoli ed eccezioni del gruppo aggiornati!");
       setIsEditingRoles(false);
       onUpdated();
       qc.invalidateQueries({ queryKey: ["admin-telegram-groups"] });
@@ -779,6 +812,13 @@ function TelegramGroupCard({
                 <Badge className="bg-sky-500/10 text-sky-300 border-sky-500/30 text-[10px] uppercase font-mono">
                   ID: {group.chat_id}
                 </Badge>
+
+                {ignoreChecks && (
+                  <Badge className="bg-amber-500/15 text-amber-300 border-amber-500/30 text-[10px] font-semibold flex items-center gap-1">
+                    <ShieldOff className="h-3 w-3 text-amber-400" />
+                    Controlli & Espulsioni Disabilitate
+                  </Badge>
+                )}
 
                 {/* Bot Permission Status Badge */}
                 {botPerms && (
@@ -1011,6 +1051,7 @@ function TelegramGroupCard({
                       updateRolesMutation.mutate({
                         roleIds: selectedRoleIds,
                         allowedExceptions: exceptions,
+                        ignoreChecks: ignoreChecks,
                       })
                     }
                     disabled={updateRolesMutation.isPending}
@@ -1020,6 +1061,29 @@ function TelegramGroupCard({
                   </Button>
                 </div>
               )}
+            </div>
+
+            {/* Quick Toggle: Disable Checks & Expulsions */}
+            <div className="p-3 bg-[#0a0b10] border border-slate-800 rounded-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <ShieldOff className="h-4 w-4 text-amber-400" />
+                    <span>Disabilita Controlli ed Espulsioni Automatiche</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Se attivo, il bot ignorerà i controlli di ruolo per questo gruppo e non effettuerà alcuna espulsione automatica o sollecito di verifica.
+                  </p>
+                </div>
+                <Switch
+                  checked={ignoreChecks}
+                  onCheckedChange={(checked) => {
+                    setIgnoreChecks(checked);
+                    toggleChecksMutation.mutate(checked);
+                  }}
+                  disabled={toggleChecksMutation.isPending}
+                />
+              </div>
             </div>
 
             {!isEditingRoles ? (
