@@ -10,7 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { listBotTelegramGroups, sendBroadcastTelegramMessage } from "@/lib/telegram-groups.functions";
+import {
+  listBotTelegramGroups,
+  sendBroadcastTelegramMessage,
+} from "@/lib/telegram-groups.functions";
 import {
   Send,
   MessageSquare,
@@ -53,7 +56,7 @@ function TelegramHTMLRenderer({ html }: { html: string }) {
   }
 
   // Pre-process HTML string to convert Telegram <tg-spoiler> tags to a inspectable token format
-  let processStr = html
+  const processStr = html
     .replace(/<tg-spoiler>/gi, "___SPOILER_START___")
     .replace(/<\/tg-spoiler>/gi, "___SPOILER_END___");
 
@@ -260,7 +263,9 @@ function TelegramMessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const [messageText, setMessageText] = useState("");
-  const [inlineButtons, setInlineButtons] = useState<{ id: string; text: string; url: string }[]>([]);
+  const [inlineButtons, setInlineButtons] = useState<{ id: string; text: string; url: string }[]>(
+    [],
+  );
   const [newBtnText, setNewBtnText] = useState("");
   const [newBtnUrl, setNewBtnUrl] = useState("");
 
@@ -277,7 +282,11 @@ function TelegramMessagesPage() {
   } | null>(null);
 
   // Load Telegram groups from server
-  const { data: groups = [], isLoading: loadingGroups, refetch: refetchGroups } = useQuery({
+  const {
+    data: groups = [],
+    isLoading: loadingGroups,
+    refetch: refetchGroups,
+  } = useQuery({
     queryKey: ["bot-telegram-groups"],
     queryFn: async () => {
       const res = await listBotTelegramGroups();
@@ -294,13 +303,13 @@ function TelegramMessagesPage() {
       (g: any) =>
         (g.title || "").toLowerCase().includes(q) ||
         String(g.chat_id || "").includes(q) ||
-        (g.type || "").toLowerCase().includes(q)
+        (g.type || "").toLowerCase().includes(q),
     );
   }, [groups, searchQuery]);
 
   const toggleGroupSelect = (chatId: string) => {
     setSelectedChatIds((prev) =>
-      prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId]
+      prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId],
     );
   };
 
@@ -342,7 +351,7 @@ function TelegramMessagesPage() {
         textarea.focus();
         textarea.setSelectionRange(
           start + openTag.length,
-          start + openTag.length + placeholder.length
+          start + openTag.length + placeholder.length,
         );
       }, 50);
     }
@@ -419,7 +428,7 @@ function TelegramMessagesPage() {
       setSendResult(res);
       if (res.successCount > 0) {
         toast.success(
-          `Messaggio inviato con successo a ${res.successCount} di ${res.total} gruppi!`
+          `Messaggio inviato con successo a ${res.successCount} di ${res.total} gruppi!`,
         );
       } else {
         toast.error("Impossibile inviare il messaggio ai gruppi selezionati.");
@@ -441,7 +450,8 @@ function TelegramMessagesPage() {
               <div>
                 <CardTitle className="text-xl text-red-300">Accesso Negato</CardTitle>
                 <CardDescription className="text-slate-400">
-                  Non disponi dei permessi necessari per inviare messaggi nei gruppi Telegram del Bot.
+                  Non disponi dei permessi necessari per inviare messaggi nei gruppi Telegram del
+                  Bot.
                 </CardDescription>
               </div>
             </div>
@@ -463,7 +473,7 @@ function TelegramMessagesPage() {
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(
     2,
-    "0"
+    "0",
   )}`;
 
   return (
@@ -485,7 +495,8 @@ function TelegramMessagesPage() {
                 </Badge>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Seleziona i gruppi target, inserisci la formattazione e verifica la preview Telegram prima di inviare.
+                Seleziona i gruppi target, inserisci la formattazione e verifica la preview Telegram
+                prima di inviare.
               </p>
             </div>
           </div>
@@ -512,7 +523,9 @@ function TelegramMessagesPage() {
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-sky-400" />
                   <div>
-                    <CardTitle className="text-base text-white">1. Seleziona Gruppi Destinatari</CardTitle>
+                    <CardTitle className="text-base text-white">
+                      1. Seleziona Gruppi Destinatari
+                    </CardTitle>
                     <CardDescription className="text-xs text-slate-400">
                       {selectedChatIds.length} di {groups.length} gruppi selezionati
                     </CardDescription>
@@ -615,7 +628,8 @@ function TelegramMessagesPage() {
                 2. Componi Messaggio Formattato
               </CardTitle>
               <CardDescription className="text-xs text-slate-400">
-                Usa la barra degli strumenti per formattare il testo. Telegram supporta grassetto, corsivo, citazioni (cita), spoiler e blocchi codice.
+                Usa la barra degli strumenti per formattare il testo. Telegram supporta grassetto,
+                corsivo, citazioni (cita), spoiler e blocchi codice.
               </CardDescription>
             </CardHeader>
 
@@ -631,8 +645,7 @@ function TelegramMessagesPage() {
                     className="h-8 px-2.5 bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:text-white text-xs font-bold gap-1"
                     title="Grassetto (<b>)"
                   >
-                    <Bold className="h-3.5 w-3.5" />
-                    B
+                    <Bold className="h-3.5 w-3.5" />B
                   </Button>
 
                   <Button
@@ -643,8 +656,7 @@ function TelegramMessagesPage() {
                     className="h-8 px-2.5 bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:text-white text-xs italic gap-1"
                     title="Corsivo (<i>)"
                   >
-                    <Italic className="h-3.5 w-3.5" />
-                    I
+                    <Italic className="h-3.5 w-3.5" />I
                   </Button>
 
                   <Button
@@ -655,8 +667,7 @@ function TelegramMessagesPage() {
                     className="h-8 px-2.5 bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:text-white text-xs underline gap-1"
                     title="Sottolineato (<u>)"
                   >
-                    <Underline className="h-3.5 w-3.5" />
-                    U
+                    <Underline className="h-3.5 w-3.5" />U
                   </Button>
 
                   <Button
@@ -667,8 +678,7 @@ function TelegramMessagesPage() {
                     className="h-8 px-2.5 bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:text-white text-xs line-through gap-1"
                     title="Barrato (<s>)"
                   >
-                    <Strikethrough className="h-3.5 w-3.5" />
-                    S
+                    <Strikethrough className="h-3.5 w-3.5" />S
                   </Button>
 
                   <span className="text-slate-700 mx-0.5">|</span>
@@ -977,7 +987,8 @@ function TelegramMessagesPage() {
                   Suggerimento Telegram:
                 </p>
                 <p>
-                  Gli spoiler si possono rivelare direttamente nella preview cliccandoci sopra. I link con tag HTML apriranno la pagina di destinazione.
+                  Gli spoiler si possono rivelare direttamente nella preview cliccandoci sopra. I
+                  link con tag HTML apriranno la pagina di destinazione.
                 </p>
               </div>
             </CardContent>

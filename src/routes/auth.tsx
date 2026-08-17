@@ -51,21 +51,32 @@ function AuthPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       if (data.session?.user?.id) {
-        const [{ data: prof }, { data: roles }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("has_employee_access")
-            .eq("id", data.session.user.id)
-            .maybeSingle(),
-          supabase.from("user_roles").select("role").eq("user_id", data.session.user.id),
-        ]);
+        const uid = data.session.user.id;
+        const [{ data: prof }, { data: roles }, { data: customRoles }, { data: perms }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("has_employee_access, show_in_staff_list")
+              .eq("id", uid)
+              .maybeSingle(),
+            supabase.from("user_roles").select("role").eq("user_id", uid),
+            supabase.from("user_custom_roles").select("role_id").eq("user_id", uid),
+            supabase.from("user_permissions").select("permission").eq("user_id", uid),
+          ]);
         if (!active) return;
         const isEmployeeOrAdmin =
-          prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
+          prof?.has_employee_access === true ||
+          prof?.show_in_staff_list === true ||
+          (roles || []).some((r: any) =>
+            ["admin", "gestore", "capitano", "direzione"].includes(r.role),
+          ) ||
+          (customRoles || []).length > 0 ||
+          (perms || []).length > 0;
+
         if (isEmployeeOrAdmin) {
           navigate({ to: "/dashboard" });
         } else {
-          navigate({ to: "/" });
+          navigate({ to: "/scheda-cittadino" });
         }
       }
     });
@@ -85,31 +96,43 @@ function AuthPage() {
         setPassword("");
         return;
       }
-      const { data: authRes, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: usernameToEmail(username),
         password,
       });
       if (error) throw error;
       toast.success("Accesso effettuato con successo");
 
-      if (authRes.user?.id) {
-        const [{ data: prof }, { data: roles }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("has_employee_access")
-            .eq("id", authRes.user.id)
-            .maybeSingle(),
-          supabase.from("user_roles").select("role").eq("user_id", authRes.user.id),
-        ]);
+      // Check role
+      const uid = data?.user?.id;
+      if (uid) {
+        const [{ data: prof }, { data: roles }, { data: customRoles }, { data: perms }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("has_employee_access, show_in_staff_list")
+              .eq("id", uid)
+              .maybeSingle(),
+            supabase.from("user_roles").select("role").eq("user_id", uid),
+            supabase.from("user_custom_roles").select("role_id").eq("user_id", uid),
+            supabase.from("user_permissions").select("permission").eq("user_id", uid),
+          ]);
         const isEmployeeOrAdmin =
-          prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
+          prof?.has_employee_access === true ||
+          prof?.show_in_staff_list === true ||
+          (roles || []).some((r: any) =>
+            ["admin", "gestore", "capitano", "direzione"].includes(r.role),
+          ) ||
+          (customRoles || []).length > 0 ||
+          (perms || []).length > 0;
+
         if (isEmployeeOrAdmin) {
           navigate({ to: "/dashboard" });
         } else {
-          navigate({ to: "/" });
+          navigate({ to: "/scheda-cittadino" });
         }
       } else {
-        navigate({ to: "/" });
+        navigate({ to: "/scheda-cittadino" });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Errore di accesso");

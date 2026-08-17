@@ -557,9 +557,7 @@ export const getPublicStaffList = createServerFn({ method: "GET" }).handler(asyn
   const repartiList = (allCustomRoles || [])
     .filter((cr: any) => cr && cr.is_reparto === true && cr.show_in_staff_list === true)
     .map((rep: any) => {
-      const members = sortedStaff.filter((m: any) =>
-        m.reparti.some((r: any) => r.id === rep.id),
-      );
+      const members = sortedStaff.filter((m: any) => m.reparti.some((r: any) => r.id === rep.id));
       return {
         id: rep.id,
         name: rep.name,

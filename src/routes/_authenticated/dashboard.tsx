@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -140,7 +140,7 @@ const FEATURES: FeatureItem[] = [
 ];
 
 function DashboardPage() {
-  const { profile, isAdmin, permissions, userSanctions } = useAuth();
+  const { profile, isAdmin, permissions, userSanctions, hasEmployeeAccess, loading } = useAuth();
   const qc = useQueryClient();
 
   const { data: maintenanceData } = useQuery({
@@ -208,13 +208,23 @@ function DashboardPage() {
   const displayName = profile?.display_name || profile?.username || "Collaboratore";
   const [allGroupsJoined, setAllGroupsJoined] = useState(false);
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] space-y-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <p className="text-sm text-slate-400">Caricamento pannello...</p>
+      </div>
+    );
+  }
+
   // Filter features based on user permissions or admin status
   const visibleFeatures = FEATURES.filter((f) => {
     if (isAdmin) return true;
     if (f.adminOnly) return false;
     if (f.to === "/congedi") return true; // Accessible to all authenticated employees
+    if (hasEmployeeAccess && permissions.length === 0) return true;
     // Show if user has at least one permission in the feature's permission list
-    return f.permissions.some((p) => permissions.includes(p));
+    return f.permissions.length === 0 || f.permissions.some((p) => permissions.includes(p));
   });
 
   return (
@@ -255,116 +265,276 @@ function DashboardPage() {
             Buongiorno, <span className="text-amber-400">{displayName}</span>!
           </div>
           <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
-            Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle sezioni a
-            te abilitate con il dettaglio delle tue funzioni operative.
+            {hasEmployeeAccess
+              ? "Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle sezioni a te abilitate con il dettaglio delle tue funzioni operative."
+              : "Benvenuto nel portale ufficiale del Casinò Revenge. Di seguito trovi i tuoi servizi cittadini, la tua tessera e le sezioni dedicate."}
           </p>
         </div>
 
         <div className="shrink-0 flex items-center gap-2 bg-[#0a0b10] border border-slate-800 px-3.5 py-2 rounded-xl">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-            {isAdmin ? "Amministratore" : "Collaboratore Attivo"}
+            {isAdmin
+              ? "Amministratore"
+              : hasEmployeeAccess
+                ? "Collaboratore Attivo"
+                : "Cittadino Registrato"}
           </span>
         </div>
       </div>
 
       {/* Fascicolo Sanzioni / Situazione Disciplinare */}
-      <PersonalDisciplinaryStatus userSanctions={userSanctions} />
+      {hasEmployeeAccess && <PersonalDisciplinaryStatus userSanctions={userSanctions} />}
 
       {/* Gruppi Telegram & Canali Staff Riservati (Normal position if pending) */}
-      {!allGroupsJoined && (
+      {hasEmployeeAccess && !allGroupsJoined && (
         <TelegramStaffGroupsSection profile={profile} onAllJoinedChange={setAllGroupsJoined} />
       )}
 
       {/* Features Section */}
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">
-            Le tue funzionalità abilitate
-          </h2>
-          <p className="text-slate-400 text-xs mt-1">
-            Seleziona una sezione per iniziare a lavorare
-          </p>
-        </div>
+      {hasEmployeeAccess ? (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">
+              Le tue funzionalità abilitate
+            </h2>
+            <p className="text-slate-400 text-xs mt-1">
+              Seleziona una sezione per iniziare a lavorare
+            </p>
+          </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {visibleFeatures.map((f) => {
-            const Icon = f.icon;
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {visibleFeatures.map((f) => {
+              const Icon = f.icon;
 
-            // Get user's active permissions for this feature
-            const activePerms = isAdmin
-              ? f.adminOnly
-                ? ["Amministrazione completa"]
-                : PERMISSIONS.filter((p) => f.permissions.includes(p.key)).map((p) => p.label)
-              : PERMISSIONS.filter(
-                  (p) => f.permissions.includes(p.key) && permissions.includes(p.key),
-                ).map((p) => p.label);
+              // Get user's active permissions for this feature
+              const activePerms = isAdmin
+                ? f.adminOnly
+                  ? ["Amministrazione completa"]
+                  : PERMISSIONS.filter((p) => f.permissions.includes(p.key)).map((p) => p.label)
+                : PERMISSIONS.filter(
+                    (p) => f.permissions.includes(p.key) && permissions.includes(p.key),
+                  ).map((p) => p.label);
 
-            return (
-              <Card
-                key={f.to}
-                className="group bg-[#12141c] border-slate-800/90 hover:border-amber-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl"
-              >
-                <CardHeader className="space-y-4 pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    {f.adminOnly && (
-                      <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-[10px] uppercase font-bold">
-                        Amministratore
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
-                      {f.title}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2 text-slate-400 text-xs">
-                      {f.description}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-0 flex-1 flex flex-col justify-between">
-                  {/* Active Permissions List */}
-                  <div className="space-y-2 border-t border-slate-800/80 pt-4">
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Le tue abilitazioni:
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activePerms.length > 0 ? (
-                        activePerms.map((label, idx) => (
-                          <Badge
-                            key={idx}
-                            className="bg-[#0a0b10] border-slate-800 text-slate-300 text-[10px] px-2 py-0.5 font-semibold"
-                          >
-                            {label}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="border-slate-800 text-[10px] px-2 py-0.5 text-slate-500"
-                        >
-                          Accesso base consentito
+              return (
+                <Card
+                  key={f.to}
+                  className="group bg-[#12141c] border-slate-800/90 hover:border-amber-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl"
+                >
+                  <CardHeader className="space-y-4 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      {f.adminOnly && (
+                        <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-[10px] uppercase font-bold">
+                          Amministratore
                         </Badge>
                       )}
                     </div>
-                  </div>
+                    <div className="space-y-1.5">
+                      <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
+                        {f.title}
+                      </CardTitle>
+                      <CardDescription className="line-clamp-2 text-slate-400 text-xs">
+                        {f.description}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-0 flex-1 flex flex-col justify-between">
+                    {/* Active Permissions List */}
+                    <div className="space-y-2 border-t border-slate-800/80 pt-4">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        Le tue abilitazioni:
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activePerms.length > 0 ? (
+                          activePerms.map((label, idx) => (
+                            <Badge
+                              key={idx}
+                              className="bg-[#0a0b10] border-slate-800 text-slate-300 text-[10px] px-2 py-0.5 font-semibold"
+                            >
+                              {label}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="border-slate-800 text-[10px] px-2 py-0.5 text-slate-500"
+                          >
+                            Accesso base consentito
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
 
-                  {/* Navigation Button */}
-                  <Button asChild size="sm" className="w-full mt-4 group/btn" variant="outline">
-                    <Link to={f.to} className="flex items-center justify-center gap-1.5">
-                      Accedi a {f.title}
-                      <ChevronRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    {/* Navigation Button */}
+                    <Button asChild size="sm" className="w-full mt-4 group/btn" variant="outline">
+                      <Link to={f.to} className="flex items-center justify-center gap-1.5">
+                        Accedi a {f.title}
+                        <ChevronRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="font-black text-sm text-white uppercase tracking-wider">
+                  Gestionale Riservato allo Staff
+                </div>
+                <p className="text-slate-400 text-xs">
+                  Il pannello di gestione interna è riservato esclusivamente agli utenti con un
+                  ruolo staff personalizzato autorizzato. La tua Scheda Cittadino ufficiale è
+                  consultabile direttamente sul sito.
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0 rounded-xl px-5 h-9"
+            >
+              <Link to="/scheda-cittadino">
+                Vai alla Scheda Cittadino
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-white uppercase">
+              I tuoi servizi cittadini
+            </h2>
+            <p className="text-slate-400 text-xs mt-1">
+              Accedi alle sezioni dedicate ai clienti e cittadini del Casinò Revenge
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="group bg-[#12141c] border-slate-800/90 hover:border-amber-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl">
+              <CardHeader className="space-y-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/30 text-amber-300 text-[10px] uppercase font-bold"
+                  >
+                    Tessera Ufficiale
+                  </Badge>
+                </div>
+                <div className="space-y-1.5">
+                  <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
+                    La Mia Scheda Cittadino
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2 text-slate-400 text-xs">
+                    Consulta la tua anagrafica, i tuoi dati di gioco, il saldo conversioni in
+                    Dobloni, le consumazioni e la cassetta di sicurezza.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl"
+                >
+                  <Link to="/scheda-cittadino" className="flex items-center justify-center gap-1.5">
+                    Apri Scheda Cittadino
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="group bg-[#12141c] border-slate-800/90 hover:border-emerald-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl">
+              <CardHeader className="space-y-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/30 text-emerald-300 text-[10px] uppercase font-bold"
+                  >
+                    Reclutamento
+                  </Badge>
+                </div>
+                <div className="space-y-1.5">
+                  <CardTitle className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    Candidature Staff
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2 text-slate-400 text-xs">
+                    Invia la tua candidatura per entrare a far parte della Ciurma e dello staff del
+                    Casinò.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl"
+                >
+                  <Link to="/candidature" className="flex items-center justify-center gap-1.5">
+                    Invia Candidatura
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="group bg-[#12141c] border-slate-800/90 hover:border-sky-500/50 transition-all flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl">
+              <CardHeader className="space-y-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/30 flex items-center justify-center transition-transform group-hover:scale-110">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="border-sky-500/30 text-sky-300 text-[10px] uppercase font-bold"
+                  >
+                    Info & Ciurma
+                  </Badge>
+                </div>
+                <div className="space-y-1.5">
+                  <CardTitle className="text-lg font-bold text-white group-hover:text-sky-400 transition-colors">
+                    La Ciurma & Staff
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2 text-slate-400 text-xs">
+                    Visualizza i membri della Ciurma, la gerarchia del Casinò e i dettagli
+                    informativi.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="w-full mt-4 border-sky-500/30 text-sky-300 hover:bg-sky-500/10 rounded-xl"
+                >
+                  <Link to="/ciurma" className="flex items-center justify-center gap-1.5">
+                    Vedi Ciurma
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Gruppi Telegram & Canali Staff Riservati (Moved to bottom if user is inside ALL groups) */}
       {allGroupsJoined && (

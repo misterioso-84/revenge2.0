@@ -48,7 +48,19 @@ import {
   syncTelegramGroupsNow,
   checkGroupBotPermissionsFn,
 } from "@/lib/telegram-groups.functions";
-import { AlertTriangle, XCircle, Shield, ShieldOff, Check, Info, AtSign, Gamepad2, X, Search, UserPlus } from "lucide-react";
+import {
+  AlertTriangle,
+  XCircle,
+  Shield,
+  ShieldOff,
+  Check,
+  Info,
+  AtSign,
+  Gamepad2,
+  X,
+  Search,
+  UserPlus,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
@@ -320,7 +332,8 @@ function RolesPage() {
                 REPARTI & EXTRAPEX
               </h2>
               <p className="text-xs text-slate-400">
-                I reparti (extrapex) concedono permessi aggiuntivi cumulativi oltre al ruolo base dell'utente e sono visibili nella pagina della Ciurma.
+                I reparti (extrapex) concedono permessi aggiuntivi cumulativi oltre al ruolo base
+                dell'utente e sono visibili nella pagina della Ciurma.
               </p>
             </div>
 
@@ -341,9 +354,12 @@ function RolesPage() {
               <Card className="md:col-span-2 bg-[#12141c] border-slate-800">
                 <CardContent className="text-center text-slate-400 py-10 space-y-2">
                   <Sparkles className="h-8 w-8 text-purple-400 mx-auto opacity-80" />
-                  <div className="font-bold text-white text-sm">Nessun Reparto / Extrapex Creato</div>
+                  <div className="font-bold text-white text-sm">
+                    Nessun Reparto / Extrapex Creato
+                  </div>
                   <p className="text-xs max-w-sm mx-auto text-slate-400">
-                    Crea reparti speciali come "Sicurezza", "Eventi" o "Cassa" per assegnare mansioni e permessi extra allo staff.
+                    Crea reparti speciali come "Sicurezza", "Eventi" o "Cassa" per assegnare
+                    mansioni e permessi extra allo staff.
                   </p>
                 </CardContent>
               </Card>
@@ -358,7 +374,10 @@ function RolesPage() {
               );
 
               return (
-                <Card key={rep.id} className="relative overflow-hidden border border-purple-500/30 bg-[#12141c] text-white">
+                <Card
+                  key={rep.id}
+                  className="relative overflow-hidden border border-purple-500/30 bg-[#12141c] text-white"
+                >
                   <div
                     className="h-1.5 w-full"
                     style={{ backgroundColor: rep.staff_color || "#8b5cf6" }}
@@ -372,7 +391,9 @@ function RolesPage() {
                             Extrapex
                           </Badge>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">{rep.description ?? "Nessuna descrizione"}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {rep.description ?? "Nessuna descrizione"}
+                        </p>
                       </div>
 
                       <div className="flex gap-1">
@@ -406,10 +427,15 @@ function RolesPage() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {(rep.permissions ?? []).length === 0 && (
-                          <span className="text-xs text-slate-500 italic">Nessun permesso aggiuntivo</span>
+                          <span className="text-xs text-slate-500 italic">
+                            Nessun permesso aggiuntivo
+                          </span>
                         )}
                         {(rep.permissions ?? []).map((p: string) => (
-                          <Badge key={p} className="text-xs bg-purple-500/10 text-purple-200 border-purple-500/20">
+                          <Badge
+                            key={p}
+                            className="text-xs bg-purple-500/10 text-purple-200 border-purple-500/20"
+                          >
                             + {PERMISSIONS.find((x) => x.key === p)?.label ?? p}
                           </Badge>
                         ))}
@@ -424,10 +450,15 @@ function RolesPage() {
                         </div>
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {assignedProfiles.length === 0 ? (
-                            <span className="text-xs text-slate-500 italic">Nessun membro assegnato</span>
+                            <span className="text-xs text-slate-500 italic">
+                              Nessun membro assegnato
+                            </span>
                           ) : (
                             assignedProfiles.slice(0, 5).map((p: any) => (
-                              <Badge key={p.id} className="text-[10px] bg-slate-900 text-slate-200 border-slate-800 flex items-center gap-1">
+                              <Badge
+                                key={p.id}
+                                className="text-[10px] bg-slate-900 text-slate-200 border-slate-800 flex items-center gap-1"
+                              >
                                 <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
                                 {p.display_name || p.username}
                               </Badge>
@@ -1037,7 +1068,10 @@ function TelegramGroupCard({
                     onClick={() => {
                       setSelectedRoleIds(group.allowed_role_ids || []);
                       setExceptions(
-                        group.allowedExceptions || group.allowed_exceptions || group.allowed_handles || [],
+                        group.allowedExceptions ||
+                          group.allowed_exceptions ||
+                          group.allowed_handles ||
+                          [],
                       );
                       setIsEditingRoles(false);
                     }}
@@ -1072,7 +1106,8 @@ function TelegramGroupCard({
                     <span>Disabilita Controlli ed Espulsioni Automatiche</span>
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    Se attivo, il bot ignorerà i controlli di ruolo per questo gruppo e non effettuerà alcuna espulsione automatica o sollecito di verifica.
+                    Se attivo, il bot ignorerà i controlli di ruolo per questo gruppo e non
+                    effettuerà alcuna espulsione automatica o sollecito di verifica.
                   </p>
                 </div>
                 <Switch
@@ -1170,7 +1205,9 @@ function TelegramGroupCard({
                 </div>
               </div>
               <p className="text-[11px] text-slate-400">
-                Puoi autorizzare manualmente specifici utenti (inserendo il loro <b>@username Telegram</b> oppure il <b>Nickname Minecraft</b>). Il bot verificherà la corrispondenza ed eviterà di espellerli, bypassando il controllo sui ruoli.
+                Puoi autorizzare manualmente specifici utenti (inserendo il loro{" "}
+                <b>@username Telegram</b> oppure il <b>Nickname Minecraft</b>). Il bot verificherà
+                la corrispondenza ed eviterà di espellerli, bypassando il controllo sui ruoli.
               </p>
 
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -1238,11 +1275,14 @@ function TelegramGroupCard({
                   {allProfiles && allProfiles.length > 0 && (
                     <div className="space-y-1.5 pt-1">
                       <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                        <Search className="h-3 w-3 text-sky-400" /> Seleziona un utente registrato sul sito:
+                        <Search className="h-3 w-3 text-sky-400" /> Seleziona un utente registrato
+                        sul sito:
                       </span>
                       <div className="max-h-32 overflow-y-auto border border-slate-800/80 rounded-lg p-2 bg-slate-950/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {allProfiles.map((p: any) => {
-                          const tg = p.telegram_handle ? `@${p.telegram_handle.replace("@", "")}` : null;
+                          const tg = p.telegram_handle
+                            ? `@${p.telegram_handle.replace("@", "")}`
+                            : null;
                           const mc = p.username || p.display_name;
                           const targetVal = tg || mc;
 
@@ -1269,7 +1309,9 @@ function TelegramGroupCard({
                             >
                               <div className="truncate pr-1">
                                 <div className="font-semibold text-slate-200">{mc}</div>
-                                {tg && <div className="text-[10px] text-sky-400 font-mono">{tg}</div>}
+                                {tg && (
+                                  <div className="text-[10px] text-sky-400 font-mono">{tg}</div>
+                                )}
                               </div>
                               {isAdded ? (
                                 <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
@@ -1796,7 +1838,11 @@ function RoleDialog({
               name="description"
               rows={2}
               defaultValue={role?.description ?? ""}
-              placeholder={isReparto ? "Descrivi i compiti e permessi di questo reparto..." : "Descrizione del ruolo..."}
+              placeholder={
+                isReparto
+                  ? "Descrivi i compiti e permessi di questo reparto..."
+                  : "Descrizione del ruolo..."
+              }
               className="bg-slate-900 border-slate-800 text-white"
             />
           </div>
@@ -1854,12 +1900,17 @@ function RoleDialog({
           </div>
 
           <div>
-            <Label className="text-slate-300">Permessi {isReparto ? "Aggiuntivi (Extrapex)" : "Ruolo"}</Label>
+            <Label className="text-slate-300">
+              Permessi {isReparto ? "Aggiuntivi (Extrapex)" : "Ruolo"}
+            </Label>
             <div className="grid grid-cols-1 gap-1.5 mt-2 max-h-56 overflow-y-auto border border-slate-800 bg-[#0a0b10] rounded-md p-3">
               {PERMISSIONS.map((p) => {
                 const checked = perms.includes(p.key);
                 return (
-                  <label key={p.key} className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer hover:text-white">
+                  <label
+                    key={p.key}
+                    className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer hover:text-white"
+                  >
                     <input
                       type="checkbox"
                       checked={checked}
@@ -1886,7 +1937,11 @@ function RoleDialog({
             form="role-form"
             type="submit"
             disabled={save.isPending}
-            className={isReparto ? "bg-purple-600 hover:bg-purple-500 text-white font-bold" : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"}
+            className={
+              isReparto
+                ? "bg-purple-600 hover:bg-purple-500 text-white font-bold"
+                : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+            }
           >
             {save.isPending ? "Salvataggio..." : isReparto ? "Salva Reparto" : "Salva Ruolo"}
           </Button>

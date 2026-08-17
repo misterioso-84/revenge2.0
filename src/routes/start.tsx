@@ -31,7 +31,7 @@ export const Route = createFileRoute("/start")({
 });
 
 function StartPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, hasEmployeeAccess, loading } = useAuth();
   const navigate = useNavigate();
 
   const isConnected = !!(user && profile && profile.telegram_connected && profile.username);
@@ -157,14 +157,13 @@ function StartPage() {
                   >
                     <Globe className="h-4 w-4 mr-1.5" /> Torna alla Home
                   </Button>
-                  {profile?.has_employee_access && (
-                    <Button
-                      onClick={() => navigate({ to: "/dashboard" })}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10"
-                    >
-                      Pannello Dipendenti <ArrowRight className="h-4 w-4 ml-1.5" />
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => navigate({ to: "/dashboard" })}
+                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10"
+                  >
+                    {hasEmployeeAccess ? "Pannello Dipendenti" : "Pannello Cittadino"}{" "}
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
+                  </Button>
                 </div>
               </div>
             </CardContent>

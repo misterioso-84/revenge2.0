@@ -45,9 +45,11 @@ import {
   Gamepad2,
   Flame,
   ClipboardList,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteFooter } from "@/components/Footer";
+import { UserProfileDropdown } from "@/components/UserProfileDropdown";
 import {
   checkCitizenEligibility,
   registerPublicUser,
@@ -471,7 +473,7 @@ function InteractiveGamesSection() {
 
 function LandingPage() {
   const navigate = useNavigate();
-  const { user, profile, isAdmin, customRoleNames } = useAuth();
+  const { user, profile, isAdmin, customRoleNames, hasEmployeeAccess } = useAuth();
 
   const checkEligibilityFn = useServerFn(checkCitizenEligibility);
   const registerFn = useServerFn(registerPublicUser);
@@ -481,9 +483,7 @@ function LandingPage() {
     queryKey: ["public-staff-list"],
     queryFn: () => getStaffListFn(),
   });
-  const staffList = Array.isArray(rawStaffData)
-    ? rawStaffData
-    : rawStaffData?.staffMembers || [];
+  const staffList = Array.isArray(rawStaffData) ? rawStaffData : rawStaffData?.staffMembers || [];
 
   // Modals state
   const [loginOpen, setLoginOpen] = useState(false);
@@ -607,23 +607,34 @@ function LandingPage() {
       setLoginOpen(false);
 
       if (authRes.user?.id) {
-        const [{ data: prof }, { data: roles }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("has_employee_access")
-            .eq("id", authRes.user.id)
-            .maybeSingle(),
-          supabase.from("user_roles").select("role").eq("user_id", authRes.user.id),
-        ]);
+        const uid = authRes.user.id;
+        const [{ data: prof }, { data: roles }, { data: customRoles }, { data: perms }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("has_employee_access, show_in_staff_list")
+              .eq("id", uid)
+              .maybeSingle(),
+            supabase.from("user_roles").select("role").eq("user_id", uid),
+            supabase.from("user_custom_roles").select("role_id").eq("user_id", uid),
+            supabase.from("user_permissions").select("permission").eq("user_id", uid),
+          ]);
         const isEmployeeOrAdmin =
-          prof?.has_employee_access || (roles || []).some((r: any) => r.role === "admin");
+          prof?.has_employee_access === true ||
+          prof?.show_in_staff_list === true ||
+          (roles || []).some((r: any) =>
+            ["admin", "gestore", "capitano", "direzione"].includes(r.role),
+          ) ||
+          (customRoles || []).length > 0 ||
+          (perms || []).length > 0;
+
         if (isEmployeeOrAdmin) {
           navigate({ to: "/dashboard" });
         } else {
-          navigate({ to: "/" });
+          navigate({ to: "/scheda-cittadino" });
         }
       } else {
-        navigate({ to: "/" });
+        navigate({ to: "/scheda-cittadino" });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Credenziali di accesso non valide.");
@@ -807,6 +818,12 @@ function LandingPage() {
                 Corse Cavalli
               </a>
               <Link
+                to="/scheda-cittadino"
+                className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-300 font-bold"
+              >
+                <User className="h-3 w-3 text-amber-400" /> Scheda Cittadino
+              </Link>
+              <Link
                 to="/ciurma"
                 className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-400 font-bold"
               >
@@ -822,40 +839,7 @@ function LandingPage() {
 
             <div className="flex items-center gap-3">
               {user ? (
-                <div className="flex items-center gap-3 bg-slate-900 border border-amber-500/30 rounded-xl px-3 py-1.5 shadow-md">
-                  <img
-                    src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/36`}
-                    alt="Avatar Minecraft"
-                    className="h-8 w-8 rounded-lg border border-amber-500/50 object-cover shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/36.png";
-                    }}
-                  />
-                  <div className="hidden sm:block text-left">
-                    <div className="text-xs font-bold text-slate-100 truncate">
-                      {profile?.display_name || profile?.username}
-                    </div>
-                    <div className="text-[10px] text-amber-400 font-medium">
-                      {isAdmin ? "Amministratore" : customRoleNames[0] || "Ospite Registrato"}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-8 px-3"
-                    onClick={() => navigate({ to: "/dashboard" })}
-                  >
-                    Pannello
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-slate-400 hover:text-white"
-                    onClick={signOut}
-                    title="Scollegati"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
+                <UserProfileDropdown />
               ) : (
                 <div className="flex items-center gap-2">
                   <Button

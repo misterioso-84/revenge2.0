@@ -7,7 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SiteFooter } from "@/components/Footer";
-import { Anchor, Users, MessageCircle, Search, ArrowLeft, Crown, LogOut, Sparkles, Shield, Layers } from "lucide-react";
+import { UserProfileDropdown } from "@/components/UserProfileDropdown";
+import {
+  Anchor,
+  Users,
+  MessageCircle,
+  Search,
+  ArrowLeft,
+  Crown,
+  LogOut,
+  Sparkles,
+  Shield,
+  Layers,
+} from "lucide-react";
 import { getPublicStaffList } from "@/lib/registration.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,7 +40,7 @@ export const Route = createFileRoute("/ciurma")({
 
 function StaffCiurmaPage() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, hasEmployeeAccess } = useAuth();
   const getStaffListFn = useServerFn(getPublicStaffList);
 
   const [search, setSearch] = useState("");
@@ -257,37 +269,26 @@ function StaffCiurmaPage() {
               <Link to="/" className="hover:text-amber-400 transition-colors">
                 Home & Guida
               </Link>
-              <Link to="/" hash="valute" className="hover:text-amber-400 transition-colors">
-                Valute
-              </Link>
-              <Link to="/" hash="giochi" className="hover:text-amber-400 transition-colors">
-                Giochi
+              <Link
+                to="/scheda-cittadino"
+                className="hover:text-amber-400 transition-colors text-amber-300 font-bold"
+              >
+                Scheda Cittadino
               </Link>
               <Link to="/ciurma" className="text-amber-400 font-bold flex items-center gap-1.5">
                 <Anchor className="h-3.5 w-3.5 text-amber-500" /> La nostra Ciurma
+              </Link>
+              <Link
+                to="/candidature"
+                className="hover:text-amber-400 transition-colors text-emerald-400"
+              >
+                Candidature
               </Link>
             </nav>
 
             <div className="flex items-center gap-3">
               {user ? (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-4"
-                    onClick={() => navigate({ to: "/dashboard" })}
-                  >
-                    Pannello Dipendenti
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-9 w-9 text-slate-400 hover:text-white"
-                    onClick={signOut}
-                    title="Scollegati"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
+                <UserProfileDropdown />
               ) : (
                 <Button
                   size="sm"
@@ -398,7 +399,8 @@ function StaffCiurmaPage() {
                         <span>Reparti & Extrapex Operativi ({filteredReparti.length})</span>
                       </div>
                       <p className="text-xs text-slate-400 max-w-lg mx-auto uppercase tracking-wider font-medium">
-                        Reparti operativi e mansioni speciali attive con la spunta nella gestione ruoli
+                        Reparti operativi e mansioni speciali attive con la spunta nella gestione
+                        ruoli
                       </p>
                     </div>
 
@@ -409,23 +411,21 @@ function StaffCiurmaPage() {
                 )}
               </div>
             )
+          ) : /* REPARTI (EXTRAPEX) VIEW */
+          filteredReparti.length === 0 ? (
+            <div className="text-center py-20 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+              <Sparkles className="h-12 w-12 text-purple-400 mx-auto" />
+              <p className="text-sm font-semibold text-slate-300">
+                Nessun Reparto o membro trovato.
+              </p>
+              <p className="text-xs text-slate-500">
+                I reparti (extrapex) vengono configurati dalla direzione nella sezione dei Ruoli.
+              </p>
+            </div>
           ) : (
-            /* REPARTI (EXTRAPEX) VIEW */
-            filteredReparti.length === 0 ? (
-              <div className="text-center py-20 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
-                <Sparkles className="h-12 w-12 text-purple-400 mx-auto" />
-                <p className="text-sm font-semibold text-slate-300">
-                  Nessun Reparto o membro trovato.
-                </p>
-                <p className="text-xs text-slate-500">
-                  I reparti (extrapex) vengono configurati dalla direzione nella sezione dei Ruoli.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-12">
-                {filteredReparti.map((reparto: any) => renderRepartoGroup(reparto))}
-              </div>
-            )
+            <div className="space-y-12">
+              {filteredReparti.map((reparto: any) => renderRepartoGroup(reparto))}
+            </div>
           )}
 
           <div className="mt-12 text-center">

@@ -518,7 +518,12 @@ export function isUserOrHandleAuthorizedForGroup(
   ];
 
   const exceptions = rawExceptions
-    .map((s) => String(s || "").trim().toLowerCase().replace(/^@/, ""))
+    .map((s) =>
+      String(s || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^@/, ""),
+    )
     .filter(Boolean);
 
   if (exceptions.length === 0) return false;
@@ -527,8 +532,13 @@ export function isUserOrHandleAuthorizedForGroup(
   if (profile?.id && exceptions.includes(String(profile.id).toLowerCase())) return true;
 
   // Check Telegram User ID
-  if (telegramUserIdOverride && exceptions.includes(String(telegramUserIdOverride).toLowerCase())) return true;
-  if (profile?.telegram_user_id && exceptions.includes(String(profile.telegram_user_id).toLowerCase())) return true;
+  if (telegramUserIdOverride && exceptions.includes(String(telegramUserIdOverride).toLowerCase()))
+    return true;
+  if (
+    profile?.telegram_user_id &&
+    exceptions.includes(String(profile.telegram_user_id).toLowerCase())
+  )
+    return true;
 
   // Check Telegram handle
   if (telegramHandleOverride) {
@@ -586,12 +596,7 @@ export async function syncUserTelegramGroupAccess(userId: string) {
         continue;
       }
 
-      const hasPermission = isUserOrHandleAuthorizedForGroup(
-        group,
-        profile,
-        userRoleIds,
-        isAdmin,
-      );
+      const hasPermission = isUserOrHandleAuthorizedForGroup(group, profile, userRoleIds, isAdmin);
 
       const existingMember = (allMembers || []).find((m: any) => {
         const matchesGroup = m.group_id === group.id || String(m.chat_id) === String(group.chat_id);
@@ -709,7 +714,9 @@ export async function runDaily1700TelegramAudit() {
 
     for (const group of groups || []) {
       if (group.ignore_checks || group.disable_checks) {
-        console.log(`[Telegram Audit] Skipping group "${group.title}" (${group.id}) - controlli ed espulsioni disabilitate.`);
+        console.log(
+          `[Telegram Audit] Skipping group "${group.title}" (${group.id}) - controlli ed espulsioni disabilitate.`,
+        );
         continue;
       }
       const allowedRoles = group.allowed_role_ids || [];
@@ -718,12 +725,7 @@ export async function runDaily1700TelegramAudit() {
       for (const prof of profiles || []) {
         const isAdmin = adminUserIds.has(prof.id);
         const roles = userRoleMap.get(prof.id) || new Set();
-        const hasAccess = isUserOrHandleAuthorizedForGroup(
-          group,
-          prof,
-          roles,
-          isAdmin,
-        );
+        const hasAccess = isUserOrHandleAuthorizedForGroup(group, prof, roles, isAdmin);
 
         const userHandle = prof.telegram_handle
           ? prof.telegram_handle.toLowerCase().replace("@", "")
@@ -2033,7 +2035,11 @@ export async function fetchTelegramUpdates() {
           try {
             await supabaseAdmin.rpc("force_db_reload", {});
             const [{ data: pendD }, { data: profD }] = await Promise.all([
-              supabaseAdmin.from("telegram_pending_codes").select("*").eq("code", code).maybeSingle(),
+              supabaseAdmin
+                .from("telegram_pending_codes")
+                .select("*")
+                .eq("code", code)
+                .maybeSingle(),
               supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
             ]);
             pendingDbObj = pendD;

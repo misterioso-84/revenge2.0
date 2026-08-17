@@ -17,6 +17,12 @@ export function SiteFooter() {
           <Link to="/" className="hover:text-amber-400 transition-colors">
             HOME
           </Link>
+          <Link
+            to="/scheda-cittadino"
+            className="hover:text-amber-400 transition-colors text-amber-300 font-black"
+          >
+            SCHEDA CITTADINO
+          </Link>
           <a href="#guida" className="hover:text-amber-400 transition-colors">
             NOVITÀ
           </a>

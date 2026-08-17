@@ -670,12 +670,7 @@ export const generateGroupInviteLink = createServerFn({ method: "POST" })
     const isAdmin = (userRoles || []).some((r: any) => r.role === "admin");
     const userCustomRoleIds = (customRoles || []).map((cr: any) => cr.custom_role_id);
 
-    const isAllowed = isUserOrHandleAuthorizedForGroup(
-      group,
-      profile,
-      userCustomRoleIds,
-      isAdmin,
-    );
+    const isAllowed = isUserOrHandleAuthorizedForGroup(group, profile, userCustomRoleIds, isAdmin);
 
     if (!isAllowed) {
       throw new Error("Non disponi dei ruoli o eccezioni necessarie per accedere a questo gruppo.");
@@ -764,7 +759,9 @@ async function assertTelegramSender(ctx: { supabase: any; userId: string }) {
     return;
   }
 
-  throw new Error("Permesso negato: non disponi dell'autorizzazione per inviare messaggi nei gruppi Telegram.");
+  throw new Error(
+    "Permesso negato: non disponi dell'autorizzazione per inviare messaggi nei gruppi Telegram.",
+  );
 }
 
 // List registered active Telegram groups available for sending messages
@@ -817,7 +814,8 @@ export const sendBroadcastTelegramMessage = createServerFn({ method: "POST" })
       }
     }
 
-    const results: { chatId: string | number; title: string; success: boolean; error?: string }[] = [];
+    const results: { chatId: string | number; title: string; success: boolean; error?: string }[] =
+      [];
 
     const { data: groups } = await supabaseAdmin
       .from("telegram_groups")
@@ -869,4 +867,3 @@ export const sendBroadcastTelegramMessage = createServerFn({ method: "POST" })
       results,
     };
   });
-

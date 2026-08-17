@@ -39,6 +39,7 @@ import {
   Check,
   Copy,
   ClipboardList,
+  User,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -70,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const {
     profile,
     isAdmin,
+    hasEmployeeAccess,
     customRoleNames,
     activeSuspension,
     activeLeave,
@@ -136,12 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const isStaffMember =
-    isAdmin ||
-    permissions.length > 0 ||
-    customRoleNames.length > 0 ||
-    profile?.has_employee_access === true ||
-    !!profile?.show_in_staff_list;
+  const isStaffMember = hasEmployeeAccess;
 
   const items = NAV.filter((n) => {
     if (isAdmin) return true;
@@ -215,10 +212,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
     return true;
   }).map((n) => {
+    if (n.to === "/dashboard") {
+      return {
+        ...n,
+        label: isStaffMember ? "Dashboard" : "Pannello",
+      };
+    }
     if (n.to === "/cittadini") {
       return {
         ...n,
-        label: isStaffMember ? "Anagrafica Cittadini" : "Pannello Cittadino",
+        label: isStaffMember ? "Anagrafica Cittadini" : "Tessera Cittadino",
       };
     }
     return n;
@@ -243,11 +246,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // 1. Check if user is trying to access an internal employee-only route without employee access
   const isCitizenOnly = !isStaffMember;
   const isAllowedCitizenRoute =
+    path === "/dashboard" ||
     path === "/cittadini" ||
     path === "/candidature" ||
-    path === "/dashboard" ||
+    path === "/ciurma" ||
     path === "/" ||
-    path.startsWith("/candidature");
+    path.startsWith("/candidature") ||
+    path.startsWith("/ciurma");
 
   if (isCitizenOnly && !isAllowedCitizenRoute) {
     return (
@@ -285,14 +290,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="space-y-3 pt-2">
             <Button
-              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
-              onClick={() => navigate({ to: "/cittadini" })}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl"
+              onClick={() => navigate({ to: "/scheda-cittadino" })}
             >
-              Apri il tuo Pannello Cittadino
+              Apri la Tua Scheda Cittadino
             </Button>
             <Button
               variant="outline"
-              className="w-full border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+              className="w-full border-amber-500/30 text-amber-300 hover:bg-amber-500/10 rounded-xl"
               onClick={() => navigate({ to: "/candidature" })}
             >
               Invia una Candidatura Staff
@@ -564,12 +569,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             to="/"
             title={collapsed ? "Torna alla Guida / Sito" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-md text-sm font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors mb-3",
+              "flex items-center gap-3 rounded-md text-sm font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors mb-2",
               collapsed ? "justify-center h-10 w-full" : "px-3 py-2",
             )}
           >
             <Globe className="h-4 w-4 shrink-0 text-amber-500" />
-            {!collapsed && <span className="truncate">🌐 Torna alla Guida</span>}
+            {!collapsed && <span className="truncate">🌐 Torna al Sito</span>}
+          </Link>
+
+          <Link
+            to="/scheda-cittadino"
+            title={collapsed ? "La Mia Scheda Cittadino" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-md text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors mb-3",
+              collapsed ? "justify-center h-10 w-full" : "px-3 py-2",
+            )}
+          >
+            <User className="h-4 w-4 shrink-0 text-amber-400" />
+            {!collapsed && <span className="truncate">👤 La Mia Scheda</span>}
           </Link>
 
           <Link
@@ -613,17 +630,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-4")}>
           {!collapsed ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
+              <Link
+                to="/scheda-cittadino"
+                className="flex items-center gap-2.5 group p-1.5 -m-1.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition-colors"
+                title="Visualizza la tua Scheda Cittadino"
+              >
                 <img
                   src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/40`}
                   alt="Skin Minecraft"
-                  className="h-10 w-10 rounded-lg border border-amber-500/40 object-cover shrink-0 shadow-sm"
+                  className="h-10 w-10 rounded-lg border border-amber-500/40 object-cover shrink-0 shadow-sm group-hover:border-amber-400 group-hover:scale-105 transition-all"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/40.png";
                   }}
                 />
                 <div className="text-sm min-w-0 flex-1">
-                  <div className="font-semibold truncate text-slate-100">
+                  <div className="font-semibold truncate text-slate-100 group-hover:text-amber-400 transition-colors">
                     {profile?.display_name ?? profile?.username}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -639,15 +660,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ))}
                   </div>
                 </div>
-              </div>
+              </Link>
               <Button variant="outline" size="sm" className="w-full" onClick={signOut}>
                 <LogOut className="h-4 w-4" /> Esci
               </Button>
             </div>
           ) : (
-            <Button variant="outline" size="icon" className="w-full" onClick={signOut} title="Esci">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="space-y-2">
+              <Link
+                to="/scheda-cittadino"
+                title="La Mia Scheda Cittadino"
+                className="block text-center"
+              >
+                <img
+                  src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/40`}
+                  alt="Skin Minecraft"
+                  className="h-8 w-8 mx-auto rounded-lg border border-amber-500/40 object-cover shrink-0 shadow-sm hover:border-amber-400 hover:scale-105 transition-all"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/40.png";
+                  }}
+                />
+              </Link>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-full"
+                onClick={signOut}
+                title="Esci"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
       </aside>
@@ -666,7 +709,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 variant="outline"
                 className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2.5"
               >
-                <Globe className="h-3.5 w-3.5 mr-1" /> Guida
+                <Globe className="h-3.5 w-3.5 mr-1" /> Sito
+              </Button>
+            </Link>
+            <Link to="/scheda-cittadino">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2.5"
+              >
+                <User className="h-3.5 w-3.5 mr-1" /> Scheda
               </Button>
             </Link>
             <Link to="/ciurma">

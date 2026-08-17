@@ -1218,7 +1218,8 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
             Ruoli & Reparti di {user.username}
           </DialogTitle>
           <DialogDescription className="text-slate-400 text-xs">
-            Assegna un ruolo base o i reparti (extrapex) per concedere permessi cumulativi all'utente.
+            Assegna un ruolo base o i reparti (extrapex) per concedere permessi cumulativi
+            all'utente.
           </DialogDescription>
         </DialogHeader>
 
@@ -1266,7 +1267,9 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
               <Sparkles className="h-3.5 w-3.5" /> Reparti & Extrapex
             </div>
             {reparti.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">Nessun reparto (extrapex) configurato.</p>
+              <p className="text-xs text-slate-500 italic">
+                Nessun reparto (extrapex) configurato.
+              </p>
             ) : (
               reparti.map((r: any) => {
                 const checked = assignedIds.has(r.id);
@@ -1305,7 +1308,10 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
         </div>
 
         <DialogFooter>
-          <Button onClick={onClose} className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+          <Button
+            onClick={onClose}
+            className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+          >
             Chiudi
           </Button>
         </DialogFooter>
