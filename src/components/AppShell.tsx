@@ -695,42 +695,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <main className="flex-1 min-w-0">
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar/60 backdrop-blur">
-          <div className="font-semibold text-primary flex items-center gap-2">
-            <span>Revenge</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">
+        <div className="md:hidden flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border bg-sidebar/80 backdrop-blur min-w-0">
+          <div className="font-semibold text-primary flex items-center gap-2 shrink-0">
+            <span className="text-amber-400 font-black">Revenge</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono hidden sm:inline">
               Pannello
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Link to="/">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2.5"
+                className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2 sm:px-2.5"
+                title="Torna al Sito"
               >
-                <Globe className="h-3.5 w-3.5 mr-1" /> Sito
+                <Globe className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Sito</span>
               </Button>
             </Link>
             <Link to="/scheda-cittadino">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2.5"
+                className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300 h-8 px-2 sm:px-2.5"
+                title="Scheda Cittadino"
               >
-                <User className="h-3.5 w-3.5 mr-1" /> Scheda
+                <User className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Scheda</span>
               </Button>
             </Link>
             <Link to="/ciurma">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs bg-sky-500/10 border-sky-500/30 text-sky-300 h-8 px-2.5"
+                className="text-xs bg-sky-500/10 border-sky-500/30 text-sky-300 h-8 px-2 sm:px-2.5"
+                title="La nostra Ciurma"
               >
-                <Anchor className="h-3.5 w-3.5 mr-1" /> Ciurma
+                <Anchor className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Ciurma</span>
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={signOut} className="h-8 px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="h-8 px-2 text-slate-400 hover:text-red-400"
+              title="Esci"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

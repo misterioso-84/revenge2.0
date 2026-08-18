@@ -56,13 +56,13 @@ export function UserProfileDropdown({ className = "" }: { className?: string }) 
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={`flex items-center gap-2.5 bg-slate-900/90 hover:bg-slate-850 border border-amber-500/35 hover:border-amber-400/60 rounded-full sm:rounded-2xl px-2.5 py-1.5 sm:px-3 sm:py-1.5 shadow-lg transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 group cursor-pointer ${className}`}
+          className={`flex items-center gap-2 sm:gap-2.5 bg-slate-900/90 hover:bg-slate-800 border border-amber-500/35 hover:border-amber-400/60 rounded-full sm:rounded-2xl px-2 py-1.5 sm:px-3 sm:py-1.5 shadow-lg transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 group cursor-pointer shrink-0 min-w-0 ${className}`}
         >
           <div className="relative shrink-0">
             <img
               src={avatarUrl}
               alt={username}
-              className="h-8 w-8 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl border border-amber-500/60 group-hover:border-amber-400 object-cover shadow-sm transition-transform duration-200 group-hover:scale-105"
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl border border-amber-500/60 group-hover:border-amber-400 object-cover shadow-sm transition-transform duration-200 group-hover:scale-105"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/64.png";
               }}
@@ -70,7 +70,7 @@ export function UserProfileDropdown({ className = "" }: { className?: string }) 
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border border-slate-950" />
           </div>
 
-          <div className="hidden md:flex flex-col text-left max-w-[110px] lg:max-w-[140px] xl:max-w-[180px]">
+          <div className="hidden md:flex flex-col text-left min-w-0 max-w-[80px] lg:max-w-[120px] xl:max-w-[160px]">
             <span className="text-xs font-black text-white truncate group-hover:text-amber-300 transition-colors">
               {displayName}
             </span>

@@ -22,7 +22,7 @@ interface SiteNavbarProps {
 }
 
 export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
-  const { user, hasEmployeeAccess, isAdmin } = useAuth();
+  const { user, hasEmployeeAccess } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -31,7 +31,7 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
+      if (window.scrollY > 15) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
@@ -53,24 +53,28 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
   const navLinks = [
     {
       label: "Home & Guida",
+      shortLabel: "Home",
       href: "/",
       icon: Home,
       isActive: currentPath === "/",
     },
     {
       label: "Scheda Cittadino",
+      shortLabel: "Scheda",
       href: "/scheda-cittadino",
       icon: User,
       isActive: currentPath === "/scheda-cittadino",
     },
     {
       label: "La nostra Ciurma",
+      shortLabel: "Ciurma",
       href: "/ciurma",
       icon: Anchor,
       isActive: currentPath === "/ciurma",
     },
     {
       label: "Candidature",
+      shortLabel: "Candidature",
       href: "/candidature",
       icon: ClipboardList,
       isActive: currentPath === "/candidature",
@@ -81,38 +85,31 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out pointer-events-none",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
           isScrolled
-            ? "py-2.5 sm:py-3.5 px-3 sm:px-6 lg:px-10"
-            : "py-3.5 sm:py-5 px-4 sm:px-8 lg:px-12 border-b border-amber-500/15 bg-slate-950/60 backdrop-blur-md",
+            ? "py-2 sm:py-2.5 px-3 sm:px-6 lg:px-10 bg-slate-950/95 backdrop-blur-xl border-b border-amber-500/30 shadow-[0_12px_40px_-5px_rgba(0,0,0,0.95),0_0_25px_rgba(245,158,11,0.12)]"
+            : "py-3 sm:py-4 px-4 sm:px-8 lg:px-12 bg-slate-950/80 backdrop-blur-md border-b border-amber-500/15 shadow-[0_4px_20px_rgba(0,0,0,0.5)]",
         )}
       >
-        <div
-          className={cn(
-            "pointer-events-auto mx-auto transition-all duration-300 ease-out flex items-center justify-between gap-4 lg:gap-8",
-            isScrolled
-              ? "max-w-[1400px] w-full bg-slate-950/90 backdrop-blur-xl border border-amber-500/30 rounded-2xl sm:rounded-full px-4 sm:px-7 py-2 sm:py-2.5 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.85),0_0_25px_rgba(245,158,11,0.15)]"
-              : "max-w-[1400px] w-full",
-          )}
-        >
+        <div className="max-w-[1400px] w-full mx-auto flex items-center justify-between gap-2 sm:gap-4 lg:gap-6 min-w-0 transition-all duration-300 ease-out">
           {/* BRAND LOGO */}
-          <Link to="/" className="flex items-center gap-3 group shrink-0">
-            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-lg sm:text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 group-hover:shadow-amber-500/40 transition-all shrink-0">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-base sm:text-lg shadow-lg shadow-amber-500/20 group-hover:scale-105 group-hover:shadow-amber-500/40 transition-all shrink-0">
               ♠
             </div>
-            <div>
-              <div className="font-extrabold text-sm sm:text-base lg:text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase leading-tight whitespace-nowrap">
+            <div className="min-w-0">
+              <div className="font-extrabold text-xs sm:text-sm md:text-base lg:text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase leading-tight whitespace-nowrap">
                 Casinò Revenge
               </div>
-              <div className="text-[10px] text-amber-500/80 font-mono tracking-widest uppercase flex items-center gap-1 whitespace-nowrap">
+              <div className="hidden sm:flex text-[9px] md:text-[10px] text-amber-500/80 font-mono tracking-widest uppercase items-center gap-1 whitespace-nowrap">
                 <MapPin className="h-2.5 w-2.5 shrink-0" />
                 <span>Liberty Bay</span>
               </div>
             </div>
           </Link>
 
-          {/* DESKTOP & TABLET NAV LINKS */}
-          <nav className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-4 mx-auto">
+          {/* DESKTOP & LAPTOP RESPONSIVE NAV LINKS */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2.5 mx-auto min-w-0 justify-center">
             {navLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -120,7 +117,7 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3.5 lg:px-4 py-2 rounded-full text-xs lg:text-[13px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+                    "flex items-center gap-1.5 px-2.5 lg:px-3 xl:px-4 py-1.5 xl:py-2 rounded-full text-xs xl:text-[13px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0",
                     item.isActive
                       ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/10"
                       : "text-slate-300 hover:text-white hover:bg-slate-800/60",
@@ -128,11 +125,12 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
                 >
                   <Icon
                     className={cn(
-                      "h-3.5 w-3.5 lg:h-4 lg:w-4 shrink-0",
+                      "h-3.5 w-3.5 xl:h-4 xl:w-4 shrink-0",
                       item.isActive ? "text-amber-400" : "text-slate-400",
                     )}
                   />
-                  <span>{item.label}</span>
+                  <span className="hidden xl:inline">{item.label}</span>
+                  <span className="xl:hidden inline">{item.shortLabel}</span>
                 </Link>
               );
             })}
@@ -140,25 +138,26 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
             {hasEmployeeAccess && (
               <Link
                 to="/dashboard"
-                className="flex items-center gap-1.5 lg:gap-2 px-3.5 lg:px-4 py-2 rounded-full text-xs lg:text-[13px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-sm whitespace-nowrap ml-1"
+                className="flex items-center gap-1.5 px-2.5 lg:px-3 xl:px-4 py-1.5 xl:py-2 rounded-full text-xs xl:text-[13px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-sm whitespace-nowrap shrink-0 ml-0.5"
               >
-                <ShieldAlert className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-amber-400 shrink-0" />
-                <span>Gestionale Dipendenti</span>
+                <ShieldAlert className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-amber-400 shrink-0" />
+                <span className="hidden xl:inline">Gestionale Dipendenti</span>
+                <span className="xl:hidden inline">Gestionale</span>
               </Link>
             )}
           </nav>
 
           {/* RIGHT ACTIONS / USER PROFILE */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {user ? (
               <UserProfileDropdown />
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {onOpenLogin ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs font-bold h-8 sm:h-9 px-3 sm:px-4 rounded-xl"
+                    className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs font-bold h-8 sm:h-9 px-2.5 sm:px-4 rounded-xl"
                     onClick={onOpenLogin}
                   >
                     Accedi
@@ -167,7 +166,7 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs font-bold h-8 sm:h-9 px-3 sm:px-4 rounded-xl"
+                    className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs font-bold h-8 sm:h-9 px-2.5 sm:px-4 rounded-xl"
                     asChild
                   >
                     <Link to="/scheda-cittadino">Accedi</Link>
@@ -177,26 +176,28 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
                 {onOpenRegister ? (
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg shadow-amber-500/20 hidden sm:flex items-center gap-1"
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs h-8 sm:h-9 px-2.5 sm:px-4 rounded-xl shadow-lg shadow-amber-500/20 hidden sm:flex items-center gap-1"
                     onClick={onOpenRegister}
                   >
-                    <Sparkles className="h-3.5 w-3.5" /> Registrati
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="hidden md:inline">Registrati</span>
                   </Button>
                 ) : (
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg shadow-amber-500/20 hidden sm:flex items-center gap-1"
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs h-8 sm:h-9 px-2.5 sm:px-4 rounded-xl shadow-lg shadow-amber-500/20 hidden sm:flex items-center gap-1"
                     asChild
                   >
                     <Link to="/scheda-cittadino">
-                      <Sparkles className="h-3.5 w-3.5" /> Registrati
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span className="hidden md:inline">Registrati</span>
                     </Link>
                   </Button>
                 )}
               </div>
             )}
 
-            {/* MOBILE MENU TOGGLE BUTTON (Visible only on mobile screen < md) */}
+            {/* MOBILE & COMPACT MENU TOGGLE BUTTON */}
             <Button
               variant="ghost"
               size="icon"
@@ -209,9 +210,9 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
           </div>
         </div>
 
-        {/* MOBILE DROPDOWN OVERLAY (Visible only on mobile screen < md) */}
+        {/* MOBILE & COMPACT DROPDOWN OVERLAY */}
         {mobileMenuOpen && (
-          <div className="pointer-events-auto md:hidden mt-2 mx-auto max-w-lg bg-slate-950/90 backdrop-blur-2xl border border-amber-500/30 rounded-2xl p-4 shadow-2xl animate-in fade-in-50 zoom-in-95">
+          <div className="md:hidden mt-2.5 mx-auto max-w-lg bg-slate-950/98 backdrop-blur-2xl border border-amber-500/30 rounded-2xl p-4 shadow-2xl animate-in fade-in-50 zoom-in-95">
             <div className="space-y-1">
               {navLinks.map((item) => {
                 const Icon = item.icon;
@@ -236,11 +237,6 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
                       />
                       <span>{item.label}</span>
                     </div>
-                    {item.badge && (
-                      <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
