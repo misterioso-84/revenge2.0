@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SiteFooter } from "@/components/Footer";
+import { SiteNavbar } from "@/components/SiteNavbar";
 import { UserProfileDropdown } from "@/components/UserProfileDropdown";
 import {
   Dialog,
@@ -385,73 +386,11 @@ function SchedaCittadinoPage() {
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950 font-sans antialiased">
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-amber-500/20 bg-[#0a0c14]/90 backdrop-blur-md px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* LOGO */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-              ♠
-            </div>
-            <div>
-              <div className="font-black text-base uppercase tracking-wider text-slate-100 group-hover:text-amber-400 transition-colors">
-                Casinò Revenge
-              </div>
-              <div className="text-[10px] font-mono text-amber-500/80 uppercase tracking-widest">
-                Liberty Bay • Stabilimento
-              </div>
-            </div>
-          </Link>
-
-          {/* NAV LINKS */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <Link to="/" className="hover:text-amber-400 transition-colors">
-              Home
-            </Link>
-            <Link
-              to="/scheda-cittadino"
-              className="text-amber-400 font-black border-b-2 border-amber-500 pb-0.5"
-            >
-              Scheda Cittadino
-            </Link>
-            <Link to="/ciurma" className="hover:text-amber-400 transition-colors text-sky-400">
-              Staff & Ciurma
-            </Link>
-            <Link
-              to="/candidature"
-              className="hover:text-amber-400 transition-colors text-emerald-400"
-            >
-              Candidature
-            </Link>
-            {hasEmployeeAccess && (
-              <Link
-                to="/dashboard"
-                className="hover:text-amber-300 transition-colors text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30"
-              >
-                Pannello Gestionale
-              </Link>
-            )}
-          </nav>
-
-          {/* USER ACTIONS */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <UserProfileDropdown />
-            ) : (
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-slate-950 font-bold text-xs h-9 px-4 rounded-xl shadow-lg shadow-amber-500/20"
-                onClick={() => setLoginOpen(true)}
-              >
-                Accedi con il tuo account
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* UNIFIED FLOATING NAVBAR */}
+      <SiteNavbar onOpenLogin={() => setLoginOpen(true)} />
 
       {/* MAIN CONTAINER */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-10">
         {/* BREADCRUMB / BACK LINK */}
         <div className="flex items-center justify-between">
           <Link

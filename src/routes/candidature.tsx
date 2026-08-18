@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/Footer";
+import { SiteNavbar } from "@/components/SiteNavbar";
 import { UserProfileDropdown } from "@/components/UserProfileDropdown";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ApplicationForm, ApplicationSubmission } from "@/components/candidature/types";
+import { checkFormAccess } from "@/components/candidature/accessControl";
 import { SubmitApplicationDialog } from "@/components/candidature/SubmitApplicationDialog";
 import { ReviewApplicationDialog } from "@/components/candidature/ReviewApplicationDialog";
 import { FormBuilderDialog } from "@/components/candidature/FormBuilderDialog";
@@ -45,11 +47,14 @@ import {
   Check,
   User,
   ShieldCheck,
+  ShieldAlert,
   History,
   Eye,
   AlertCircle,
   HelpCircle,
   FileEdit,
+  RotateCcw,
+  Timer,
 } from "lucide-react";
 
 export const Route = createFileRoute("/candidature")({
@@ -62,6 +67,7 @@ function CandidaturePage() {
     user,
     profile,
     isAdmin,
+    roles = [],
     permissions = [],
     customRoleNames = [],
     hasEmployeeAccess,
@@ -107,6 +113,12 @@ function CandidaturePage() {
   const [editingForm, setEditingForm] = useState<ApplicationForm | null>(null);
 
   const [deleteFormConfirm, setDeleteFormConfirm] = useState<{
+    isOpen: boolean;
+    formId: string | null;
+    title: string;
+  }>({ isOpen: false, formId: null, title: "" });
+
+  const [resetFormConfirm, setResetFormConfirm] = useState<{
     isOpen: boolean;
     formId: string | null;
     title: string;
@@ -209,22 +221,35 @@ function CandidaturePage() {
     );
   }, [citizens, profile, user]);
 
-  // Map of form ID -> my submission
+  // Map of form ID -> my submissions array (sorted by created_at desc)
   const mySubmissionsMap = useMemo(() => {
-    const map = new Map<string, ApplicationSubmission>();
+    const map = new Map<string, ApplicationSubmission[]>();
     mySubmissions.forEach((sub) => {
-      map.set(sub.form_id, sub);
+      const existing = map.get(sub.form_id) || [];
+      existing.push(sub);
+      map.set(sub.form_id, existing);
+    });
+    map.forEach((list) => {
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     });
     return map;
   }, [mySubmissions]);
 
-  // Filter available forms based on user role (show internal only to staff)
+  // Filter available forms based on user role and granular access control (whitelist / staff / public)
   const availableForms = useMemo(() => {
     return forms.filter((f) => {
-      if (f.visibility === "internal_staff" && !isStaff) return false;
-      return true;
+      const { allowed } = checkFormAccess(f, {
+        user,
+        profile,
+        isAdmin,
+        isStaff,
+        canManageForms,
+        roles,
+        customRoleNames,
+      });
+      return allowed;
     });
-  }, [forms, isStaff]);
+  }, [forms, user, profile, isAdmin, isStaff, canManageForms, roles, customRoleNames]);
 
   // Filter evaluations list
   const filteredApplications = useMemo(() => {
@@ -250,14 +275,9 @@ function CandidaturePage() {
         const s = evalSearch.trim().toLowerCase();
         const nick = (app.applicant_nickname || "").toLowerCase();
         const name = (app.applicant_name || "").toLowerCase();
-        const discord = (app.applicant_discord || "").toLowerCase();
+        const tg = (app.applicant_telegram || "").toLowerCase();
         const formTitle = (matchedForm?.title || "").toLowerCase();
-        if (
-          !nick.includes(s) &&
-          !name.includes(s) &&
-          !discord.includes(s) &&
-          !formTitle.includes(s)
-        ) {
+        if (!nick.includes(s) && !name.includes(s) && !tg.includes(s) && !formTitle.includes(s)) {
           return false;
         }
       }
@@ -313,6 +333,59 @@ function CandidaturePage() {
     },
   });
 
+  // Toggle second chance (Staff)
+  const toggleRetryMutation = useMutation({
+    mutationFn: async ({ appId, allowRetry }: { appId: string; allowRetry: boolean }) => {
+      const { error } = await supabase
+        .from("applications")
+        .update({
+          allow_retry: allowRetry,
+          retry_granted_at: allowRetry ? new Date().toISOString() : null,
+          retry_granted_by: allowRetry
+            ? profile?.display_name || user?.user_metadata?.display_name || "Staff"
+            : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", appId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(
+        vars.allowRetry
+          ? "✨ Seconda possibilità concessa al candidato!"
+          : "Seconda possibilità revocata",
+      );
+      qc.invalidateQueries({ queryKey: ["applications"] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Errore durante l'aggiornamento della seconda possibilità");
+    },
+  });
+
+  // Reset form cooldown mutation (Admin)
+  const resetFormCooldownMutation = useMutation({
+    mutationFn: async (formId: string) => {
+      const { error } = await supabase
+        .from("application_forms")
+        .update({
+          reset_timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", formId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("⚡ Cooldown e sessione azzerati! Tutti i candidati possono ora reinviare.");
+      qc.invalidateQueries({ queryKey: ["application_forms"] });
+      qc.invalidateQueries({ queryKey: ["applications"] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Errore durante l'azzeramento del modulo");
+    },
+  });
+
   if (isBuildingForm) {
     return (
       <div className="space-y-8 py-2">
@@ -331,58 +404,10 @@ function CandidaturePage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
       <div>
-        <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-amber-500/20 px-4 lg:px-8 py-3 transition-all">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                ♠
-              </div>
-              <div>
-                <div className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase">
-                  Casinò Revenge
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium tracking-widest uppercase">
-                  Liberty Bay • Lavora con noi
-                </div>
-              </div>
-            </Link>
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-slate-300">
-              <Link to="/" className="hover:text-amber-400 transition-colors">
-                Home & Guida
-              </Link>
-              <Link
-                to="/scheda-cittadino"
-                className="hover:text-amber-400 transition-colors text-amber-300 font-bold"
-              >
-                Scheda Cittadino
-              </Link>
-              <Link to="/ciurma" className="hover:text-amber-400 transition-colors">
-                La Ciurma
-              </Link>
-              <Link
-                to="/candidature"
-                className="text-amber-400 font-bold border-b border-amber-500 pb-0.5"
-              >
-                Candidature
-              </Link>
-            </nav>
+        {/* UNIFIED FLOATING NAVBAR */}
+        <SiteNavbar />
 
-            <div className="flex items-center gap-3">
-              {user ? (
-                <UserProfileDropdown />
-              ) : (
-                <Button
-                  size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-4"
-                  onClick={() => navigate({ to: "/" })}
-                >
-                  Accedi / Registrati
-                </Button>
-              )}
-            </div>
-          </div>
-        </header>
-        <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
+        <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8 lg:py-10">
           <div className="space-y-8 py-2">
             {/* Title Section (Roleplay Theme) */}
             <div className="text-center space-y-2 pt-2">
@@ -560,8 +585,37 @@ function CandidaturePage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {availableForms.map((formItem) => {
-                      const existingSubmission = mySubmissionsMap.get(formItem.id);
+                      const userSubs = mySubmissionsMap.get(formItem.id) || [];
+                      const latestSubmission = userSubs[0];
                       const isOpen = formItem.status === "open";
+
+                      const hasSubmission = !!latestSubmission;
+                      const isPending =
+                        latestSubmission?.status === "pending" ||
+                        latestSubmission?.status === "under_review";
+                      const isAccepted = latestSubmission?.status === "accepted";
+                      const isRejected = latestSubmission?.status === "rejected";
+                      const retryGranted = !!latestSubmission?.allow_retry;
+                      const globalReset = !!(
+                        formItem.reset_timestamp &&
+                        latestSubmission &&
+                        new Date(formItem.reset_timestamp) > new Date(latestSubmission.created_at)
+                      );
+                      const cooldownDays = formItem.cooldown_days || 0;
+                      const daysSinceSubmission = latestSubmission
+                        ? (Date.now() - new Date(latestSubmission.created_at).getTime()) /
+                          (1000 * 60 * 60 * 24)
+                        : 9999;
+                      const cooldownElapsed =
+                        cooldownDays > 0 && daysSinceSubmission >= cooldownDays;
+                      const daysRemaining =
+                        cooldownDays > 0 ? Math.ceil(cooldownDays - daysSinceSubmission) : 0;
+
+                      const canSubmitAgain =
+                        !hasSubmission ||
+                        (!isPending &&
+                          !isAccepted &&
+                          (retryGranted || globalReset || cooldownElapsed));
 
                       return (
                         <Card
@@ -572,7 +626,12 @@ function CandidaturePage() {
                             {/* Top Badges */}
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <div className="flex items-center gap-2">
-                                {formItem.visibility === "internal_staff" ? (
+                                {formItem.visibility === "private" ? (
+                                  <Badge className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
+                                    <ShieldAlert className="h-3 w-3 mr-1" />
+                                    Bando Riservato (Whitelist)
+                                  </Badge>
+                                ) : formItem.visibility === "internal_staff" ? (
                                   <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider">
                                     <Lock className="h-3 w-3 mr-1" />
                                     Bando Interno Staff
@@ -594,6 +653,13 @@ function CandidaturePage() {
                                 >
                                   {isOpen ? "Aperto" : "Chiuso"}
                                 </Badge>
+
+                                {formItem.time_limit_minutes ? (
+                                  <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                                    <Timer className="h-3 w-3 mr-1" />
+                                    Test a Tempo: {formItem.time_limit_minutes}m
+                                  </Badge>
+                                ) : null}
                               </div>
 
                               <Badge
@@ -614,6 +680,20 @@ function CandidaturePage() {
                               </p>
                             </div>
 
+                            {/* Retry eligibility notices */}
+                            {hasSubmission && canSubmitAgain && (
+                              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 text-xs text-amber-300">
+                                <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+                                <span className="font-bold">
+                                  {retryGranted
+                                    ? "Seconda possibilità concessa dallo Staff: puoi inviare una nuova candidatura!"
+                                    : globalReset
+                                      ? "Nuova sessione aperta dallo Staff: puoi inviare una nuova candidatura!"
+                                      : "Periodo di cooldown terminato: puoi inviare una nuova candidatura!"}
+                                </span>
+                              </div>
+                            )}
+
                             {/* Questions count info */}
                             <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800/80">
                               <span className="flex items-center gap-1 font-medium">
@@ -625,54 +705,79 @@ function CandidaturePage() {
                           </div>
 
                           {/* Footer Actions */}
-                          <div className="p-4 bg-[#0a0b10] border-t border-slate-800 flex items-center justify-between gap-3">
-                            {existingSubmission ? (
-                              <div className="flex items-center justify-between w-full gap-2">
-                                <div className="flex items-center gap-2">
+                          <div className="p-4 bg-[#0a0b10] border-t border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+                            {canSubmitAgain && isOpen ? (
+                              <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                                {hasSubmission ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedAppToView(latestSubmission);
+                                      setViewAnswersOpen(true);
+                                    }}
+                                    className="text-xs border-slate-800 text-slate-300 hover:text-white rounded-xl gap-1.5 h-9"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-amber-400" />
+                                    Vedi Risposta Precedente
+                                  </Button>
+                                ) : (
+                                  <div />
+                                )}
+
+                                <Button
+                                  onClick={() => {
+                                    setSelectedFormToSubmit(formItem);
+                                    setSubmitDialogOpen(true);
+                                  }}
+                                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 gap-1.5 h-9 px-5 ml-auto w-full sm:w-auto"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                  {hasSubmission ? "Invia Nuovo Tentativo" : "Compila Candidatura"}
+                                </Button>
+                              </div>
+                            ) : latestSubmission ? (
+                              <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                                <div className="space-y-1">
                                   <Badge
                                     className={`text-[11px] font-bold ${
-                                      existingSubmission.status === "accepted"
+                                      latestSubmission.status === "accepted"
                                         ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                                        : existingSubmission.status === "rejected"
+                                        : latestSubmission.status === "rejected"
                                           ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
                                           : "bg-amber-500/20 text-amber-400 border-amber-500/30"
                                     }`}
                                   >
-                                    {existingSubmission.status === "accepted" &&
+                                    {latestSubmission.status === "accepted" &&
                                       "✓ Candidatura Accettata"}
-                                    {existingSubmission.status === "rejected" &&
+                                    {latestSubmission.status === "rejected" &&
                                       "✕ Candidatura Rifiutata"}
-                                    {existingSubmission.status === "under_review" &&
+                                    {latestSubmission.status === "under_review" &&
                                       "⏳ In Valutazione"}
-                                    {existingSubmission.status === "pending" &&
+                                    {latestSubmission.status === "pending" &&
                                       "⏳ Inviata (In Attesa)"}
                                   </Badge>
+
+                                  {isRejected && (
+                                    <p className="text-[10px] text-slate-400">
+                                      {cooldownDays > 0 && daysRemaining > 0
+                                        ? `Nuovo tentativo tra ${daysRemaining} ${daysRemaining === 1 ? "giorno" : "giorni"} (o chiedi allo Staff)`
+                                        : "Richiedi una 2ª possibilità allo Staff per ricandidarti"}
+                                    </p>
+                                  )}
                                 </div>
 
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setSelectedAppToView(existingSubmission);
+                                    setSelectedAppToView(latestSubmission);
                                     setViewAnswersOpen(true);
                                   }}
                                   className="text-xs border-slate-800 text-slate-300 hover:text-white rounded-xl gap-1.5 h-8"
                                 >
                                   <Eye className="h-3.5 w-3.5 text-amber-400" />
                                   Vedi la tua Risposta
-                                </Button>
-                              </div>
-                            ) : isOpen ? (
-                              <div className="flex items-center justify-end w-full">
-                                <Button
-                                  onClick={() => {
-                                    setSelectedFormToSubmit(formItem);
-                                    setSubmitDialogOpen(true);
-                                  }}
-                                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 gap-1.5 h-9 px-5 w-full sm:w-auto"
-                                >
-                                  <Send className="h-3.5 w-3.5" />
-                                  Compila Candidatura
                                 </Button>
                               </div>
                             ) : (
@@ -781,9 +886,11 @@ function CandidaturePage() {
                                     ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                                     : sub.status === "rejected"
                                       ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
-                                      : sub.status === "under_review"
-                                        ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                        : "bg-slate-500/20 text-slate-300 border-slate-700"
+                                      : sub.status === "expired"
+                                        ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                                        : sub.status === "under_review"
+                                          ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                          : "bg-slate-500/20 text-slate-300 border-slate-700"
                                 }`}
                               >
                                 {sub.status === "accepted" && (
@@ -792,6 +899,7 @@ function CandidaturePage() {
                                 {sub.status === "rejected" && (
                                   <XCircle className="h-3.5 w-3.5 mr-1" />
                                 )}
+                                {sub.status === "expired" && <Timer className="h-3.5 w-3.5 mr-1" />}
                                 {sub.status === "under_review" && (
                                   <Clock className="h-3.5 w-3.5 mr-1" />
                                 )}
@@ -800,9 +908,11 @@ function CandidaturePage() {
                                   ? "Accettata"
                                   : sub.status === "rejected"
                                     ? "Rifiutata"
-                                    : sub.status === "under_review"
-                                      ? "In Valutazione"
-                                      : "In Attesa di Revisione"}
+                                    : sub.status === "expired"
+                                      ? "Fallito per Tempo Scaduto"
+                                      : sub.status === "under_review"
+                                        ? "In Valutazione"
+                                        : "In Attesa di Revisione"}
                               </Badge>
 
                               <Button
@@ -819,6 +929,44 @@ function CandidaturePage() {
                               </Button>
                             </div>
                           </div>
+
+                          {/* Second chance banner if granted */}
+                          {sub.allow_retry && (
+                            <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-300">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-amber-300">
+                                    Seconda Possibilità Concessa dallo Staff!
+                                    {sub.time_extension_minutes
+                                      ? ` (+${sub.time_extension_minutes} minuti extra)`
+                                      : ""}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400">
+                                    {sub.retry_granted_by
+                                      ? `Autorizzato da ${sub.retry_granted_by}`
+                                      : "Puoi inviare una nuova candidatura per questo bando."}
+                                    {sub.time_extension_minutes
+                                      ? ` Ti sono stati assegnati ${sub.time_extension_minutes} minuti di tempo aggiuntivo per il test!`
+                                      : ""}
+                                  </p>
+                                </div>
+                              </div>
+                              {matchedForm && matchedForm.status === "open" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedFormToSubmit(matchedForm);
+                                    setSubmitDialogOpen(true);
+                                  }}
+                                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs h-8 rounded-xl shrink-0 gap-1.5"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                  Compila Nuovo Tentativo
+                                </Button>
+                              )}
+                            </div>
+                          )}
 
                           {/* Feedback box if notes from reviewer exist */}
                           {sub.reviewer_notes && (
@@ -856,7 +1004,7 @@ function CandidaturePage() {
                         VALUTAZIONE & REVISIONE CANDIDATURE
                       </h2>
                       <p className="text-xs text-slate-400">
-                        Esamina le risposte dei candidati, conduci i colloqui e accetta/rifiuta le
+                        Esamina le risposte dei candidati, concedi seconde possibilità e gestisci le
                         richieste
                       </p>
                     </div>
@@ -928,9 +1076,10 @@ function CandidaturePage() {
                         <SelectValue placeholder="Tutte le Visibilità" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#12141c] border-slate-800 text-white text-xs">
-                        <SelectItem value="all">Tutti i Bandi (Pubblici & Interni)</SelectItem>
+                        <SelectItem value="all">Tutti i Bandi (Tutte le Visibilità)</SelectItem>
                         <SelectItem value="public">🌐 Solo Bandi Pubblici</SelectItem>
                         <SelectItem value="internal_staff">🔒 Solo Bandi Interni Staff</SelectItem>
+                        <SelectItem value="private">🛡️ Solo Bandi Privati (Whitelist)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1011,6 +1160,20 @@ function CandidaturePage() {
                                     Pubblico
                                   </Badge>
                                 )}
+
+                                {app.allow_retry && (
+                                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold">
+                                    <Sparkles className="h-2.5 w-2.5 mr-1" />
+                                    2ª Possibilità Attiva
+                                  </Badge>
+                                )}
+
+                                {app.time_extension_minutes && (
+                                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold font-mono">
+                                    <Timer className="h-2.5 w-2.5 mr-1" />+
+                                    {app.time_extension_minutes}m Extra
+                                  </Badge>
+                                )}
                               </div>
 
                               <p className="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
@@ -1029,29 +1192,63 @@ function CandidaturePage() {
                                 </span>
                               </p>
 
-                              <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-0.5">
-                                {app.applicant_discord && (
-                                  <span className="text-indigo-400 font-medium">
-                                    Discord: {app.applicant_discord}
+                              <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-0.5 flex-wrap">
+                                {app.applicant_telegram ? (
+                                  <span className="text-sky-400 font-medium inline-flex items-center gap-1">
+                                    <Send className="h-2.5 w-2.5" />
+                                    Telegram: {app.applicant_telegram}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500 italic">
+                                    Telegram non collegato
                                   </span>
                                 )}
                                 <span>•</span>
                                 <span>Inviata il {formatDateTime(app.created_at)}</span>
+                                {app.started_at && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-amber-400 font-mono font-bold flex items-center gap-1">
+                                      <Timer className="h-3 w-3" />
+                                      Durata:{" "}
+                                      {Math.floor(
+                                        Math.max(
+                                          0,
+                                          (new Date(app.created_at).getTime() -
+                                            new Date(app.started_at).getTime()) /
+                                            1000,
+                                        ) / 60,
+                                      )}
+                                      m{" "}
+                                      {Math.floor(
+                                        Math.max(
+                                          0,
+                                          (new Date(app.created_at).getTime() -
+                                            new Date(app.started_at).getTime()) /
+                                            1000,
+                                        ) % 60,
+                                      )}
+                                      s
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
 
                           {/* Status & Actions */}
-                          <div className="flex items-center gap-3 justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                          <div className="flex items-center gap-2.5 justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800 flex-wrap">
                             <Badge
                               className={`text-xs font-bold px-3 py-1 uppercase tracking-wider ${
                                 app.status === "accepted"
                                   ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                                   : app.status === "rejected"
                                     ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
-                                    : app.status === "under_review"
-                                      ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                      : "bg-slate-500/20 text-slate-300 border-slate-700"
+                                    : app.status === "expired"
+                                      ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                                      : app.status === "under_review"
+                                        ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                        : "bg-slate-500/20 text-slate-300 border-slate-700"
                               }`}
                             >
                               {app.status === "accepted" && (
@@ -1060,6 +1257,7 @@ function CandidaturePage() {
                               {app.status === "rejected" && (
                                 <XCircle className="h-3.5 w-3.5 mr-1" />
                               )}
+                              {app.status === "expired" && <Timer className="h-3.5 w-3.5 mr-1" />}
                               {app.status === "under_review" && (
                                 <Clock className="h-3.5 w-3.5 mr-1" />
                               )}
@@ -1068,10 +1266,48 @@ function CandidaturePage() {
                                 ? "Accettata"
                                 : app.status === "rejected"
                                   ? "Rifiutata"
-                                  : app.status === "under_review"
-                                    ? "In Valutazione"
-                                    : "In Attesa"}
+                                  : app.status === "expired"
+                                    ? "Fallito per Tempo Scaduto"
+                                    : app.status === "under_review"
+                                      ? "In Valutazione"
+                                      : "In Attesa"}
                             </Badge>
+
+                            {/* Quick second chance button on rejected or expired applications */}
+                            {(app.status === "rejected" || app.status === "expired") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  toggleRetryMutation.mutate({
+                                    appId: app.id,
+                                    allowRetry: !app.allow_retry,
+                                  })
+                                }
+                                className={`text-xs h-9 rounded-xl font-bold gap-1 ${
+                                  app.allow_retry
+                                    ? "border-slate-800 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+                                    : "border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                                }`}
+                                title={
+                                  app.allow_retry
+                                    ? "Revoca la possibilità di ricandidarsi"
+                                    : "Concedi al candidato la possibilità di compilare una nuova domanda"
+                                }
+                              >
+                                {app.allow_retry ? (
+                                  <>
+                                    <RotateCcw className="h-3 w-3" />
+                                    Revoca 2ª Possibilità
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="h-3 w-3 text-amber-400" />
+                                    Concedi 2ª Possibilità
+                                  </>
+                                )}
+                              </Button>
+                            )}
 
                             <Button
                               onClick={() => {
@@ -1108,7 +1344,7 @@ function CandidaturePage() {
                       </h2>
                       <p className="text-xs text-slate-400">
                         Crea e configura i moduli di candidatura, personalizza le domande e gestisci
-                        lo stato di apertura
+                        i reset di sessione
                       </p>
                     </div>
                   </div>
@@ -1147,7 +1383,12 @@ function CandidaturePage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="text-base font-black text-white">{f.title}</h3>
 
-                              {f.visibility === "internal_staff" ? (
+                              {f.visibility === "private" ? (
+                                <Badge className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-bold">
+                                  <ShieldAlert className="h-3 w-3 mr-1" />
+                                  Privato (Whitelist)
+                                </Badge>
+                              ) : f.visibility === "internal_staff" ? (
                                 <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[10px] font-bold">
                                   <Lock className="h-3 w-3 mr-1" />
                                   Interno Staff
@@ -1169,6 +1410,13 @@ function CandidaturePage() {
                               >
                                 {isOpen ? "Aperto" : "Chiuso"}
                               </Badge>
+
+                              {f.reset_timestamp && (
+                                <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                                  <RotateCcw className="h-2.5 w-2.5 mr-1" />
+                                  Sessione Azzerata il {formatDate(f.reset_timestamp)}
+                                </Badge>
+                              )}
                             </div>
 
                             <p className="text-xs text-slate-400">{f.description}</p>
@@ -1186,11 +1434,42 @@ function CandidaturePage() {
                               <span className="text-amber-400 font-bold">
                                 {pendingCount} in attesa
                               </span>
+                              <span>•</span>
+                              <span className="text-slate-400">
+                                Cooldown: {f.cooldown_days || 0} gg
+                              </span>
+                              {f.time_limit_minutes ? (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-amber-300 font-bold flex items-center gap-1">
+                                    <Timer className="h-3 w-3" />
+                                    Limite: {f.time_limit_minutes} min
+                                  </span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
 
                           {/* Actions */}
                           <div className="flex items-center gap-2 flex-wrap justify-end">
+                            {/* Reset session button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setResetFormConfirm({
+                                  isOpen: true,
+                                  formId: f.id,
+                                  title: f.title,
+                                })
+                              }
+                              className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-xs rounded-xl h-9 font-bold gap-1.5"
+                              title="Azzera il cooldown per tutti i candidati permettendo una nuova candidatura"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                              Azzera Cooldown Sessione
+                            </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -1258,6 +1537,10 @@ function CandidaturePage() {
               currentUser={user}
               currentProfile={profile}
               currentCitizen={myCitizen}
+              userRoles={roles}
+              userCustomRoles={customRoleNames}
+              isAdmin={isAdmin}
+              isStaff={isStaff}
               onSubmitted={() => setActiveTab("my-submissions")}
             />
 
@@ -1301,6 +1584,20 @@ function CandidaturePage() {
               title="Elimina Modulo di Candidatura"
               description={`Sei sicuro di voler eliminare definitivamente il modulo "${deleteFormConfirm.title}"? Le relative candidature inviate rimarranno archiviate.`}
               confirmText="Elimina Definitivamente"
+            />
+
+            {/* Reset Form Cooldown Confirmation */}
+            <ConfirmDialog
+              isOpen={resetFormConfirm.isOpen}
+              onClose={() => setResetFormConfirm({ isOpen: false, formId: null, title: "" })}
+              onConfirm={() => {
+                if (resetFormConfirm.formId) {
+                  resetFormCooldownMutation.mutate(resetFormConfirm.formId);
+                }
+              }}
+              title="Azzera Cooldown per Tutti i Candidati"
+              description={`Sei sicuro di voler azzerare il cooldown per il bando "${resetFormConfirm.title}"? Tutti i candidati che hanno precedentemente inviato una candidatura riceveranno immediatamente la possibilità di inviarne una nuova.`}
+              confirmText="Azzera e Consenti Nuovi Invii"
             />
           </div>
         </main>

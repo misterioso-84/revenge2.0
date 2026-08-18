@@ -19,6 +19,8 @@ import {
   Sparkles,
   Lock,
   Globe,
+  Timer,
+  Send,
 } from "lucide-react";
 
 interface ViewAnswersDialogProps {
@@ -40,6 +42,20 @@ export function ViewAnswersDialog({
   const fields = matchedForm?.fields || [];
   const answers = application.answers || {};
 
+  const durationSec =
+    application.started_at && application.created_at
+      ? Math.max(
+          0,
+          Math.floor(
+            (new Date(application.created_at).getTime() -
+              new Date(application.started_at).getTime()) /
+              1000,
+          ),
+        )
+      : null;
+  const durationMin = durationSec !== null ? Math.floor(durationSec / 60) : null;
+  const durationRemSec = durationSec !== null ? durationSec % 60 : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#0b0c12] border border-slate-800 text-white max-w-2xl max-h-[90vh] flex flex-col p-0 shadow-2xl rounded-2xl overflow-hidden">
@@ -47,7 +63,7 @@ export function ViewAnswersDialog({
         <div className="p-6 border-b border-slate-800/90 bg-[#10121a]">
           <DialogHeader className="space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant="outline"
                   className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 ${
@@ -55,25 +71,40 @@ export function ViewAnswersDialog({
                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                       : application.status === "rejected"
                         ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
-                        : application.status === "under_review"
-                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          : "bg-slate-500/10 text-slate-300 border-slate-700"
+                        : application.status === "expired"
+                          ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                          : application.status === "under_review"
+                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            : "bg-slate-500/10 text-slate-300 border-slate-700"
                   }`}
                 >
                   {application.status === "accepted" && (
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                   )}
                   {application.status === "rejected" && <XCircle className="h-3.5 w-3.5 mr-1" />}
+                  {application.status === "expired" && <Timer className="h-3.5 w-3.5 mr-1" />}
                   {application.status === "under_review" && <Clock className="h-3.5 w-3.5 mr-1" />}
                   {application.status === "pending" && <Clock className="h-3.5 w-3.5 mr-1" />}
                   {application.status === "accepted"
                     ? "Candidatura Accettata"
                     : application.status === "rejected"
                       ? "Candidatura Rifiutata"
-                      : application.status === "under_review"
-                        ? "In Valutazione"
-                        : "In Attesa di Revisione"}
+                      : application.status === "expired"
+                        ? "Fallito per Tempo Scaduto"
+                        : application.status === "under_review"
+                          ? "In Valutazione"
+                          : "In Attesa di Revisione"}
                 </Badge>
+
+                {application.allow_retry && (
+                  <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] font-bold flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Seconda Possibilità Concessa
+                    {application.time_extension_minutes
+                      ? ` (+${application.time_extension_minutes}m)`
+                      : ""}
+                  </Badge>
+                )}
 
                 {matchedForm?.visibility === "internal_staff" ? (
                   <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[10px]">
@@ -84,6 +115,16 @@ export function ViewAnswersDialog({
                   <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[10px]">
                     <Globe className="h-3 w-3 mr-1" />
                     Bando Pubblico
+                  </Badge>
+                )}
+
+                {durationSec !== null && (
+                  <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold">
+                    <Timer className="h-3 w-3 mr-1" />
+                    Tempo impiegato: {durationMin}m {durationRemSec}s
+                    {matchedForm?.time_limit_minutes
+                      ? ` / max ${matchedForm.time_limit_minutes}m`
+                      : ""}
                   </Badge>
                 )}
               </div>
@@ -101,6 +142,11 @@ export function ViewAnswersDialog({
             <DialogDescription className="text-xs text-slate-400">
               Ruolo Target:{" "}
               <strong className="text-amber-400">{matchedForm?.role_target || "Staff"}</strong>
+              {application.applicant_telegram && (
+                <span className="ml-3 inline-flex items-center gap-1 text-sky-400 font-mono">
+                  <Send className="h-3 w-3" /> Telegram: {application.applicant_telegram}
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -156,8 +202,10 @@ export function ViewAnswersDialog({
                           </Badge>
                         ))}
                       </div>
+                    ) : typeof ans === "boolean" ? (
+                      <span className="text-xs font-bold text-amber-400">{ans ? "Sì" : "No"}</span>
                     ) : (
-                      <p className="text-xs text-slate-200 bg-[#12141c] p-3 rounded-lg border border-slate-800/90 whitespace-pre-wrap">
+                      <p className="text-xs text-slate-200 bg-[#12141c] p-3 rounded-lg border border-slate-800 whitespace-pre-wrap leading-relaxed">
                         {String(ans)}
                       </p>
                     )}
@@ -169,7 +217,9 @@ export function ViewAnswersDialog({
             <div className="space-y-3">
               {Object.entries(answers).map(([k, v], idx) => (
                 <div key={k} className="p-3 rounded-xl bg-[#0e1017] border border-slate-800">
-                  <p className="text-xs font-bold text-slate-400 mb-1">Domanda #{idx + 1}</p>
+                  <p className="text-xs font-bold text-slate-400 mb-1">
+                    Campo #{idx + 1} ({k})
+                  </p>
                   <p className="text-xs text-white whitespace-pre-wrap">{String(v)}</p>
                 </div>
               ))}
@@ -178,12 +228,12 @@ export function ViewAnswersDialog({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="p-4 border-t border-slate-800 bg-[#0e1017] flex justify-end">
+        <DialogFooter className="p-4 border-t border-slate-800 bg-[#0e1017]">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-slate-800 text-slate-300 hover:text-white bg-transparent rounded-xl text-xs"
+            className="border-slate-800 text-slate-400 hover:text-white bg-transparent rounded-xl text-xs w-full sm:w-auto"
           >
             Chiudi
           </Button>

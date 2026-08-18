@@ -28,19 +28,23 @@ import {
   QuestionType,
 } from "./types";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Plus,
   Trash2,
   Lock,
   Globe,
-  GripVertical,
   HelpCircle,
   Sparkles,
   Layers,
   ArrowUp,
   ArrowDown,
+  ShieldAlert,
+  ShieldCheck,
+  User,
+  Send,
+  X,
 } from "lucide-react";
 
 interface FormBuilderDialogProps {
@@ -65,6 +69,26 @@ export function FormBuilderDialog({
   const [status, setStatus] = useState<FormStatus>("open");
   const [fields, setFields] = useState<ApplicationFormField[]>([]);
 
+  // Whitelist state
+  const [allowedRoles, setAllowedRoles] = useState<string[]>([]);
+  const [allowedNicks, setAllowedNicks] = useState<string[]>([]);
+  const [allowedTelegrams, setAllowedTelegrams] = useState<string[]>([]);
+  const [newNickInput, setNewNickInput] = useState("");
+  const [newTgInput, setNewTgInput] = useState("");
+  const [newRoleInput, setNewRoleInput] = useState("");
+
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ["custom-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("custom_roles").select("*").order("name");
+      if (error) return [];
+      return (data || []) as any[];
+    },
+  });
+
+  const baseRoles = customRoles.filter((r: any) => !r.is_reparto);
+  const extrapexRoles = customRoles.filter((r: any) => r.is_reparto === true);
+
   useEffect(() => {
     if (open) {
       if (form) {
@@ -73,6 +97,9 @@ export function FormBuilderDialog({
         setRoleTarget(form.role_target || "");
         setVisibility(form.visibility || "public");
         setStatus(form.status || "open");
+        setAllowedRoles(form.allowed_roles || []);
+        setAllowedNicks(form.allowed_minecraft_nicknames || []);
+        setAllowedTelegrams(form.allowed_telegram_handles || []);
         setFields(
           form.fields && form.fields.length > 0 ? JSON.parse(JSON.stringify(form.fields)) : [],
         );
@@ -82,6 +109,9 @@ export function FormBuilderDialog({
         setRoleTarget("Croupier");
         setVisibility("public");
         setStatus("open");
+        setAllowedRoles([]);
+        setAllowedNicks([]);
+        setAllowedTelegrams([]);
         setFields([
           {
             id: "f_" + Math.random().toString(36).substring(2, 9),
@@ -116,6 +146,44 @@ export function FormBuilderDialog({
       }
     }
   }, [form, open]);
+
+  const handleAddNick = () => {
+    if (!newNickInput.trim()) return;
+    const parts = newNickInput
+      .split(/[\s,]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    setAllowedNicks((prev) => Array.from(new Set([...prev, ...parts])));
+    setNewNickInput("");
+  };
+
+  const handleAddTelegram = () => {
+    if (!newTgInput.trim()) return;
+    const parts = newTgInput
+      .split(/[\s,]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0)
+      .map((p) => (p.startsWith("@") ? p : `@${p}`));
+    setAllowedTelegrams((prev) => Array.from(new Set([...prev, ...parts])));
+    setNewTgInput("");
+  };
+
+  const handleAddRole = () => {
+    if (!newRoleInput.trim()) return;
+    const r = newRoleInput.trim();
+    if (!allowedRoles.some((role) => role.toLowerCase() === r.toLowerCase())) {
+      setAllowedRoles((prev) => [...prev, r]);
+    }
+    setNewRoleInput("");
+  };
+
+  const toggleRole = (r: string) => {
+    if (allowedRoles.some((role) => role.toLowerCase() === r.toLowerCase())) {
+      setAllowedRoles((prev) => prev.filter((role) => role.toLowerCase() !== r.toLowerCase()));
+    } else {
+      setAllowedRoles((prev) => [...prev, r]);
+    }
+  };
 
   const addField = () => {
     const newField: ApplicationFormField = {
@@ -204,6 +272,9 @@ export function FormBuilderDialog({
         visibility: visibility,
         status: status,
         fields: fields,
+        allowed_roles: visibility === "private" ? allowedRoles : null,
+        allowed_minecraft_nicknames: visibility === "private" ? allowedNicks : null,
+        allowed_telegram_handles: visibility === "private" ? allowedTelegrams : null,
         created_by: form?.created_by || currentUserId || "system",
         updated_at: new Date().toISOString(),
         ...(form?.id ? {} : { created_at: new Date().toISOString(), expires_at: null }),
@@ -249,8 +320,8 @@ export function FormBuilderDialog({
               {form ? "Modifica Modulo Candidatura" : "Crea Nuovo Modulo Candidatura"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-400">
-              Personalizza le domande (aperte, a scelta multipla, checkbox, numeriche) e la
-              visibilità (pubblica o riservata allo staff).
+              Personalizza le domande, la visibilità (pubblica, staff o whitelist privata) e le
+              regole di accesso.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -285,6 +356,40 @@ export function FormBuilderDialog({
                   placeholder="Es: Croupier, Addetto Sicurezza, Barman..."
                   className="bg-[#12141c] border-slate-800 text-white rounded-xl text-xs h-10"
                 />
+                {/* Role Suggestion Chips */}
+                {(baseRoles.length > 0 || extrapexRoles.length > 0) && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {baseRoles.map((r: any) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setRoleTarget(r.name)}
+                        className={`text-[9px] px-1.5 py-0.5 rounded border transition-all ${
+                          roleTarget.toLowerCase() === r.name.toLowerCase()
+                            ? "bg-amber-500 text-slate-950 font-bold border-amber-400"
+                            : "bg-[#0e1017] text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700"
+                        }`}
+                      >
+                        {r.name}
+                      </button>
+                    ))}
+                    {extrapexRoles.map((r: any) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setRoleTarget(r.name)}
+                        className={`text-[9px] px-1.5 py-0.5 rounded border flex items-center gap-0.5 transition-all ${
+                          roleTarget.toLowerCase() === r.name.toLowerCase()
+                            ? "bg-purple-600 text-white font-bold border-purple-400"
+                            : "bg-purple-950/20 text-purple-300 hover:text-purple-200 border-purple-800/30 hover:border-purple-700/50"
+                        }`}
+                      >
+                        <Sparkles className="h-2 w-2 text-purple-400" />
+                        {r.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -301,12 +406,13 @@ export function FormBuilderDialog({
                 </Select>
               </div>
 
+              {/* Visibilità 3-way */}
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs font-bold text-slate-200">Visibilità del Modulo</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <label
                     onClick={() => setVisibility("public")}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
                       visibility === "public"
                         ? "bg-amber-500/10 border-amber-500/50 text-white"
                         : "bg-[#12141c] border-slate-800 text-slate-400 hover:border-slate-700"
@@ -316,17 +422,14 @@ export function FormBuilderDialog({
                       className={`h-4 w-4 mt-0.5 shrink-0 ${visibility === "public" ? "text-amber-400" : "text-slate-500"}`}
                     />
                     <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-white">Pubblica (Tutti i Cittadini)</p>
-                      <p className="text-[10px] text-slate-400">
-                        Visibile a tutti gli utenti registrati per candidarsi ad entrare nello
-                        Staff.
-                      </p>
+                      <p className="text-xs font-bold text-white">Pubblica</p>
+                      <p className="text-[10px] text-slate-400">Tutti i cittadini</p>
                     </div>
                   </label>
 
                   <label
                     onClick={() => setVisibility("internal_staff")}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
                       visibility === "internal_staff"
                         ? "bg-purple-500/10 border-purple-500/50 text-white"
                         : "bg-[#12141c] border-slate-800 text-slate-400 hover:border-slate-700"
@@ -336,77 +439,294 @@ export function FormBuilderDialog({
                       className={`h-4 w-4 mt-0.5 shrink-0 ${visibility === "internal_staff" ? "text-purple-400" : "text-slate-500"}`}
                     />
                     <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-white">Interna (Solo Membri Staff)</p>
-                      <p className="text-[10px] text-slate-400">
-                        Riservata solo agli utenti con permessi Staff (concorsi interni, promozioni,
-                        feedback).
-                      </p>
+                      <p className="text-xs font-bold text-white">Staff</p>
+                      <p className="text-[10px] text-slate-400">Solo membri Staff</p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setVisibility("private")}
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      visibility === "private"
+                        ? "bg-rose-500/10 border-rose-500/50 text-white ring-1 ring-rose-500/30"
+                        : "bg-[#12141c] border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <ShieldAlert
+                      className={`h-4 w-4 mt-0.5 shrink-0 ${visibility === "private" ? "text-rose-400" : "text-slate-500"}`}
+                    />
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-white">Privata / Whitelist</p>
+                      <p className="text-[10px] text-slate-400">Ruoli, Nick o TG</p>
                     </div>
                   </label>
                 </div>
               </div>
 
+              {/* Whitelist box if private */}
+              {visibility === "private" && (
+                <div className="sm:col-span-2 p-4 rounded-xl border border-rose-500/30 bg-[#12141c] space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4" />
+                      Destinatari Whitelist
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {allowedRoles.length} Ruoli • {allowedNicks.length} Nick MC •{" "}
+                      {allowedTelegrams.length} TG
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* Roles (Base + Extrapex) */}
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold text-slate-300">Ruoli ammessi</Label>
+
+                      {/* Base Roles */}
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-amber-400/90 uppercase tracking-wider block">
+                          Ruoli Base:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {["admin", "staff"].map((r) => {
+                            const isSel = allowedRoles.some((x) => x.toLowerCase() === r);
+                            return (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => toggleRole(r)}
+                                className={`text-[10px] px-1.5 py-0.5 rounded border transition-all ${
+                                  isSel
+                                    ? "bg-rose-500 text-white border-rose-400 font-bold"
+                                    : "bg-[#0a0b10] text-slate-400 border-slate-800 hover:text-slate-200"
+                                }`}
+                              >
+                                {isSel ? "✓ " : "+ "}
+                                {r}
+                              </button>
+                            );
+                          })}
+                          {baseRoles.map((cr: any) => {
+                            const isSel = allowedRoles.some(
+                              (x) =>
+                                x.toLowerCase() === cr.name.toLowerCase() ||
+                                x.toLowerCase() === cr.id.toLowerCase(),
+                            );
+                            return (
+                              <button
+                                key={cr.id}
+                                type="button"
+                                onClick={() => toggleRole(cr.name)}
+                                className={`text-[10px] px-1.5 py-0.5 rounded border transition-all ${
+                                  isSel
+                                    ? "bg-rose-500 text-white border-rose-400 font-bold"
+                                    : "bg-[#0a0b10] text-amber-300/80 border-amber-500/20 hover:text-amber-200"
+                                }`}
+                              >
+                                {isSel ? "✓ " : "+ "}
+                                {cr.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Reparti & Extrapex */}
+                      {extrapexRoles.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            Reparti (Extrapex):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {extrapexRoles.map((er: any) => {
+                              const isSel = allowedRoles.some(
+                                (x) =>
+                                  x.toLowerCase() === er.name.toLowerCase() ||
+                                  x.toLowerCase() === er.id.toLowerCase(),
+                              );
+                              return (
+                                <button
+                                  key={er.id}
+                                  type="button"
+                                  onClick={() => toggleRole(er.name)}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded border transition-all ${
+                                    isSel
+                                      ? "bg-purple-600 text-white border-purple-400 font-bold shadow-sm"
+                                      : "bg-purple-950/20 text-purple-300 border-purple-800/30 hover:text-purple-100 hover:border-purple-700/50"
+                                  }`}
+                                >
+                                  {isSel ? "✓ " : "+ "}
+                                  {er.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Add custom role input */}
+                      <div className="flex gap-1 pt-1">
+                        <Input
+                          placeholder="Altro ruolo..."
+                          value={newRoleInput}
+                          onChange={(e) => setNewRoleInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddRole();
+                            }
+                          }}
+                          className="bg-[#0a0b10] border-slate-700 text-white text-xs h-7 rounded"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddRole}
+                          className="bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 font-bold text-xs h-7 px-2"
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Nicknames */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold text-slate-300">
+                        Nickname Minecraft
+                      </Label>
+                      <div className="flex gap-1">
+                        <Input
+                          placeholder="Nick..."
+                          value={newNickInput}
+                          onChange={(e) => setNewNickInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddNick();
+                            }
+                          }}
+                          className="bg-[#0a0b10] border-slate-700 text-white text-xs h-7 rounded"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddNick}
+                          className="bg-amber-500 text-slate-950 font-bold text-xs h-7 px-2"
+                        >
+                          +
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                        {allowedNicks.map((nick) => (
+                          <Badge
+                            key={nick}
+                            className="bg-amber-500/15 text-amber-300 text-[10px] py-0 px-1.5 gap-1"
+                          >
+                            {nick}
+                            <X
+                              className="h-2.5 w-2.5 cursor-pointer"
+                              onClick={() => setAllowedNicks((p) => p.filter((x) => x !== nick))}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Telegram */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold text-slate-300">
+                        Username @ Telegram
+                      </Label>
+                      <div className="flex gap-1">
+                        <Input
+                          placeholder="@handle..."
+                          value={newTgInput}
+                          onChange={(e) => setNewTgInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddTelegram();
+                            }
+                          }}
+                          className="bg-[#0a0b10] border-slate-700 text-white text-xs h-7 rounded"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddTelegram}
+                          className="bg-sky-500 text-white font-bold text-xs h-7 px-2"
+                        >
+                          +
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                        {allowedTelegrams.map((tg) => (
+                          <Badge
+                            key={tg}
+                            className="bg-sky-500/15 text-sky-300 text-[10px] py-0 px-1.5 gap-1"
+                          >
+                            {tg}
+                            <X
+                              className="h-2.5 w-2.5 cursor-pointer"
+                              onClick={() => setAllowedTelegrams((p) => p.filter((x) => x !== tg))}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs font-bold text-slate-200">
-                  Descrizione & Istruzioni per i Candidati
+                  Descrizione & Requisiti del Bando
                 </Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descrivi i requisiti, orari previsti o informazioni utili..."
-                  rows={2}
+                  placeholder="Spiega i requisiti, orari minimi o cosa cerchi nel candidato..."
+                  rows={3}
                   className="bg-[#12141c] border-slate-800 text-white rounded-xl text-xs resize-y"
                 />
               </div>
             </div>
           </div>
 
-          {/* Dynamic Question List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap border-b border-slate-800/80 pb-2">
-              <div>
-                <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                  <Layers className="h-3.5 w-3.5" />
-                  Domande & Campi del Modulo ({fields.length})
-                </h3>
-                <p className="text-[11px] text-slate-400">
-                  Aggiungi domande aperte, a scelta multipla o checkbox per selezionare i candidati.
-                </p>
-              </div>
-
+          {/* Questions Section */}
+          <div className="p-5 rounded-2xl bg-[#0e1017] border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5" />
+                Domande del Modulo ({fields.length})
+              </h3>
               <Button
                 type="button"
+                size="sm"
                 onClick={addField}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 gap-1.5"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg h-7 gap-1"
               >
-                <Plus className="h-3.5 w-3.5" />
-                Aggiungi Domanda
+                <Plus className="h-3 w-3" /> Aggiungi Domanda
               </Button>
             </div>
 
             {fields.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-[#0a0b10] space-y-2">
+              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
                 <HelpCircle className="h-8 w-8 text-slate-600 mx-auto" />
-                <p className="text-xs font-bold text-slate-400">Nessuna domanda presente</p>
-                <p className="text-[11px] text-slate-500">
-                  Clicca su "Aggiungi Domanda" per iniziare a comporre il questionario.
+                <p className="text-xs text-slate-400">
+                  Nessuna domanda presente. Clicca su "Aggiungi Domanda".
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {fields.map((field, idx) => (
                   <div
                     key={field.id || idx}
-                    className="p-4 rounded-2xl bg-[#0e1017] border border-slate-800/90 shadow-md space-y-3 relative group"
+                    className="p-4 rounded-xl bg-[#12141c] border border-slate-800 space-y-3"
                   >
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-800/60 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="h-6 w-6 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black">
-                          {idx + 1}
-                        </span>
-                        <span className="text-xs font-bold text-white">Domanda #{idx + 1}</span>
-                      </div>
-
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-800/60 pb-2">
+                      <span className="text-xs font-bold text-amber-400">Domanda #{idx + 1}</span>
                       <div className="flex items-center gap-1">
                         <Button
                           type="button"
@@ -414,8 +734,7 @@ export function FormBuilderDialog({
                           size="icon"
                           disabled={idx === 0}
                           onClick={() => moveField(idx, "up")}
-                          className="h-7 w-7 text-slate-400 hover:text-white"
-                          title="Sposta in alto"
+                          className="h-6 w-6 text-slate-400 hover:text-white"
                         >
                           <ArrowUp className="h-3.5 w-3.5" />
                         </Button>
@@ -425,8 +744,7 @@ export function FormBuilderDialog({
                           size="icon"
                           disabled={idx === fields.length - 1}
                           onClick={() => moveField(idx, "down")}
-                          className="h-7 w-7 text-slate-400 hover:text-white"
-                          title="Sposta in basso"
+                          className="h-6 w-6 text-slate-400 hover:text-white"
                         >
                           <ArrowDown className="h-3.5 w-3.5" />
                         </Button>
@@ -435,8 +753,7 @@ export function FormBuilderDialog({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeField(idx)}
-                          className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                          title="Elimina domanda"
+                          className="h-6 w-6 text-rose-400 hover:text-rose-300"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -445,21 +762,17 @@ export function FormBuilderDialog({
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2 space-y-1">
-                        <Label className="text-[11px] font-bold text-slate-300">
-                          Testo della Domanda *
-                        </Label>
+                        <Label className="text-[11px] font-bold text-slate-300">Domanda *</Label>
                         <Input
                           value={field.label}
                           onChange={(e) => updateField(idx, { label: e.target.value })}
-                          placeholder="Es: Qual è il tuo livello di esperienza?"
-                          className="bg-[#12141c] border-slate-800 text-white rounded-xl text-xs h-9"
+                          placeholder="Testo del quesito..."
+                          className="bg-[#0a0b10] border-slate-800 text-white rounded-lg text-xs h-8"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold text-slate-300">
-                          Tipo di Risposta
-                        </Label>
+                        <Label className="text-[11px] font-bold text-slate-300">Tipo</Label>
                         <Select
                           value={field.type}
                           onValueChange={(val: QuestionType) => {
@@ -473,80 +786,73 @@ export function FormBuilderDialog({
                             updateField(idx, updates);
                           }}
                         >
-                          <SelectTrigger className="bg-[#12141c] border-slate-800 text-white rounded-xl text-xs h-9">
+                          <SelectTrigger className="bg-[#0a0b10] border-slate-800 text-white rounded-lg text-xs h-8">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-[#12141c] border-slate-800 text-white text-xs">
-                            <SelectItem value="text">✏️ Risposta Aperta (Breve)</SelectItem>
-                            <SelectItem value="textarea">📄 Risposta Aperta (Lunga)</SelectItem>
-                            <SelectItem value="radio">🔘 Scelta Singola (Radio)</SelectItem>
-                            <SelectItem value="checkbox">☑️ Scelta Multipla (Checkbox)</SelectItem>
-                            <SelectItem value="select">📑 Menu a Tendina (Select)</SelectItem>
-                            <SelectItem value="number">🔢 Numerico (Età / Ore)</SelectItem>
+                            <SelectItem value="text">✏️ Testo Breve</SelectItem>
+                            <SelectItem value="textarea">📄 Testo Lungo</SelectItem>
+                            <SelectItem value="radio">🔘 Radio Singola</SelectItem>
+                            <SelectItem value="checkbox">☑️ Checkbox Multipla</SelectItem>
+                            <SelectItem value="select">📑 Select Menu</SelectItem>
+                            <SelectItem value="number">🔢 Numerico</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="sm:col-span-2 space-y-1">
-                        <Label className="text-[11px] font-medium text-slate-400">
-                          Descrizione / Suggerimento (Opzionale)
+                        <Label className="text-[11px] font-bold text-slate-400">
+                          Suggerimento / Istruzioni
                         </Label>
                         <Input
                           value={field.description || ""}
                           onChange={(e) => updateField(idx, { description: e.target.value })}
-                          placeholder="Es: Specifica eventuali server RP precedenti"
-                          className="bg-[#12141c] border-slate-800 text-white rounded-xl text-xs h-9"
+                          placeholder="Opzionale..."
+                          className="bg-[#0a0b10] border-slate-800 text-white rounded-lg text-xs h-7"
                         />
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-start gap-3 pt-4">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={field.required}
-                            onCheckedChange={(checked) => updateField(idx, { required: checked })}
-                            id={`req-${idx}`}
-                          />
-                          <Label
-                            htmlFor={`req-${idx}`}
-                            className="text-xs font-bold text-slate-300 cursor-pointer"
-                          >
-                            Obbligatorio
-                          </Label>
-                        </div>
+                      <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-[#0a0b10] border border-slate-800 self-end h-8">
+                        <Label
+                          htmlFor={`req-d-${idx}`}
+                          className="text-[11px] font-bold text-slate-300 cursor-pointer"
+                        >
+                          Obbligatoria
+                        </Label>
+                        <Switch
+                          id={`req-d-${idx}`}
+                          checked={field.required}
+                          onCheckedChange={(checked) => updateField(idx, { required: checked })}
+                          className="data-[state=checked]:bg-amber-500 scale-75"
+                        />
                       </div>
                     </div>
 
-                    {/* Options manager for radio, checkbox, select */}
                     {(field.type === "radio" ||
                       field.type === "checkbox" ||
                       field.type === "select") && (
-                      <div className="p-3.5 rounded-xl bg-[#141722]/70 border border-slate-800/80 space-y-2 mt-2">
+                      <div className="p-3 rounded-lg bg-[#0a0b10] border border-slate-800/80 space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-                            Opzioni di Risposta
+                          <Label className="text-[11px] font-bold text-amber-400">
+                            Opzioni ({field.options?.length || 0})
                           </Label>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => addOption(idx)}
-                            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 h-6 px-2"
+                            className="text-amber-400 hover:text-amber-300 text-[10px] h-6 px-1.5"
                           >
-                            + Aggiungi Opzione
+                            + Aggiungi
                           </Button>
                         </div>
-
                         <div className="space-y-1.5">
                           {(field.options || []).map((opt, optIdx) => (
-                            <div key={optIdx} className="flex items-center gap-2">
-                              <span className="text-[10px] text-slate-500 font-mono w-4">
-                                {optIdx + 1}.
-                              </span>
+                            <div key={optIdx} className="flex items-center gap-1.5">
                               <Input
                                 value={opt}
                                 onChange={(e) => updateOption(idx, optIdx, e.target.value)}
-                                placeholder={`Opzione ${optIdx + 1}`}
-                                className="bg-[#0e1017] border-slate-800 text-white text-xs h-8 rounded-lg"
+                                className="bg-[#12141c] border-slate-800 text-white rounded text-xs h-7 flex-1"
                               />
                               {(field.options || []).length > 1 && (
                                 <Button
@@ -554,7 +860,7 @@ export function FormBuilderDialog({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeOption(idx, optIdx)}
-                                  className="h-7 w-7 text-rose-400 hover:text-rose-300"
+                                  className="h-6 w-6 text-slate-500 hover:text-rose-400"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -572,21 +878,20 @@ export function FormBuilderDialog({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="p-4 border-t border-slate-800 bg-[#0e1017] flex items-center justify-between sm:justify-between gap-3">
+        <DialogFooter className="p-4 border-t border-slate-800 bg-[#10121a] flex items-center justify-between sm:justify-between">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-slate-800 text-slate-400 hover:text-white bg-transparent rounded-xl text-xs"
+            className="border-slate-800 text-slate-400 hover:text-white rounded-xl text-xs"
           >
             Annulla
           </Button>
-
           <Button
             type="button"
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 px-6"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 px-6 h-9"
           >
             {saveMutation.isPending ? "Salvataggio..." : form ? "Salva Modifiche" : "Crea Modulo"}
           </Button>

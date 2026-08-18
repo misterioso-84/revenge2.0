@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteFooter } from "@/components/Footer";
+import { SiteNavbar } from "@/components/SiteNavbar";
 import { UserProfileDropdown } from "@/components/UserProfileDropdown";
 import {
   checkCitizenEligibility,
@@ -59,6 +60,12 @@ import {
   verifyTelegramCode,
 } from "@/lib/registration.functions";
 import { usernameToEmail } from "@/lib/format";
+import mcSlotMachineImg from "@/assets/images/mc_slot_machine_1786967204672.jpg";
+import mcBlackjackImg from "@/assets/images/mc_blackjack_table_1786967217771.jpg";
+import mcRouletteImg from "@/assets/images/mc_roulette_wheel_1786967237131.jpg";
+import mcHorseRacingImg from "@/assets/images/mc_horse_racing_1786967251597.jpg";
+import mcBaccaratImg from "@/assets/images/mc_baccarat_vip_1786967263612.jpg";
+import mcPokerImg from "@/assets/images/mc_poker_table_1786967279173.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,397 +82,293 @@ export const Route = createFileRoute("/")({
 });
 
 function InteractiveGamesSection() {
-  const [selectedGame, setSelectedGame] = useState<
-    "slot" | "blackjack" | "roulette" | "cavalli" | "baccarat" | "poker"
-  >("slot");
-
-  const GAMES_DATA = {
-    slot: {
+  const GAMES_LIST = [
+    {
       id: "slot",
-      name: "Slot Machine 3D",
-      tagline: "4 Varianti con Gettoni Jackpot Bronzo, Oro e Platino",
-      icon: "🎰",
-      minBet: "100 Dobloni (Classic)",
-      maxBet: "10.000 Dobloni (Élite)",
-      payout: "Fino a x500 + Jackpot Progressivo",
-      features: [
-        "4 Sale dedicate: Classic, VIP, Exclusive ed Élite",
-        "Puntate: 100d, 500d, 2.000d e 10.000d per giro",
-        "Erogazione automatica di Gettoni Jackpot (Bronzo, Oro, Platino)",
-        "Convertibili direttamente in cassa o per servizi VIP",
+      titlePrefix: "SLOT MACHINE",
+      titleHighlight: "3D JACKPOT",
+      image: mcSlotMachineImg,
+      alt: "Slot Machine 3D Minecraft Casinò Revenge",
+      badge: "Attrazione 3D",
+      paragraphs: [
+        <>
+          Mettiti alla prova con le nostre slot machine animate su Minecraft. Aziona i 3 rulli 3D
+          con i simboli di <strong className="text-white">Fortuna, Dobloni e Corone</strong> per
+          tentare la sorte a Liberty Bay. Se allinei 3 simboli identici sulla linea vincente,
+          riscuoti subito la tua vincita in{" "}
+          <strong className="text-amber-400">Dobloni sonanti</strong> ed ottieni i preziosi{" "}
+          <strong className="text-amber-300">Gettoni Jackpot</strong> speciali.
+        </>,
+        <>
+          Scegli il tuo livello di rischio: dalle sale più accessibili per turisti e cittadini fino
+          al prestigioso <strong className="text-white">Privé Élite</strong>. I gettoni vinti
+          possono essere convertiti direttamente in cassa o spesi per servizi VIP esclusivi!
+        </>,
       ],
-      rules:
-        "La Slot Machine aziona 3 rulli 3D con simboli di Fortuna, Dobloni e Corone. Quando 3 simboli identici si allineano sulla linea centrale, la macchina eroga la vincita in Dobloni e rilascia un Gettone Jackpot speciale.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#1a1c26] to-[#0a0b0f] rounded-2xl border border-amber-500/30 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-amber-400/60 transition-all duration-500">
-          <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/20 rounded-full blur-2xl group-hover:bg-amber-400/30 transition-all" />
-
-          <div className="flex justify-between w-full items-center z-10 border-b border-amber-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-              SLOT MACHINE 3D • LIBERTY BAY
-            </span>
-            <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-              JACKPOT ATTIVO
-            </span>
-          </div>
-
-          <div className="flex gap-3 my-auto z-10 transform-gpu group-hover:scale-105 transition-transform duration-500">
-            {["7️⃣", "💎", "🎰"].map((symbol, idx) => (
-              <div
-                key={idx}
-                className="w-16 h-24 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border-2 border-amber-500/50 rounded-xl flex items-center justify-center text-3xl shadow-xl relative overflow-hidden animate-pulse"
-                style={{ animationDelay: `${idx * 150}ms` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-amber-500/10 pointer-events-none" />
-                <span className="drop-shadow-[0_0_12px_rgba(245,158,11,0.8)]">{symbol}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
-            <span className="text-slate-400">WIN MULTIPLIER:</span>
-            <span className="font-bold text-amber-400 animate-bounce">x500 DOBLONI</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Scegli la tua sala & puntata",
+      features: [
+        "Sala Classic: 100 Dobloni",
+        "Gettoni Bronzo, Oro e Platino",
+        "Sala VIP: 500 Dobloni",
+        "Moltiplicatore fino a x500",
+        "Sala Exclusive: 2.000 Dobloni",
+        "Jackpot Progressivo Attivo",
+        "Sala Élite: 10.000 Dobloni",
+        "Riconversione istantanea in Cassa",
+      ],
     },
-    blackjack: {
+    {
       id: "blackjack",
-      name: "Blackjack Ufficiale",
-      tagline: "Regola Soft 17 e Pagamento 3:2 per Blackjack Naturale",
-      icon: "♠️",
-      minBet: "10 Dobloni",
-      maxBet: "2.000 Dobloni (Privé)",
-      payout: "2.5x Puntata (3:2)",
-      features: [
-        "Il banco si ferma obbligatoriamente su soft 17",
-        "Raddoppio consentito su qualsiasi combinazione di 2 carte",
-        "Divisione coppie (Split) abilitata con opzione raddoppio",
-        "Assicurazione disponibile a x2 la puntata",
+      titlePrefix: "TAVOLO UFFICIALE",
+      titleHighlight: "BLACKJACK 3:2",
+      image: mcBlackjackImg,
+      alt: "Blackjack Ufficiale Casinò Revenge",
+      badge: "Tavolo dal Vivo",
+      paragraphs: [
+        <>
+          Sfida i nostri croupier professionisti al classico tavolo verde di Blackjack. L'obiettivo
+          è totalizzare un punteggio superiore a quello del banco{" "}
+          <strong className="text-white">senza mai superare il 21</strong>. Le figure valgono 10, le
+          carte numeriche il loro valore e l'Asso vale 1 o 11 a tua scelta.
+        </>,
+        <>
+          La casa applica le regole ufficiali di Las Vegas: il banco{" "}
+          <strong className="text-rose-400">si ferma obbligatoriamente su Soft 17</strong> e il
+          Blackjack Naturale (21 servito di prima mano) garantisce un pagamento maggiorato a{" "}
+          <strong className="text-amber-400">3:2 (2.5x la puntata)</strong>.
+        </>,
       ],
-      rules:
-        "L'obiettivo è totalizzare un punteggio superiore a quello del croupier senza mai superare il 21. Le carte numeriche valgono il loro valore nominale, le figure valgono 10 e l'Asso vale 1 o 11.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#0c2217] via-[#091811] to-[#040c08] rounded-2xl border border-emerald-500/40 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-emerald-400 transition-all duration-500">
-          <div className="flex justify-between w-full items-center z-10 border-b border-emerald-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
-              BLACKJACK FELT TABLE • LIBERTY BAY
-            </span>
-            <span className="text-[10px] font-mono font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-              SOFT 17
-            </span>
-          </div>
-
-          <div className="relative my-auto z-10 flex items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-500">
-            <div className="w-16 h-24 bg-white rounded-xl border border-slate-300 p-2 flex flex-col justify-between shadow-2xl transform -rotate-6 transition-transform group-hover:-rotate-12">
-              <span className="text-rose-600 font-bold text-xs">A ♥</span>
-              <span className="text-center text-rose-600 text-2xl font-black">♥</span>
-              <span className="text-right text-rose-600 font-bold text-xs">A</span>
-            </div>
-            <div className="w-16 h-24 bg-slate-900 border-2 border-amber-400 rounded-xl p-2 flex flex-col justify-between shadow-2xl transform rotate-6 transition-transform group-hover:rotate-12">
-              <span className="text-amber-400 font-bold text-xs">K ♠</span>
-              <span className="text-center text-amber-400 text-2xl font-black">♠</span>
-              <span className="text-right text-amber-400 font-bold text-xs">K</span>
-            </div>
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-emerald-500/30">
-            <span className="text-slate-300">PUNTEGGIO TOTALE:</span>
-            <span className="font-bold text-emerald-400">BLACKJACK! (21)</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Regole e opzioni al tavolo",
+      features: [
+        "Puntata minima: 10 Dobloni",
+        "Pagamento 3:2 Blackjack Naturale",
+        "Puntata max Privé: 2.000 Dobloni",
+        "Raddoppio su qualsiasi coppia iniziale",
+        "Regola banco: Stop su Soft 17",
+        "Divisione coppie (Split) abilitata",
+        "Assicurazione contro Asso (2x)",
+        "Croupier dal vivo al tavolo",
+      ],
     },
-    roulette: {
+    {
       id: "roulette",
-      name: "Roulette Europea",
-      tagline: "Single Zero (0) Ufficiale con vincite fino a x36",
-      icon: "🎡",
-      minBet: "5 Dobloni",
-      maxBet: "5.000 Dobloni (Privé)",
-      payout: "Pieno x36 • Cavallo x18 • Terzina x12 • Rosso/Nero x2",
-      features: [
-        "Ruota Europea tradizionale con zero singolo (0)",
-        "Puntate interne: Pieno, Cavallo, Terzina, Carré, Sestina",
-        "Puntate esterne: Rosso/Nero, Pari/Dispari, 1-18 / 19-36, Dozzine",
-        "Croupier dedicato per annunci ufficiali al tavolo",
+      titlePrefix: "ROULETTE EUROPEA",
+      titleHighlight: "SINGLE ZERO (0)",
+      image: mcRouletteImg,
+      alt: "Roulette Europea Casinò Revenge",
+      badge: "Ruota Panoramica",
+      paragraphs: [
+        <>
+          Vivi il brivido della ruota panoramica più famosa al mondo. La nostra Roulette Europea
+          utilizza il tradizionale <strong className="text-white">Zero Singolo (0)</strong>,
+          offrendo le migliori probabilità matematiche e un vantaggio ridotto per il banco rispetto
+          alle versioni americane.
+        </>,
+        <>
+          Piazza le tue fiche prima del celebre annuncio del croupier: punta su singoli numeri per
+          centrare la vincita massima da{" "}
+          <strong className="text-amber-400">x36 volte la posta</strong>, oppure copri le
+          combinazioni esterne come <strong className="text-rose-400">Rosso</strong>/
+          <strong className="text-white">Nero</strong>, Pari/Dispari e le 3 Dozzine.
+        </>,
       ],
-      rules:
-        "I giocatori piazzano le loro fiche sul panno prima che il croupier lanci la pallina d'avorio. Il numero nel quale la pallina si arresta determina le combinazioni vincenti.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#1d121c] via-[#120a13] to-[#0a050b] rounded-2xl border border-purple-500/30 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-purple-400 transition-all duration-500">
-          <div className="flex justify-between w-full items-center z-10 border-b border-purple-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-widest">
-              EUROPEAN ROULETTE • LIBERTY BAY
-            </span>
-            <span className="text-[10px] font-mono font-black text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/30">
-              ZERO SINGOLO
-            </span>
-          </div>
-
-          <div className="relative my-auto z-10 h-28 w-28 rounded-full border-4 border-amber-500/70 bg-gradient-to-tr from-rose-900 via-slate-900 to-rose-900 flex items-center justify-center shadow-[0_0_25px_rgba(168,85,247,0.4)] group-hover:rotate-45 transition-transform duration-700">
-            <div className="h-20 w-20 rounded-full border-2 border-amber-400/40 bg-slate-950 flex items-center justify-center text-xl font-black text-amber-300 relative">
-              0
-              <div className="absolute top-2 right-2 h-3 w-3 rounded-full bg-white shadow-[0_0_10px_#fff] animate-ping" />
-            </div>
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-purple-500/30">
-            <span className="text-slate-300">PAGAMENTO PIENO:</span>
-            <span className="font-bold text-purple-400">x36 LA PUNTATA</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Combinazioni e moltiplicatori",
+      features: [
+        "Numero Pieno: Paga x36",
+        "Zero Singolo a favore giocatore",
+        "Cavallo (2 numeri): Paga x18",
+        "Rosso / Nero: Paga x2",
+        "Terzina (3 numeri): Paga x12",
+        "Pari / Dispari: Paga x2",
+        "Carré (4 numeri): Paga x9",
+        "Dozzine & Colonne: Paga x3",
+      ],
     },
-    cavalli: {
+    {
       id: "cavalli",
-      name: "Ippodromo Liberty Bay",
-      tagline: "Corse di Cavalli dal Vivo con 8 Fantini Ufficiali",
-      icon: "🐎",
-      minBet: "10 Dobloni",
-      maxBet: "10.000 Dobloni",
-      payout: "Quote Dinamiche basate su Statistiche e Forma",
-      features: [
-        "Pista all'aperto regolamentare all'interno del complesso",
-        "8 Fantini ufficiali con statistiche pubbliche e storiche",
-        "Tipologie di scommessa: Vincente, Piazzato, Accoppiata",
-        "Spalti VIP e monitoraggio in tempo reale dal gestionale",
+      titlePrefix: "IPPODROMO & CORSE",
+      titleHighlight: "LIBERTY BAY",
+      image: mcHorseRacingImg,
+      alt: "Ippodromo Liberty Bay Casinò Revenge",
+      badge: "Scommesse Sportive",
+      paragraphs: [
+        <>
+          All'esterno del casinò si snoda il circuito ippico regolamentare di Liberty Bay. Assisti
+          alle spettacolari corse dal vivo con{" "}
+          <strong className="text-white">8 Fantini Ufficiali</strong> in gara, ciascuno dotato di
+          statistiche storiche, forma fisica e preferenze di tracciato.
+        </>,
+        <>
+          Le quote vengono calcolate{" "}
+          <strong className="text-amber-400">in tempo reale in modo dinamico</strong> in base al
+          volume di puntate della community e alle condizioni meteorologiche del circuito. Segui la
+          corsa dagli spalti panoramici o dal monitor gestionale!
+        </>,
       ],
-      rules:
-        "Scommetti sul fantino e sul cavallo preferito. Le quote vengono calcolate dinamicamente in base alle prestazioni passate, alle condizioni della pista e al volume delle puntate.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#1a170f] via-[#100e09] to-[#0a0805] rounded-2xl border border-amber-500/30 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-amber-400 transition-all duration-500">
-          <div className="flex justify-between w-full items-center z-10 border-b border-amber-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-              IPPODROMO • 8 FANTINI
-            </span>
-            <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-              LIVE RACE
-            </span>
-          </div>
-
-          <div className="w-full my-auto z-10 space-y-2 group-hover:scale-102 transition-transform">
-            {[
-              { name: "⚡ Fulmine Nero", pos: "1°", odd: "2.50", col: "text-amber-400" },
-              { name: "👑 Doblone d'Oro", pos: "2°", odd: "3.20", col: "text-slate-300" },
-              { name: "🌊 Scirocco Bay", pos: "3°", odd: "4.50", col: "text-amber-600" },
-            ].map((h, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between bg-slate-950/90 border border-slate-800 p-2 rounded-xl text-xs font-mono"
-              >
-                <span className={`font-black ${h.col}`}>
-                  {h.pos} {h.name}
-                </span>
-                <span className="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                  Quota: {h.odd}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-amber-500/30">
-            <span className="text-slate-400">PROSSIMA PARTENZA:</span>
-            <span className="font-bold text-amber-400">OGNI 15 MINUTI</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Tipologie di scommessa ippica",
+      features: [
+        "Puntata Vincente (1° Classificato)",
+        "8 Fantini ufficiali con storico",
+        "Puntata Piazzato (Nei primi 3)",
+        "Quote Dinamiche in tempo reale",
+        "Accoppiata in ordine esatto",
+        "Partenze ogni 15 minuti",
+        "Puntata minima: 10 Dobloni",
+        "Spalti panoramici & VIP Lounge",
+      ],
     },
-    baccarat: {
+    {
       id: "baccarat",
-      name: "Baccarat & Punto Banco",
-      tagline: "Eleganza e Ritmo Incalzante per i Giocatori d'Élite",
-      icon: "🃏",
-      minBet: "50 Dobloni",
-      maxBet: "5.000 Dobloni",
-      payout: "Punto x2 • Banco x1.95 • Pareggio x9",
-      features: [
-        "Regole tradizionali con valutazione del 9 naturale",
-        "Opzione di puntata su Punto, Banco o Pareggio (Tie)",
-        "Tabellone storico delle uscite per analisi delle tendenze",
-        "Tavolo a limite elevato nel Privé Exclusive",
+      titlePrefix: "BACCARAT & PUNTO",
+      titleHighlight: "BANCO PRIVÉ",
+      image: mcBaccaratImg,
+      alt: "Baccarat Punto Banco Casinò Revenge",
+      badge: "Tavolo Esclusivo",
+      paragraphs: [
+        <>
+          Il gioco d'elezione per i grandi capitani e i clienti d'élite. Nel Baccarat non giochi
+          contro altri avversari ma scommetti su quale delle due mani —{" "}
+          <strong className="text-white">Punto o Banco</strong> — si avvicinerà maggiormente al
+          totale di <strong className="text-amber-400">9 punti</strong>.
+        </>,
+        <>
+          Le figure e i dieci valgono zero, mentre le altre carte conservano il loro valore
+          nominale. Se hai fiuto per le grandi quote, la puntata sul{" "}
+          <strong className="text-amber-300">Pareggio (Tie)</strong> premia gli audaci con un
+          moltiplicatore fino a <strong className="text-amber-400">x9 volte la posta</strong>.
+        </>,
       ],
-      rules:
-        "Si scommette sulla mano che totalizzerà un punteggio più vicino a 9 tra Punto e Banco. Le figure e i 10 valgono 0, le altre carte mantengono il loro valore.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#1b150c] via-[#100d07] to-[#0a0804] rounded-2xl border border-amber-500/30 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-amber-400 transition-all duration-500">
-          <div className="flex justify-between w-full items-center z-10 border-b border-amber-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-              PUNTO BANCO PRIVÉ
-            </span>
-            <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-              NATURAL 9
-            </span>
-          </div>
-
-          <div className="flex gap-4 my-auto z-10 group-hover:scale-105 transition-transform duration-500">
-            <div className="bg-slate-950 border border-amber-500/40 p-3 rounded-xl text-center font-mono">
-              <div className="text-[10px] text-slate-400">PUNTO</div>
-              <div className="text-2xl font-black text-amber-400 my-1">9</div>
-              <div className="text-[9px] text-emerald-400 font-bold">VINCENTE</div>
-            </div>
-            <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl text-center font-mono">
-              <div className="text-[10px] text-slate-400">BANCO</div>
-              <div className="text-2xl font-black text-slate-300 my-1">6</div>
-              <div className="text-[9px] text-slate-500 font-bold">PERDENTE</div>
-            </div>
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-amber-500/30">
-            <span className="text-slate-400">PAREGGIO (TIE):</span>
-            <span className="font-bold text-amber-400">PAGA x9</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Opzioni di puntata Baccarat",
+      features: [
+        "Puntata su Punto (Paga x2.00)",
+        "Valutazione del 9 Naturale",
+        "Puntata su Banco (Paga x1.95)",
+        "Regola terza carta automatica",
+        "Puntata Pareggio / Tie (Paga x9)",
+        "Tavolo ad alti limiti nel Privé",
+        "Puntata minima: 50 Dobloni",
+        "Tabellone storico delle uscite",
+      ],
     },
-    poker: {
+    {
       id: "poker",
-      name: "Poker Texas Hold'em",
-      tagline: "Cash Game & Tornei Settimanali con Bad Beat Jackpot",
-      icon: "👑",
-      minBet: "20 Dobloni (Blinds)",
-      maxBet: "No Limit",
-      payout: "Pot completo meno il rake ufficiale della casa (3%)",
-      features: [
-        "Tavoli da Cash Game No Limit Texas Hold'em sempre aperti",
-        "Tornei settimanali 'Coppa della Ciurma' con montepremi in €",
-        "Bad Beat Jackpot attivo per mani eccezionali stese al fiume",
-        "Croupier professionisti per la gestione del mazzo e dei piatti",
+      titlePrefix: "TEXAS HOLD'EM",
+      titleHighlight: "POKER CHAMPIONSHIP",
+      image: mcPokerImg,
+      alt: "Poker Texas Hold'em Casinò Revenge",
+      badge: "Tornei & Cash Game",
+      paragraphs: [
+        <>
+          Accomodati ai tavoli di Texas Hold'em No Limit per misurarti con i migliori strateghi di
+          Liberty Bay. Ricevi le tue <strong className="text-white">2 carte coperte</strong> e
+          combinale con le 5 carte comunitarie al flop, turn e river per formare la mano migliore.
+        </>,
+        <>
+          Partecipa ai tavoli da <strong className="text-white">Cash Game No Limit</strong> sempre
+          aperti con rake agevolato al 3%, oppure iscriviti al torneo settimanale{" "}
+          <strong className="text-amber-400">&apos;Coppa della Ciurma&apos;</strong> con ricchi
+          montepremi e trofei esclusivi in bacheca!
+        </>,
       ],
-      rules:
-        "Ciascun giocatore riceve 2 carte coperte e combina con le 5 carte comunitarie al centro per formare la migliore mano a 5 carte.",
-      visual3d: (
-        <div className="relative w-full h-64 bg-gradient-to-br from-[#1e1508] via-[#120d05] to-[#080502] rounded-2xl border border-amber-500/40 p-4 flex flex-col items-center justify-between overflow-hidden shadow-2xl group group-hover:border-amber-400 transition-all duration-500">
-          <div className="flex justify-between w-full items-center z-10 border-b border-amber-500/20 pb-2">
-            <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
-              TEXAS HOLD'EM CASH GAME
-            </span>
-            <span className="text-[10px] font-mono font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/30">
-              NO LIMIT
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center my-auto z-10 space-y-2 group-hover:scale-105 transition-transform">
-            <div className="flex gap-1.5">
-              {["10♠", "J♠", "Q♠", "K♠", "A♠"].map((c, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-12 bg-white rounded border border-slate-300 flex items-center justify-center font-bold text-[10px] text-slate-900 shadow"
-                >
-                  {c}
-                </div>
-              ))}
-            </div>
-            <span className="text-xs font-mono font-black text-amber-400 tracking-wider">
-              ROYAL FLUSH!
-            </span>
-          </div>
-
-          <div className="w-full flex items-center justify-between text-[11px] font-mono z-10 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-amber-500/30">
-            <span className="text-slate-400">RAKE UFFICIALE:</span>
-            <span className="font-bold text-amber-400">SOLO 3% SUL PIATTO</span>
-          </div>
-        </div>
-      ),
+      featureTitle: "Struttura tavoli e tornei",
+      features: [
+        "Cash Game No Limit sempre attivo",
+        "Rake ufficiale della casa: solo 3%",
+        "Torneo settimanale Coppa della Ciurma",
+        "Croupier professionisti dedicati",
+        "Bad Beat Jackpot attivo sul fiume",
+        "Tavoli per tutti i livelli di buy-in",
+        "Blinds a partire da 20 Dobloni",
+        "Classifica Hall of Fame mensile",
+      ],
     },
-  };
-
-  const activeData = GAMES_DATA[selectedGame];
+  ];
 
   return (
-    <section id="giochi" className="py-20 px-4 max-w-6xl mx-auto space-y-12">
+    <section id="giochi" className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-28">
+      {/* SECTION TITLE HEADER */}
       <div className="text-center space-y-3">
-        <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1">
+        <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 text-xs uppercase tracking-wider font-bold">
           Offerta di Gioco Esclusiva
         </Badge>
-        <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight uppercase">
+        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase">
           Tavoli, Slot e Scommesse 3D
         </h2>
-        <p className="text-slate-400 text-xs md:text-sm max-w-xl mx-auto">
-          Esplora la guida interattiva a ciascun gioco del Casinò Revenge con regole ufficiali,
-          limiti e premi.
+        <p className="text-slate-400 text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
+          Esplora la nostra offerta completa di intrattenimento su Minecraft: artwork 3D a sinistra,
+          regole e funzionamento dettagliato a destra.
         </p>
       </div>
 
-      {/* GAME SELECTOR BUTTONS */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        {(Object.keys(GAMES_DATA) as Array<keyof typeof GAMES_DATA>).map((key) => {
-          const g = GAMES_DATA[key];
-          const isActive = selectedGame === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setSelectedGame(key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-300 border ${
-                isActive
-                  ? "bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 scale-105"
-                  : "bg-slate-900 text-slate-300 border-slate-800 hover:border-amber-500/40 hover:text-amber-300"
-              }`}
-            >
-              <span>{g.icon}</span>
-              <span>{g.name.split(" ")[0]}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* CONTINUOUS VERTICAL LIST OF GAMES (MATCHING ATLANTE SCREENSHOT STYLE) */}
+      <div className="space-y-28 md:space-y-36">
+        {GAMES_LIST.map((game, index) => (
+          <div
+            key={game.id}
+            id={`game-${game.id}`}
+            className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+          >
+            {/* SINISTRA: IMMAGINE 3D MINECRAFT DEL GIOCO */}
+            <div className="lg:col-span-5 flex justify-center items-center">
+              <div className="relative group w-full max-w-md">
+                {/* Ambient glow behind the 3D render */}
+                <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-transparent rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* ACTIVE GAME SHOWCASE CARD */}
-      <div className="grid lg:grid-cols-12 gap-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-        <div className="lg:col-span-5 space-y-4">
-          <div className="space-y-1">
-            <div className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-              DETTAGLI ED ESPERIENZA 3D
-            </div>
-            <h3 className="text-2xl font-black text-white uppercase">{activeData.name}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              {activeData.tagline}
-            </p>
-          </div>
-
-          {/* 3D VISUAL */}
-          {activeData.visual3d}
-
-          {/* STATS STRIP */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-              <div className="text-[10px] text-slate-500 font-mono uppercase">
-                MIN / MAX PUNTATA
-              </div>
-              <div className="text-xs font-bold text-slate-200 mt-0.5">{activeData.minBet}</div>
-            </div>
-            <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-              <div className="text-[10px] text-slate-500 font-mono uppercase">MOLTIPLICATORE</div>
-              <div className="text-xs font-bold text-amber-400 mt-0.5">{activeData.payout}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-300 flex items-center gap-2 border-b border-slate-800/80 pb-2">
-              <Sparkles className="h-4 w-4 text-amber-400" /> CARATTERISTICHE E VANTAGGI
-            </h4>
-
-            <div className="grid sm:grid-cols-2 gap-3">
-              {activeData.features.map((feat, idx) => (
-                <div
-                  key={idx}
-                  className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-start gap-2.5"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-xs text-slate-300 leading-relaxed font-medium">{feat}</span>
+                {/* 3D Minecraft Render Image */}
+                <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-slate-950/80 group-hover:border-amber-400/70 transition-all duration-500">
+                  <img
+                    src={game.image}
+                    alt={game.alt}
+                    className="w-full h-auto aspect-square object-cover transform group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                  {/* Subtle corner badge */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="bg-slate-950/80 backdrop-blur-md text-amber-400 border border-amber-500/40 text-[11px] font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                      #{String(index + 1).padStart(2, "0")} • {game.badge}
+                    </span>
+                  </div>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* DESTRA: TITOLO CON PAROLA EVIDENZIATA, DESCRIZIONE E BOX CARATTERISTICHE */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* BIG BOLD TITLE (ATLANTE STYLE) */}
+              <div className="space-y-1">
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase leading-tight">
+                  {game.titlePrefix} <span className="text-amber-400">{game.titleHighlight}</span>
+                </h3>
+              </div>
+
+              {/* NARRATIVE AND FUNCTIONING PARAGRAPHS */}
+              <div className="space-y-4 text-slate-300 text-sm sm:text-base leading-relaxed">
+                {game.paragraphs.map((p, pIdx) => (
+                  <p key={pIdx}>{p}</p>
+                ))}
+              </div>
+
+              {/* FEATURE CHECKLIST BOX (EXACT SCREENSHOT STYLE) */}
+              <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5">
+                {/* Header with yellow dot */}
+                <div className="flex items-center gap-2.5 text-sm sm:text-base font-black text-white">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] shrink-0" />
+                  <span>{game.featureTitle}</span>
+                </div>
+
+                {/* 2-column list of items with checkmark */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
+                  {game.features.map((feat, fIdx) => (
+                    <div key={fIdx} className="flex items-center gap-2">
+                      <span className="text-amber-400 font-bold shrink-0">✓</span>
+                      <span className="leading-snug">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="space-y-2 bg-slate-950 border border-amber-500/20 p-4 rounded-2xl">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-              <Shield className="h-4 w-4" /> REGOLE UFFICIALI E STRATEGIA
-            </h4>
-            <p className="text-xs text-slate-300 leading-relaxed font-normal">{activeData.rules}</p>
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   );
@@ -784,91 +687,18 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
       <div>
-        {/* HEADER NAVBAR */}
-        <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-amber-500/20 px-4 lg:px-8 py-3 transition-all">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                ♠
-              </div>
-              <div>
-                <div className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase">
-                  Casinò Revenge
-                </div>
-                <div className="text-[10px] text-amber-500/80 font-medium tracking-widest uppercase flex items-center gap-1">
-                  <MapPin className="h-2.5 w-2.5" /> Liberty Bay
-                </div>
-              </div>
-            </Link>
-
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
-              <a href="#guida" className="hover:text-amber-400 transition-colors">
-                Guida & Filosofia
-              </a>
-              <a href="#valute" className="hover:text-amber-400 transition-colors">
-                Valute (€ & Dobloni)
-              </a>
-              <a href="#giochi" className="hover:text-amber-400 transition-colors">
-                I Giochi
-              </a>
-              <a href="#membership" className="hover:text-amber-400 transition-colors">
-                Membership & Privé
-              </a>
-              <a href="#cavalli" className="hover:text-amber-400 transition-colors">
-                Corse Cavalli
-              </a>
-              <Link
-                to="/scheda-cittadino"
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-300 font-bold"
-              >
-                <User className="h-3 w-3 text-amber-400" /> Scheda Cittadino
-              </Link>
-              <Link
-                to="/ciurma"
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-400 font-bold"
-              >
-                <Anchor className="h-3 w-3 text-amber-500" /> La nostra Ciurma
-              </Link>
-              <Link
-                to="/candidature"
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-300 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg"
-              >
-                <ClipboardList className="h-3 w-3 text-amber-400" /> Candidature
-              </Link>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              {user ? (
-                <UserProfileDropdown />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs font-semibold h-9 px-4"
-                    onClick={() => setLoginOpen(true)}
-                  >
-                    Accedi
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs h-9 px-4 shadow-lg shadow-amber-500/20"
-                    onClick={() => {
-                      setRegStep(1);
-                      setRegError(null);
-                      setRegisterOpen(true);
-                    }}
-                  >
-                    Registrati
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
+        {/* UNIFIED FLOATING HEADER NAVBAR */}
+        <SiteNavbar
+          onOpenLogin={() => setLoginOpen(true)}
+          onOpenRegister={() => {
+            setRegStep(1);
+            setRegError(null);
+            setRegisterOpen(true);
+          }}
+        />
 
         {/* HERO SECTION */}
-        <section className="relative pt-20 pb-28 px-4 overflow-hidden border-b border-amber-500/10">
+        <section className="relative pt-8 sm:pt-12 pb-24 px-4 overflow-hidden border-b border-amber-500/10">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-slate-950 to-slate-950 pointer-events-none" />
           <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
             <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1 text-xs uppercase tracking-widest font-semibold rounded-full">

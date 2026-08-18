@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SiteFooter } from "@/components/Footer";
+import { SiteNavbar } from "@/components/SiteNavbar";
 import { UserProfileDropdown } from "@/components/UserProfileDropdown";
 import {
   Anchor,
@@ -248,62 +249,11 @@ function StaffCiurmaPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
       <div>
-        {/* HEADER NAVBAR */}
-        <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-amber-500/20 px-4 lg:px-8 py-3 transition-all">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                ♠
-              </div>
-              <div>
-                <div className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent uppercase">
-                  Casinò Revenge
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium tracking-widest uppercase">
-                  Liberty Bay • Guida Ufficiale
-                </div>
-              </div>
-            </Link>
-
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-slate-300">
-              <Link to="/" className="hover:text-amber-400 transition-colors">
-                Home & Guida
-              </Link>
-              <Link
-                to="/scheda-cittadino"
-                className="hover:text-amber-400 transition-colors text-amber-300 font-bold"
-              >
-                Scheda Cittadino
-              </Link>
-              <Link to="/ciurma" className="text-amber-400 font-bold flex items-center gap-1.5">
-                <Anchor className="h-3.5 w-3.5 text-amber-500" /> La nostra Ciurma
-              </Link>
-              <Link
-                to="/candidature"
-                className="hover:text-amber-400 transition-colors text-emerald-400"
-              >
-                Candidature
-              </Link>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              {user ? (
-                <UserProfileDropdown />
-              ) : (
-                <Button
-                  size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-4"
-                  onClick={() => navigate({ to: "/" })}
-                >
-                  Accedi / Registrati
-                </Button>
-              )}
-            </div>
-          </div>
-        </header>
+        {/* UNIFIED FLOATING NAVBAR */}
+        <SiteNavbar />
 
         {/* TITLE BANNER */}
-        <section className="relative pt-12 pb-8 px-4 overflow-hidden">
+        <section className="relative pt-6 sm:pt-10 pb-8 px-4 overflow-hidden">
           <div className="max-w-5xl mx-auto text-center relative z-10 space-y-3">
             <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
               LA CIURMA DI LIBERTY BAY
