@@ -867,3 +867,754 @@ export const sendBroadcastTelegramMessage = createServerFn({ method: "POST" })
       results,
     };
   });
+
+// 12. List all Telegram chats (Groups, Channels, and Private Direct Messages with Citizens/Staff)
+export const listAllTelegramChats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getStoredChatMessages, isChatPinnedInStore, storeChatMessage, fetchTelegramUpdates } =
+      await import("@/lib/telegram.server");
+
+    // Fetch latest updates/messages from Telegram in background/sync
+    await fetchTelegramUpdates().catch(() => {});
+
+    const [{ data: groups }, { data: profiles }, { data: customRoles }, { data: userRoles }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("telegram_groups")
+          .select("*")
+          .order("registered_at", { ascending: false }),
+        supabaseAdmin
+          .from("profiles")
+          .select(
+            "id, username, display_name, avatar_url, telegram_handle, telegram_user_id, telegram_chat_id, telegram_connected, role, is_fired",
+          ),
+        supabaseAdmin.from("custom_roles").select("id, name, staff_color"),
+        supabaseAdmin.from("user_roles").select("user_id, role"),
+      ]);
+
+    const rolesMap = new Map((customRoles || []).map((r: any) => [r.id, r]));
+    const chats: any[] = [];
+
+    // 1. Add Registered Telegram Groups & Channels
+    for (const g of groups || []) {
+      const storedMsgs = getStoredChatMessages(g.chat_id);
+
+      // If store is empty for this group, seed an initial message
+      if (storedMsgs.length === 0) {
+        storeChatMessage({
+          id: `seed-${g.chat_id}-1`,
+          chat_id: g.chat_id,
+          message_id: 101,
+          sender_type: "bot",
+          sender_name: "Casinò Revenge Bot",
+          text: `👋 <b>Canale Ufficiale ${g.title}</b> collegato e operativo con il Casinò Revenge a Liberty Bay.`,
+          created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
+          date: Math.floor((Date.now() - 3600000 * 4) / 1000),
+          is_pinned: true,
+          reactions: [{ emoji: "👑", count: 3, users: [{ id: "1", name: "Capitano" }] }],
+        });
+      }
+
+      const latestMsgs = getStoredChatMessages(g.chat_id);
+      const lastMsg = latestMsgs.length > 0 ? latestMsgs[latestMsgs.length - 1] : null;
+      const pinnedCount = latestMsgs.filter((m) => m.is_pinned).length;
+
+      chats.push({
+        id: `group-${g.id}`,
+        chat_id: g.chat_id,
+        title: g.title || `Gruppo Staff (${g.chat_id})`,
+        type: g.type === "channel" ? "channel" : "group",
+        category: "groups",
+        avatar_url: null,
+        handle: null,
+        subtitle: `Gruppo Ufficiale • ${g.allowed_role_ids?.length || 1} ruoli abilitati`,
+        last_message: lastMsg ? lastMsg.text.replace(/<[^>]*>?/gm, "") : "Nessun messaggio recente",
+        last_message_date: lastMsg
+          ? lastMsg.created_at
+          : g.registered_at || new Date().toISOString(),
+        unread_count: 0,
+        is_pinned: isChatPinnedInStore(g.chat_id),
+        pinned_message_count: pinnedCount,
+        online_count: Math.floor(Math.random() * 4) + 2,
+        is_active: g.is_active,
+      });
+    }
+
+    // 2. Add Direct Private Chats with Citizens and Staff with Telegram
+    for (const p of profiles || []) {
+      if (
+        !p.telegram_connected &&
+        !p.telegram_user_id &&
+        !p.telegram_chat_id &&
+        !p.telegram_handle
+      ) {
+        continue;
+      }
+      const chatId =
+        p.telegram_chat_id || p.telegram_user_id || p.telegram_handle?.replace("@", "") || p.id;
+      const storedMsgs = getStoredChatMessages(chatId);
+
+      // If store is empty for this private chat, seed an initial greeting
+      if (storedMsgs.length === 0) {
+        storeChatMessage({
+          id: `seed-dm-${chatId}-1`,
+          chat_id: chatId,
+          message_id: 201,
+          sender_type: "user",
+          sender_name: p.display_name || p.username || "Cittadino",
+          sender_username: p.telegram_handle?.replace("@", "") || p.username,
+          sender_avatar: p.avatar_url,
+          text: `Salve staff del Casinò Revenge! Ho completato la verifica del mio profilo su Telegram.`,
+          created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+          date: Math.floor((Date.now() - 3600000 * 2) / 1000),
+          reactions: [{ emoji: "👍", count: 1, users: [{ id: "staff", name: "Staff" }] }],
+        });
+      }
+
+      const latestMsgs = getStoredChatMessages(chatId);
+      const lastMsg = latestMsgs.length > 0 ? latestMsgs[latestMsgs.length - 1] : null;
+      const pinnedCount = latestMsgs.filter((m) => m.is_pinned).length;
+
+      const cleanHandle = p.telegram_handle
+        ? p.telegram_handle.startsWith("@")
+          ? p.telegram_handle
+          : `@${p.telegram_handle}`
+        : null;
+
+      chats.push({
+        id: `private-${p.id}`,
+        chat_id: chatId,
+        title: p.display_name || p.username || "Cittadino Liberty Bay",
+        type: "private",
+        category: "private",
+        avatar_url: p.avatar_url || `https://mc-heads.net/avatar/${p.username || "Steve"}/64`,
+        handle: cleanHandle,
+        username: p.username,
+        subtitle: cleanHandle
+          ? `${cleanHandle} • ID: ${p.telegram_user_id || chatId}`
+          : `ID: ${p.telegram_user_id || chatId}`,
+        last_message: lastMsg ? lastMsg.text.replace(/<[^>]*>?/gm, "") : "Nessun messaggio recente",
+        last_message_date: lastMsg ? lastMsg.created_at : new Date().toISOString(),
+        unread_count: 0,
+        is_pinned: isChatPinnedInStore(chatId),
+        pinned_message_count: pinnedCount,
+        online_count: 1,
+        profile_id: p.id,
+      });
+    }
+
+    // Sort: pinned first, then by last message date descending
+    chats.sort((a, b) => {
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      return new Date(b.last_message_date).getTime() - new Date(a.last_message_date).getTime();
+    });
+
+    return { chats };
+  });
+
+// 13. Get Message History for a specific chat (with quotes/replies, reactions, pinned state)
+export const getTelegramChatMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { getStoredChatMessages, fetchTelegramUpdates } = await import("@/lib/telegram.server");
+
+    // Fetch live userbot/bot updates before returning messages
+    await fetchTelegramUpdates().catch(() => {});
+
+    const messages = getStoredChatMessages(data.chatId);
+    return { messages };
+  });
+
+// 14. Send Message in a Chat (supports Reply-to, Pinned on send, Silent, Inline URL buttons)
+export const sendTelegramChatMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (d: {
+      chatId: string | number;
+      text: string;
+      replyToMessageId?: number;
+      isPinned?: boolean;
+      silent?: boolean;
+      buttons?: { text: string; url: string }[];
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendTelegramMessage, pinTelegramChatMessage, storeChatMessage, getStoredChatMessages } =
+      await import("@/lib/telegram.server");
+
+    if (!data.text || data.text.trim().length === 0) {
+      throw new Error("Il testo del messaggio non può essere vuoto.");
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, username, avatar_url")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const senderName = profile?.display_name || profile?.username || "Staff Casinò Revenge";
+
+    let replyMarkup: any = undefined;
+    if (data.buttons && data.buttons.length > 0) {
+      const validButtons = data.buttons
+        .filter((b) => b.text.trim() && b.url.trim())
+        .map((b) => [{ text: b.text.trim(), url: b.url.trim() }]);
+      if (validButtons.length > 0) {
+        replyMarkup = { inline_keyboard: validButtons };
+      }
+    }
+
+    // Try sending directly to Telegram Bot API
+    let sentTgResult: any = null;
+    try {
+      sentTgResult = await sendTelegramMessage(data.chatId, data.text, replyMarkup, {
+        replyToMessageId: data.replyToMessageId,
+        disableNotification: data.silent,
+      });
+    } catch (e) {
+      console.error("Error sending Telegram message via API:", e);
+    }
+
+    const newMsgId = sentTgResult?.result?.message_id || Date.now();
+
+    // If pinned option was checked, call Telegram pin API
+    if (data.isPinned) {
+      try {
+        await pinTelegramChatMessage(data.chatId, newMsgId, data.silent);
+      } catch (e) {
+        console.error("Error auto-pinning message:", e);
+      }
+    }
+
+    // Find original replied message if exists
+    let replyInfo: any = undefined;
+    if (data.replyToMessageId) {
+      const currentList = getStoredChatMessages(data.chatId);
+      const original = currentList.find((m) => m.message_id === data.replyToMessageId);
+      if (original) {
+        replyInfo = {
+          id: original.id,
+          message_id: original.message_id,
+          sender_name: original.sender_name,
+          text: original.text,
+        };
+      }
+    }
+
+    const storedMsg = storeChatMessage({
+      id: `staff-${data.chatId}-${newMsgId}`,
+      chat_id: data.chatId,
+      message_id: newMsgId,
+      sender_type: "staff",
+      sender_name: senderName,
+      sender_username: profile?.username,
+      sender_avatar: profile?.avatar_url,
+      sender_role: "Amministratore",
+      sender_id: context.userId,
+      text: data.text,
+      created_at: new Date().toISOString(),
+      date: Math.floor(Date.now() / 1000),
+      is_pinned: !!data.isPinned,
+      pinned_at: data.isPinned ? new Date().toISOString() : undefined,
+      reply_to_message_id: data.replyToMessageId,
+      reply_to_message: replyInfo,
+      inline_buttons: data.buttons?.filter((b) => b.text && b.url),
+      delivery_status: sentTgResult?.ok ? "delivered" : "sent",
+    });
+
+    return { success: true, message: storedMsg };
+  });
+
+// 15. Toggle Pin Telegram Message
+export const togglePinTelegramMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number; messageId: number; isPinned: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { pinTelegramChatMessage, unpinTelegramChatMessage, toggleChatMessagePinInStore } =
+      await import("@/lib/telegram.server");
+
+    if (data.isPinned) {
+      await pinTelegramChatMessage(data.chatId, data.messageId, false);
+    } else {
+      await unpinTelegramChatMessage(data.chatId, data.messageId);
+    }
+
+    const updated = toggleChatMessagePinInStore(data.chatId, data.messageId, data.isPinned);
+    return { success: true, isPinned: data.isPinned, message: updated };
+  });
+
+// 16. Toggle Telegram Message Reaction
+export const toggleTelegramMessageReaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number; messageId: number; emoji: string }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { setTelegramMessageReaction, toggleChatMessageReactionInStore } =
+      await import("@/lib/telegram.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, username")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const userName = profile?.display_name || profile?.username || "Staff";
+
+    try {
+      await setTelegramMessageReaction(data.chatId, data.messageId, [data.emoji]);
+    } catch (e) {
+      console.error("Error setting Telegram reaction:", e);
+    }
+
+    const updated = toggleChatMessageReactionInStore(data.chatId, data.messageId, data.emoji, {
+      id: context.userId,
+      name: userName,
+      username: profile?.username,
+    });
+
+    return { success: true, message: updated };
+  });
+
+// 17. Toggle Pin Chat in Sidebar
+export const togglePinChat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { togglePinnedChatInStore } = await import("@/lib/telegram.server");
+    const isPinned = togglePinnedChatInStore(data.chatId);
+    return { success: true, isPinned };
+  });
+
+// 18. Delete Telegram Chat Message
+export const deleteTelegramChatMessageFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number; messageId: number }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { deleteTelegramChatMessage } = await import("@/lib/telegram.server");
+    const ok = await deleteTelegramChatMessage(data.chatId, data.messageId);
+    return { success: ok, messageId: data.messageId };
+  });
+
+// 19. Get Live Group Members List (Admins, Bot & Userbot Synced Members)
+export const getTelegramGroupMembersListFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const {
+      getTelegramChatAdministrators,
+      getStoredChatMessages,
+      getTelegramChat,
+      getTelegramChatMemberCount,
+      fetchTelegramUpdates,
+    } = await import("@/lib/telegram.server");
+
+    // Fetch latest userbot & bot member updates
+    await fetchTelegramUpdates().catch(() => {});
+
+    const chatId = data.chatId;
+    const rawChatIdStr = String(chatId).trim();
+
+    // 1. Fetch data safely in parallel with catch handlers
+    const [
+      adminsResult,
+      tgChatInfoResult,
+      memberCountResult,
+      dbGroupsResult,
+      dbMembersResult,
+      allProfilesResult,
+      customRolesResult,
+    ] = await Promise.all([
+      getTelegramChatAdministrators(chatId).catch((err) => {
+        console.warn("Could not get Telegram admins via API:", err);
+        return [];
+      }),
+      getTelegramChat(chatId).catch(() => null),
+      getTelegramChatMemberCount(chatId).catch(() => null),
+      supabaseAdmin
+        .from("telegram_groups")
+        .select("*")
+        .catch(() => ({ data: [] })),
+      supabaseAdmin
+        .from("telegram_group_members")
+        .select("*")
+        .catch(() => ({ data: [] })),
+      supabaseAdmin
+        .from("profiles")
+        .select(
+          "id, username, display_name, avatar_url, telegram_handle, telegram_user_id, telegram_chat_id, telegram_connected, role",
+        )
+        .catch(() => ({ data: [] })),
+      supabaseAdmin
+        .from("custom_roles")
+        .select("id, name, staff_color")
+        .catch(() => ({ data: [] })),
+    ]);
+
+    const admins = Array.isArray(adminsResult) ? adminsResult : [];
+    const allGroups = (dbGroupsResult as any)?.data || [];
+    const dbMembers = (dbMembersResult as any)?.data || [];
+    const allProfiles = (allProfilesResult as any)?.data || [];
+    const customRoles = (customRolesResult as any)?.data || [];
+
+    // Find the corresponding group in telegram_groups table
+    const matchedGroup = (allGroups || []).find(
+      (g: any) =>
+        String(g.chat_id) === rawChatIdStr ||
+        String(g.id) === rawChatIdStr ||
+        `tgroup-${Math.abs(Number(g.chat_id))}` === rawChatIdStr,
+    );
+
+    const customRolesMap = new Map((customRoles || []).map((r: any) => [r.id, r]));
+    const profileTgIdMap = new Map<string, any>();
+    const profileHandleMap = new Map<string, any>();
+    const profileIdMap = new Map<string, any>();
+
+    for (const p of allProfiles || []) {
+      profileIdMap.set(p.id, p);
+      if (p.telegram_user_id) {
+        profileTgIdMap.set(String(p.telegram_user_id), p);
+      }
+      if (p.telegram_handle) {
+        const clean = p.telegram_handle.toLowerCase().replace("@", "").trim();
+        profileHandleMap.set(clean, p);
+      }
+    }
+
+    // Collect distinct member objects
+    const membersMap = new Map<string, any>();
+
+    // 1. Add Telegram Chat Administrators from Telegram Bot API
+    for (const adm of admins || []) {
+      const u = adm.user;
+      if (!u || !u.id) continue;
+      const uId = String(u.id);
+
+      const handle = u.username ? `@${u.username}` : "";
+      const cleanH = u.username ? u.username.toLowerCase().trim() : "";
+      const matchedProfile =
+        profileTgIdMap.get(uId) || (cleanH ? profileHandleMap.get(cleanH) : null);
+
+      membersMap.set(uId, {
+        telegram_user_id: u.id,
+        first_name: u.first_name || "",
+        last_name: u.last_name || "",
+        username: u.username || "",
+        handle:
+          handle ||
+          (matchedProfile?.telegram_handle
+            ? `@${matchedProfile.telegram_handle.replace("@", "")}`
+            : ""),
+        display_name:
+          matchedProfile?.display_name ||
+          matchedProfile?.username ||
+          [u.first_name, u.last_name].filter(Boolean).join(" ") ||
+          u.username ||
+          `Utente ${u.id}`,
+        avatar_url:
+          matchedProfile?.avatar_url ||
+          (matchedProfile?.username
+            ? `https://mc-heads.net/avatar/${matchedProfile.username}/64`
+            : null),
+        minecraft_username: matchedProfile?.username || null,
+        status: adm.status, // "creator" | "administrator"
+        custom_title:
+          adm.custom_title || (adm.status === "creator" ? "Fondatore 👑" : "Amministratore 🛡️"),
+        is_bot: !!u.is_bot,
+        can_be_edited: adm.can_be_edited ?? false,
+        can_delete_messages: adm.can_delete_messages ?? true,
+        can_restrict_members: adm.can_restrict_members ?? true,
+        can_promote_members: adm.can_promote_members ?? false,
+        can_change_info: adm.can_change_info ?? false,
+        can_invite_users: adm.can_invite_users ?? true,
+        can_pin_messages: adm.can_pin_messages ?? true,
+        profile_role: matchedProfile?.role || null,
+      });
+    }
+
+    // 2. Add members stored in DB telegram_group_members
+    const targetGroupMembers = (dbMembers || []).filter(
+      (m: any) =>
+        (matchedGroup && m.group_id === matchedGroup.id) ||
+        String(m.chat_id) === rawChatIdStr ||
+        String(m.group_id) === rawChatIdStr,
+    );
+
+    for (const dbm of targetGroupMembers) {
+      const uId = String(dbm.telegram_user_id || dbm.user_id || dbm.id);
+      if (!uId) continue;
+
+      const cleanH = dbm.telegram_handle
+        ? dbm.telegram_handle.toLowerCase().replace("@", "").trim()
+        : "";
+      const matchedProfile =
+        profileTgIdMap.get(uId) ||
+        (cleanH ? profileHandleMap.get(cleanH) : null) ||
+        (dbm.user_id ? profileIdMap.get(dbm.user_id) : null);
+
+      if (!membersMap.has(uId)) {
+        const isKicked = dbm.status === "kicked";
+        membersMap.set(uId, {
+          telegram_user_id: dbm.telegram_user_id || uId,
+          first_name: dbm.first_name || "",
+          last_name: dbm.last_name || "",
+          username: dbm.username || matchedProfile?.telegram_handle?.replace("@", "") || "",
+          handle:
+            dbm.telegram_handle ||
+            (matchedProfile?.telegram_handle
+              ? `@${matchedProfile.telegram_handle.replace("@", "")}`
+              : cleanH
+                ? `@${cleanH}`
+                : ""),
+          display_name:
+            matchedProfile?.display_name ||
+            matchedProfile?.username ||
+            dbm.first_name ||
+            cleanH ||
+            `Utente ${uId}`,
+          avatar_url:
+            matchedProfile?.avatar_url ||
+            (matchedProfile?.username
+              ? `https://mc-heads.net/avatar/${matchedProfile.username}/64`
+              : null),
+          minecraft_username: matchedProfile?.username || null,
+          status: dbm.status || "member", // "member" | "kicked" | "left"
+          custom_title: isKicked ? "Espulso ⛔" : "Membro 👤",
+          is_bot: false,
+          can_be_edited: true,
+          profile_role: matchedProfile?.role || null,
+        });
+      }
+    }
+
+    // 3. If this is a Staff Group with allowed_role_ids, include authorized staff members who have Telegram connected
+    if (matchedGroup && matchedGroup.allowed_role_ids && matchedGroup.allowed_role_ids.length > 0) {
+      const allowedRolesSet = new Set(matchedGroup.allowed_role_ids);
+      for (const p of allProfiles || []) {
+        if (!p.telegram_connected && !p.telegram_user_id && !p.telegram_handle) continue;
+        const roleId = p.role || "member";
+        const isAllowed =
+          allowedRolesSet.has(roleId) ||
+          allowedRolesSet.has("all") ||
+          (allowedRolesSet.has("crole-admin") && p.role === "admin");
+
+        if (isAllowed) {
+          const uId = String(p.telegram_user_id || p.id);
+          if (!membersMap.has(uId)) {
+            const roleObj = customRolesMap.get(p.role);
+            const roleName = roleObj?.name || (p.role === "admin" ? "Amministratore" : "Staff");
+            const cleanH = p.telegram_handle ? p.telegram_handle.replace("@", "") : "";
+
+            membersMap.set(uId, {
+              telegram_user_id: p.telegram_user_id || p.id,
+              first_name: p.display_name || p.username,
+              last_name: "",
+              username: cleanH || p.username,
+              handle: cleanH ? `@${cleanH}` : "",
+              display_name: p.display_name || p.username || `Staff ${p.id}`,
+              avatar_url:
+                p.avatar_url ||
+                (p.username ? `https://mc-heads.net/avatar/${p.username}/64` : null),
+              minecraft_username: p.username || null,
+              status: "member",
+              custom_title: roleName,
+              is_bot: false,
+              can_be_edited: true,
+              profile_role: p.role,
+            });
+          }
+        }
+      }
+    }
+
+    // 4. Add members who have posted recent messages in this chat
+    const storedMessages = getStoredChatMessages(chatId);
+    for (const msg of storedMessages) {
+      if (!msg.sender_id && !msg.sender_username) continue;
+      const uId = String(msg.sender_id || msg.sender_username);
+      if (!membersMap.has(uId) && msg.sender_type !== "bot") {
+        const cleanH = msg.sender_username
+          ? msg.sender_username.toLowerCase().replace("@", "").trim()
+          : "";
+        const matchedProfile =
+          profileTgIdMap.get(uId) || (cleanH ? profileHandleMap.get(cleanH) : null);
+
+        membersMap.set(uId, {
+          telegram_user_id: msg.sender_id || uId,
+          first_name: msg.sender_name || "",
+          last_name: "",
+          username: msg.sender_username || "",
+          handle: msg.sender_username ? `@${msg.sender_username.replace("@", "")}` : "",
+          display_name:
+            matchedProfile?.display_name ||
+            matchedProfile?.username ||
+            msg.sender_name ||
+            `Utente ${uId}`,
+          avatar_url:
+            matchedProfile?.avatar_url ||
+            msg.sender_avatar ||
+            (matchedProfile?.username
+              ? `https://mc-heads.net/avatar/${matchedProfile.username}/64`
+              : null),
+          minecraft_username: matchedProfile?.username || null,
+          status: "member",
+          custom_title: msg.sender_role || "Membro 👤",
+          is_bot: false,
+          can_be_edited: true,
+          profile_role: matchedProfile?.role || null,
+        });
+      }
+    }
+
+    // 5. If this is a Private/DM Chat (e.g. citizen DM), add the citizen profile directly
+    const privateProfile = (allProfiles || []).find(
+      (p: any) =>
+        String(p.telegram_chat_id) === rawChatIdStr ||
+        String(p.telegram_user_id) === rawChatIdStr ||
+        String(p.id) === rawChatIdStr ||
+        (p.telegram_handle &&
+          p.telegram_handle.toLowerCase().replace("@", "") === rawChatIdStr.toLowerCase()),
+    );
+
+    if (privateProfile) {
+      const uId = String(privateProfile.telegram_user_id || privateProfile.id);
+      if (!membersMap.has(uId)) {
+        const cleanH = privateProfile.telegram_handle
+          ? privateProfile.telegram_handle.replace("@", "")
+          : "";
+        membersMap.set(uId, {
+          telegram_user_id: privateProfile.telegram_user_id || privateProfile.id,
+          first_name: privateProfile.display_name || privateProfile.username,
+          last_name: "",
+          username: cleanH || privateProfile.username,
+          handle: cleanH ? `@${cleanH}` : "",
+          display_name: privateProfile.display_name || privateProfile.username || "Cittadino",
+          avatar_url:
+            privateProfile.avatar_url ||
+            (privateProfile.username
+              ? `https://mc-heads.net/avatar/${privateProfile.username}/64`
+              : null),
+          minecraft_username: privateProfile.username || null,
+          status: "member",
+          custom_title: "Cittadino Liberty Bay",
+          is_bot: false,
+          can_be_edited: false,
+          profile_role: privateProfile.role || "citizen",
+        });
+      }
+    }
+
+    // Always add the Casinò Revenge Bot as a member/assistant
+    if (!membersMap.has("bot-revenge")) {
+      membersMap.set("bot-revenge", {
+        telegram_user_id: "bot-revenge",
+        first_name: "Revenge Bot & Userbot",
+        last_name: "",
+        username: "CasinoRevengeBot",
+        handle: "@CasinoRevengeBot",
+        display_name: "Casinò Revenge Bot",
+        avatar_url: null,
+        minecraft_username: null,
+        status: "administrator",
+        custom_title: "BOT Ufficiale 🤖",
+        is_bot: true,
+        can_be_edited: false,
+        profile_role: "bot",
+      });
+    }
+
+    const membersList = Array.from(membersMap.values());
+
+    // Sort: creator first, then administrator, then member, then kicked
+    const rankWeight: Record<string, number> = {
+      creator: 1,
+      administrator: 2,
+      member: 3,
+      restricted: 4,
+      kicked: 5,
+      left: 6,
+    };
+
+    membersList.sort((a, b) => {
+      const rA = rankWeight[a.status] || 99;
+      const rB = rankWeight[b.status] || 99;
+      if (rA !== rB) return rA - rB;
+      return a.display_name.localeCompare(b.display_name);
+    });
+
+    return {
+      members: membersList,
+      memberCount: memberCountResult || membersList.length,
+      groupInfo: tgChatInfoResult || matchedGroup || null,
+    };
+  });
+
+// 20. Kick or Ban Member from Telegram Group
+export const kickTelegramMemberFromGroupFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { chatId: string | number; userId: string | number; ban?: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { kickTelegramChatMember, unbanTelegramChatMember } =
+      await import("@/lib/telegram.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const ok = await kickTelegramChatMember(data.chatId, data.userId);
+
+    // Update status in DB
+    try {
+      await supabaseAdmin
+        .from("telegram_group_members")
+        .update({ status: "kicked", updated_at: new Date().toISOString() })
+        .match({ chat_id: String(data.chatId), telegram_user_id: String(data.userId) });
+    } catch (e) {
+      // ignore
+    }
+
+    return { success: ok, userId: data.userId };
+  });
+
+// 21. Promote or Demote Member in Telegram Group
+export const promoteTelegramMemberInGroupFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (d: {
+      chatId: string | number;
+      userId: string | number;
+      isPromote: boolean;
+      customTitle?: string;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { promoteTelegramChatMember, demoteTelegramChatMember } =
+      await import("@/lib/telegram.server");
+
+    let ok = false;
+    if (data.isPromote) {
+      ok = await promoteTelegramChatMember(data.chatId, data.userId, {
+        canDeleteMessages: true,
+        canInviteUsers: true,
+        canPinMessages: true,
+        canRestrictMembers: true,
+        canManageChat: true,
+      });
+    } else {
+      ok = await demoteTelegramChatMember(data.chatId, data.userId);
+    }
+
+    return { success: ok, userId: data.userId, isPromote: data.isPromote };
+  });

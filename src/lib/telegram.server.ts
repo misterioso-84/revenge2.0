@@ -37,6 +37,12 @@ if (g._lastTelegramAuditDate === undefined) {
 if (!g._telegramUnregisteredNoticeCooldown) {
   g._telegramUnregisteredNoticeCooldown = new Map<string, number>();
 }
+if (!g._telegramChatMessages) {
+  g._telegramChatMessages = new Map<string, any[]>();
+}
+if (!g._telegramPinnedChats) {
+  g._telegramPinnedChats = new Set<string>();
+}
 
 const pendingCodesStore: Map<string, { createdAt: number; userId?: string }> =
   g._telegramPendingCodes;
@@ -46,6 +52,8 @@ const verifiedCodesStore: Map<
 > = g._telegramVerifiedCodes;
 const processedUpdatesSet: Set<number> = g._telegramProcessedUpdates;
 const unregisteredNoticeCooldown: Map<string, number> = g._telegramUnregisteredNoticeCooldown;
+const chatMessagesStore: Map<string, any[]> = g._telegramChatMessages;
+const pinnedChatsStore: Set<string> = g._telegramPinnedChats;
 
 export async function registerPendingCode(code: string, userId?: string) {
   pendingCodesStore.set(code, { createdAt: Date.now(), userId });
@@ -93,6 +101,10 @@ export async function sendTelegramMessage(
   chatId: number | string,
   text: string,
   replyMarkup?: any,
+  options?: {
+    replyToMessageId?: number;
+    disableNotification?: boolean;
+  },
 ) {
   try {
     const payload: any = {
@@ -102,6 +114,12 @@ export async function sendTelegramMessage(
     };
     if (replyMarkup) {
       payload.reply_markup = replyMarkup;
+    }
+    if (options?.replyToMessageId) {
+      payload.reply_parameters = { message_id: options.replyToMessageId };
+    }
+    if (options?.disableNotification) {
+      payload.disable_notification = true;
     }
     const res = await fetch(`${API_URL}/sendMessage`, {
       method: "POST",
@@ -114,6 +132,289 @@ export async function sendTelegramMessage(
     console.error("Error sending Telegram message:", err);
     return null;
   }
+}
+
+export async function pinTelegramChatMessage(
+  chatId: number | string,
+  messageId: number,
+  disableNotification: boolean = false,
+) {
+  try {
+    const res = await fetch(`${API_URL}/pinChatMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        disable_notification: disableNotification,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Error pinning Telegram chat message:", err);
+    return null;
+  }
+}
+
+export async function unpinTelegramChatMessage(chatId: number | string, messageId?: number) {
+  try {
+    const body: any = { chat_id: chatId };
+    if (messageId) body.message_id = messageId;
+    const res = await fetch(`${API_URL}/unpinChatMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Error unpinning Telegram chat message:", err);
+    return null;
+  }
+}
+
+export async function setTelegramMessageReaction(
+  chatId: number | string,
+  messageId: number,
+  emojis: string[],
+) {
+  try {
+    const reaction = emojis.map((e) => ({ type: "emoji", emoji: e }));
+    const res = await fetch(`${API_URL}/setMessageReaction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        reaction,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Error setting Telegram message reaction:", err);
+    return null;
+  }
+}
+
+export interface ChatMessageRecord {
+  id: string;
+  chat_id: string | number;
+  message_id: number;
+  sender_type: "bot" | "user" | "staff" | "channel";
+  sender_name: string;
+  sender_username?: string;
+  sender_avatar?: string;
+  sender_role?: string;
+  sender_id?: string | number;
+  text: string;
+  created_at: string;
+  date: number;
+  is_pinned?: boolean;
+  pinned_at?: string;
+  reply_to_message_id?: number;
+  reply_to_message?: {
+    id: string;
+    message_id: number;
+    sender_name: string;
+    text: string;
+  };
+  reactions?: {
+    emoji: string;
+    count: number;
+    users: { id: string | number; name: string; username?: string }[];
+  }[];
+  inline_buttons?: { text: string; url: string }[];
+  delivery_status?: "sent" | "delivered" | "read" | "failed";
+}
+
+export function getStoredChatMessages(chatId: string | number): ChatMessageRecord[] {
+  const cId = String(chatId);
+  if (!chatMessagesStore.has(cId)) {
+    chatMessagesStore.set(cId, []);
+  }
+  return chatMessagesStore.get(cId) || [];
+}
+
+export function storeChatMessage(msg: ChatMessageRecord) {
+  const cId = String(msg.chat_id);
+  const list = getStoredChatMessages(cId);
+  const existingIdx = list.findIndex((m) => m.message_id === msg.message_id || m.id === msg.id);
+  if (existingIdx >= 0) {
+    list[existingIdx] = { ...list[existingIdx], ...msg };
+  } else {
+    list.push(msg);
+  }
+  // Sort chronologically
+  list.sort((a, b) => a.date - b.date);
+  chatMessagesStore.set(cId, list);
+  return msg;
+}
+
+export function toggleChatMessagePinInStore(
+  chatId: string | number,
+  messageId: number,
+  isPinned: boolean,
+) {
+  const cId = String(chatId);
+  const list = getStoredChatMessages(cId);
+  const msg = list.find((m) => m.message_id === messageId);
+  if (msg) {
+    msg.is_pinned = isPinned;
+    msg.pinned_at = isPinned ? new Date().toISOString() : undefined;
+  }
+  return msg;
+}
+
+export function toggleChatMessageReactionInStore(
+  chatId: string | number,
+  messageId: number,
+  emoji: string,
+  user: { id: string | number; name: string; username?: string },
+) {
+  const cId = String(chatId);
+  const list = getStoredChatMessages(cId);
+  const msg = list.find((m) => m.message_id === messageId);
+  if (!msg) return null;
+
+  if (!msg.reactions) msg.reactions = [];
+
+  const existingReaction = msg.reactions.find((r) => r.emoji === emoji);
+  if (existingReaction) {
+    const userIdx = existingReaction.users.findIndex((u) => String(u.id) === String(user.id));
+    if (userIdx >= 0) {
+      // Remove reaction
+      existingReaction.users.splice(userIdx, 1);
+      existingReaction.count = existingReaction.users.length;
+      if (existingReaction.count === 0) {
+        msg.reactions = msg.reactions.filter((r) => r.emoji !== emoji);
+      }
+    } else {
+      // Add user to reaction
+      existingReaction.users.push(user);
+      existingReaction.count = existingReaction.users.length;
+    }
+  } else {
+    // New reaction
+    msg.reactions.push({
+      emoji,
+      count: 1,
+      users: [user],
+    });
+  }
+
+  return msg;
+}
+
+export function togglePinnedChatInStore(chatId: string | number): boolean {
+  const cId = String(chatId);
+  if (pinnedChatsStore.has(cId)) {
+    pinnedChatsStore.delete(cId);
+    return false;
+  } else {
+    pinnedChatsStore.add(cId);
+    return true;
+  }
+}
+
+export function deleteChatMessageFromStore(chatId: string | number, messageId: number) {
+  const cId = String(chatId);
+  const list = getStoredChatMessages(cId);
+  const nextList = list.filter((m) => m.message_id !== messageId);
+  chatMessagesStore.set(cId, nextList);
+  return nextList;
+}
+
+export async function deleteTelegramChatMessage(chatId: number | string, messageId: number) {
+  try {
+    deleteChatMessageFromStore(chatId, messageId);
+    const res = await fetch(`${API_URL}/deleteMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch (err) {
+    console.error("Error deleting Telegram chat message:", err);
+    return false;
+  }
+}
+
+export async function promoteTelegramChatMember(
+  chatId: number | string,
+  userId: number | string,
+  options?: {
+    canManageChat?: boolean;
+    canDeleteMessages?: boolean;
+    canManageVideoChats?: boolean;
+    canRestrictMembers?: boolean;
+    canPromoteMembers?: boolean;
+    canChangeInfo?: boolean;
+    canInviteUsers?: boolean;
+    canPinMessages?: boolean;
+  },
+) {
+  try {
+    const res = await fetch(`${API_URL}/promoteChatMember`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        user_id: userId,
+        can_manage_chat: options?.canManageChat ?? true,
+        can_delete_messages: options?.canDeleteMessages ?? true,
+        can_restrict_members: options?.canRestrictMembers ?? true,
+        can_invite_users: options?.canInviteUsers ?? true,
+        can_pin_messages: options?.canPinMessages ?? true,
+        can_manage_video_chats: options?.canManageVideoChats ?? true,
+        can_change_info: options?.canChangeInfo ?? false,
+        can_promote_members: options?.canPromoteMembers ?? false,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch (err) {
+    console.error("Error promoting Telegram chat member:", err);
+    return false;
+  }
+}
+
+export async function demoteTelegramChatMember(chatId: number | string, userId: number | string) {
+  try {
+    const res = await fetch(`${API_URL}/promoteChatMember`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        user_id: userId,
+        can_manage_chat: false,
+        can_delete_messages: false,
+        can_restrict_members: false,
+        can_invite_users: false,
+        can_pin_messages: false,
+        can_manage_video_chats: false,
+        can_change_info: false,
+        can_promote_members: false,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch (err) {
+    console.error("Error demoting Telegram chat member:", err);
+    return false;
+  }
+}
+
+export function isChatPinnedInStore(chatId: string | number): boolean {
+  return pinnedChatsStore.has(String(chatId));
 }
 
 export async function getTelegramChat(chatId: number | string) {
@@ -1501,6 +1802,37 @@ export async function fetchTelegramUpdates() {
       const text = msg.text.trim();
       const from = msg.from;
       if (!from) continue;
+
+      // Auto-store incoming message in chat message history
+      let replyInfo: any = undefined;
+      if (msg.reply_to_message && msg.reply_to_message.text) {
+        replyInfo = {
+          id: `tg-${msg.chat.id}-${msg.reply_to_message.message_id}`,
+          message_id: msg.reply_to_message.message_id,
+          sender_name:
+            msg.reply_to_message.from?.first_name ||
+            msg.reply_to_message.from?.username ||
+            "Utente",
+          text: msg.reply_to_message.text,
+        };
+      }
+
+      storeChatMessage({
+        id: `tg-${msg.chat.id}-${msg.message_id}`,
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        sender_type: from.is_bot ? "bot" : "user",
+        sender_name:
+          [from.first_name, from.last_name].filter(Boolean).join(" ") || from.username || "Utente",
+        sender_username: from.username,
+        sender_id: from.id,
+        text: msg.text,
+        created_at: new Date((msg.date || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        date: msg.date || Math.floor(Date.now() / 1000),
+        reply_to_message_id: msg.reply_to_message?.message_id,
+        reply_to_message: replyInfo,
+        delivery_status: "read",
+      });
 
       const rawHandle = from.username
         ? `@${from.username}`

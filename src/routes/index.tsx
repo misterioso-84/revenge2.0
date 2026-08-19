@@ -48,6 +48,7 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { SiteFooter } from "@/components/Footer";
 import { SiteNavbar } from "@/components/SiteNavbar";
 import { UserProfileDropdown } from "@/components/UserProfileDropdown";
@@ -60,12 +61,6 @@ import {
   verifyTelegramCode,
 } from "@/lib/registration.functions";
 import { usernameToEmail } from "@/lib/format";
-import mcSlotMachineImg from "@/assets/images/mc_slot_machine_1786967204672.jpg";
-import mcBlackjackImg from "@/assets/images/mc_blackjack_table_1786967217771.jpg";
-import mcRouletteImg from "@/assets/images/mc_roulette_wheel_1786967237131.jpg";
-import mcHorseRacingImg from "@/assets/images/mc_horse_racing_1786967251597.jpg";
-import mcBaccaratImg from "@/assets/images/mc_baccarat_vip_1786967263612.jpg";
-import mcPokerImg from "@/assets/images/mc_poker_table_1786967279173.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -87,8 +82,6 @@ function InteractiveGamesSection() {
       id: "slot",
       titlePrefix: "SLOT MACHINE",
       titleHighlight: "3D JACKPOT",
-      image: mcSlotMachineImg,
-      alt: "Slot Machine 3D Minecraft Casinò Revenge",
       badge: "Attrazione 3D",
       paragraphs: [
         <>
@@ -121,8 +114,6 @@ function InteractiveGamesSection() {
       id: "blackjack",
       titlePrefix: "TAVOLO UFFICIALE",
       titleHighlight: "BLACKJACK 3:2",
-      image: mcBlackjackImg,
-      alt: "Blackjack Ufficiale Casinò Revenge",
       badge: "Tavolo dal Vivo",
       paragraphs: [
         <>
@@ -154,8 +145,6 @@ function InteractiveGamesSection() {
       id: "roulette",
       titlePrefix: "ROULETTE EUROPEA",
       titleHighlight: "SINGLE ZERO (0)",
-      image: mcRouletteImg,
-      alt: "Roulette Europea Casinò Revenge",
       badge: "Ruota Panoramica",
       paragraphs: [
         <>
@@ -188,8 +177,6 @@ function InteractiveGamesSection() {
       id: "cavalli",
       titlePrefix: "IPPODROMO & CORSE",
       titleHighlight: "LIBERTY BAY",
-      image: mcHorseRacingImg,
-      alt: "Ippodromo Liberty Bay Casinò Revenge",
       badge: "Scommesse Sportive",
       paragraphs: [
         <>
@@ -221,8 +208,6 @@ function InteractiveGamesSection() {
       id: "baccarat",
       titlePrefix: "BACCARAT & PUNTO",
       titleHighlight: "BANCO PRIVÉ",
-      image: mcBaccaratImg,
-      alt: "Baccarat Punto Banco Casinò Revenge",
       badge: "Tavolo Esclusivo",
       paragraphs: [
         <>
@@ -254,8 +239,6 @@ function InteractiveGamesSection() {
       id: "poker",
       titlePrefix: "TEXAS HOLD'EM",
       titleHighlight: "POKER CHAMPIONSHIP",
-      image: mcPokerImg,
-      alt: "Poker Texas Hold'em Casinò Revenge",
       badge: "Tornei & Cash Game",
       paragraphs: [
         <>
@@ -285,79 +268,69 @@ function InteractiveGamesSection() {
   ];
 
   return (
-    <section id="giochi" className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-28">
+    <section id="giochi" className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-16">
       {/* SECTION TITLE HEADER */}
       <div className="text-center space-y-3">
         <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 text-xs uppercase tracking-wider font-bold">
           Offerta di Gioco Esclusiva
         </Badge>
         <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase">
-          Tavoli, Slot e Scommesse 3D
+          Tavoli, Slot e Scommesse
         </h2>
         <p className="text-slate-400 text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
-          Esplora la nostra offerta completa di intrattenimento su Minecraft: artwork 3D a sinistra,
-          regole e funzionamento dettagliato a destra.
+          Esplora la nostra offerta completa di intrattenimento su Minecraft con tavoli dal vivo,
+          slot machine e scommesse sportive a Liberty Bay.
         </p>
       </div>
 
-      {/* CONTINUOUS VERTICAL LIST OF GAMES (MATCHING ATLANTE SCREENSHOT STYLE) */}
-      <div className="space-y-28 md:space-y-36">
-        {GAMES_LIST.map((game, index) => (
-          <div
-            key={game.id}
-            id={`game-${game.id}`}
-            className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center"
-          >
-            {/* SINISTRA: IMMAGINE 3D MINECRAFT DEL GIOCO */}
-            <div className="lg:col-span-5 flex justify-center items-center">
-              <div className="relative group w-full max-w-md">
-                {/* Ambient glow behind the 3D render */}
-                <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-transparent rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+      {/* LIST OF GAMES CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+        {GAMES_LIST.map((game, index) => {
+          return (
+            <div
+              key={game.id}
+              id={`game-${game.id}`}
+              className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 flex flex-col justify-between hover:border-amber-500/40 transition-all duration-300 shadow-xl relative overflow-hidden group"
+            >
+              {/* Subtle ambient corner light */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
 
-                {/* 3D Minecraft Render Image */}
-                <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-slate-950/80 group-hover:border-amber-400/70 transition-all duration-500">
-                  <img
-                    src={game.image}
-                    alt={game.alt}
-                    className="w-full h-auto aspect-square object-cover transform group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
-                  />
-                  {/* Subtle corner badge */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <span className="bg-slate-950/80 backdrop-blur-md text-amber-400 border border-amber-500/40 text-[11px] font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                      #{String(index + 1).padStart(2, "0")} • {game.badge}
-                    </span>
-                  </div>
+              <div className="space-y-5">
+                {/* Header row with badge & numbering */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400/90 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+                    {game.badge}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-slate-500">
+                    #{String(index + 1).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {/* BIG BOLD TITLE */}
+                <div className="space-y-1">
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase leading-tight">
+                    {game.titlePrefix} <span className="text-amber-400">{game.titleHighlight}</span>
+                  </h3>
+                </div>
+
+                {/* NARRATIVE AND FUNCTIONING PARAGRAPHS */}
+                <div className="space-y-3 text-slate-300 text-sm leading-relaxed">
+                  {game.paragraphs.map((p, pIdx) => (
+                    <p key={pIdx}>{p}</p>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* DESTRA: TITOLO CON PAROLA EVIDENZIATA, DESCRIZIONE E BOX CARATTERISTICHE */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* BIG BOLD TITLE (ATLANTE STYLE) */}
-              <div className="space-y-1">
-                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase leading-tight">
-                  {game.titlePrefix} <span className="text-amber-400">{game.titleHighlight}</span>
-                </h3>
-              </div>
-
-              {/* NARRATIVE AND FUNCTIONING PARAGRAPHS */}
-              <div className="space-y-4 text-slate-300 text-sm sm:text-base leading-relaxed">
-                {game.paragraphs.map((p, pIdx) => (
-                  <p key={pIdx}>{p}</p>
-                ))}
-              </div>
-
-              {/* FEATURE CHECKLIST BOX (EXACT SCREENSHOT STYLE) */}
-              <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5">
+              {/* FEATURE CHECKLIST BOX */}
+              <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 shadow-inner space-y-3.5 mt-auto">
                 {/* Header with yellow dot */}
-                <div className="flex items-center gap-2.5 text-sm sm:text-base font-black text-white">
+                <div className="flex items-center gap-2.5 text-sm font-black text-white">
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] shrink-0" />
                   <span>{game.featureTitle}</span>
                 </div>
 
                 {/* 2-column list of items with checkmark */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-300 font-medium">
                   {game.features.map((feat, fIdx) => (
                     <div key={fIdx} className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold shrink-0">✓</span>
@@ -367,8 +340,8 @@ function InteractiveGamesSection() {
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
