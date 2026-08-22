@@ -41,6 +41,7 @@ import {
   Copy,
   ClipboardList,
   User,
+  GraduationCap,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -59,6 +60,7 @@ const NAV: NavItem[] = [
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },
   { to: "/eventi", label: "Gestione Eventi", icon: Sparkles },
   // { to: "/badge", label: "Badge & Timbrature", icon: Clock },
+  { to: "/master", label: "Master Spiegazioni", icon: GraduationCap },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
   { to: "/stipendi", label: "Stipendi & Payroll", icon: Banknote },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
@@ -189,6 +191,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         permissions.includes("badge.visualizza") ||
         permissions.includes("badge.settimane") ||
         permissions.includes("badge.gestisci")
+      );
+    }
+    if (n.to === "/master") {
+      return (
+        isAdmin ||
+        permissions.includes("master.gestisci") ||
+        permissions.includes("master.visualizza")
       );
     }
     if (n.to === "/dipendenti") {

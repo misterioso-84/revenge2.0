@@ -27,6 +27,7 @@ import { ReviewApplicationDialog } from "@/components/candidature/ReviewApplicat
 import { FormBuilderDialog } from "@/components/candidature/FormBuilderDialog";
 import { FormBuilderView } from "@/components/candidature/FormBuilderView";
 import { ViewAnswersDialog } from "@/components/candidature/ViewAnswersDialog";
+import { TelegramVerificationGuard } from "@/components/TelegramVerificationGuard";
 import {
   ClipboardList,
   Plus,
@@ -55,6 +56,7 @@ import {
   FileEdit,
   RotateCcw,
   Timer,
+  LogIn,
 } from "lucide-react";
 
 export const Route = createFileRoute("/candidature")({
@@ -397,6 +399,95 @@ function CandidaturePage() {
           }}
           currentUserId={user?.id}
         />
+      </div>
+    );
+  }
+
+  // 1. Restriction: Unauthenticated user (not registered or not logged in)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
+        <div>
+          <SiteNavbar />
+          <main className="max-w-3xl mx-auto px-4 py-12 sm:py-20">
+            <div className="bg-[#0f121d] border border-amber-500/30 rounded-3xl p-6 sm:p-10 text-center shadow-2xl relative overflow-hidden space-y-6">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
+
+              <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner">
+                <Lock className="h-8 w-8" />
+              </div>
+
+              <div className="space-y-2">
+                <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 uppercase text-[11px] font-black px-3 py-1">
+                  Accesso Riservato — Registrazione Richiesta
+                </Badge>
+                <h1 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight">
+                  Candidature Staff Casinò
+                </h1>
+                <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed pt-2">
+                  Per visualizzare i bandi aperti, consultare i requisiti e compilare una
+                  candidatura per entrare nello Staff del Casinò Revenge è necessario essere
+                  registrati ed aver effettuato l'accesso.
+                </p>
+              </div>
+
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  onClick={() => navigate({ to: "/auth", search: { redirect: "/candidature" } })}
+                  className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider h-11 px-6 rounded-xl shadow-lg shadow-amber-500/20"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Accedi o Registrati
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate({ to: "/" })}
+                  className="w-full sm:w-auto bg-slate-900 border-slate-800 text-slate-300 hover:text-white text-xs h-11 px-6 rounded-xl"
+                >
+                  Torna alla Home
+                </Button>
+              </div>
+            </div>
+          </main>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  // 2. Restriction: User is logged in but without connected Telegram handle (@)
+  const isTelegramConnected = Boolean(profile?.telegram_connected && profile?.telegram_handle);
+  if (!isTelegramConnected) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
+        <div>
+          <SiteNavbar />
+          <main className="max-w-3xl mx-auto px-4 py-8 sm:py-16 space-y-6">
+            <div className="text-center space-y-2">
+              <Badge className="bg-sky-500/10 text-sky-400 border-sky-500/30 uppercase text-[11px] font-black px-3 py-1">
+                Collegamento Telegram Obbligatorio
+              </Badge>
+              <h1 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight">
+                Associa il tuo Account Telegram
+              </h1>
+              <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
+                Per poter visualizzare i bandi e compilare una candidatura per lo Staff del Casinò
+                Revenge è obbligatorio aver prima associato il proprio username Telegram (@) tramite
+                il comando <strong className="text-amber-400 font-mono">/associa</strong> inviato al
+                nostro Bot ufficiale.
+              </p>
+            </div>
+
+            <TelegramVerificationGuard
+              profile={profile}
+              signOut={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/" });
+              }}
+            />
+          </main>
+        </div>
+        <SiteFooter />
       </div>
     );
   }

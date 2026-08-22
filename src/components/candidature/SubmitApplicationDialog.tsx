@@ -256,7 +256,15 @@ export function SubmitApplicationDialog({
 
   const submitMutation = useMutation({
     mutationFn: async (opts?: { isTimeout?: boolean }) => {
-      if (!form || !currentUser?.id) throw new Error("Utente o modulo non valido");
+      if (!form || !currentUser?.id) {
+        throw new Error("Devi essere registrato ed autenticato per inviare una candidatura.");
+      }
+
+      if (!currentProfile?.telegram_connected || !currentProfile?.telegram_handle) {
+        throw new Error(
+          "È obbligatorio associare prima il tuo account Telegram con il comando /associa per poter inviare una candidatura.",
+        );
+      }
 
       // Verify previous submissions for this form
       const { data: existingList } = await supabase

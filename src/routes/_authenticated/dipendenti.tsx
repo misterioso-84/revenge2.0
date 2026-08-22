@@ -35,6 +35,10 @@ import {
   Briefcase,
   LayoutGrid,
   List,
+  Crown,
+  Shield,
+  Sparkles,
+  KeyRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -78,7 +82,7 @@ function DipendentiPage() {
     onConfirm: () => {},
   });
 
-  const canVedere = isAdmin || permissions.includes("badge.visualizza");
+  const canVedere = isAdmin || permissions.includes("badge.visualizza") || permissions.length > 0;
   const canSanzioni = isAdmin || permissions.includes("dipendenti.sanzioni");
   const canRead = canVedere;
 
@@ -109,7 +113,7 @@ function DipendentiPage() {
     return null;
   });
 
-  // Fetch all employees profiles
+  // Fetch all profiles
   const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery<Prof[]>({
     queryKey: ["profiles-all"],
     queryFn: async () => {
@@ -119,6 +123,37 @@ function DipendentiPage() {
         .order("display_name", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Prof[];
+    },
+    enabled: canRead,
+    refetchInterval: 10000,
+  });
+
+  // Fetch roles and custom roles to determine who has at least one permission
+  const { data: allUserRoles = [] } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_roles").select("user_id, role");
+      return data ?? [];
+    },
+    enabled: canRead,
+    refetchInterval: 10000,
+  });
+
+  const { data: allUserCustomRoles = [] } = useQuery({
+    queryKey: ["all-user-custom-roles"],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_custom_roles").select("user_id, custom_role_id");
+      return data ?? [];
+    },
+    enabled: canRead,
+    refetchInterval: 10000,
+  });
+
+  const { data: allCustomRoles = [] } = useQuery({
+    queryKey: ["all-custom-roles"],
+    queryFn: async () => {
+      const { data } = await supabase.from("custom_roles").select("*");
+      return data ?? [];
     },
     enabled: canRead,
     refetchInterval: 10000,
@@ -147,6 +182,68 @@ function DipendentiPage() {
     enabled: canRead,
     refetchInterval: 10000,
   });
+
+  // Create custom role lookup map
+  const customRolesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    allCustomRoles.forEach((cr: any) => {
+      if (cr && cr.id) map.set(cr.id, cr);
+    });
+    return map;
+  }, [allCustomRoles]);
+
+  // Compute for each user their assigned roles, permissions count, and whether they have at least one permission ("Dipendenti")
+  const userPermissionsInfoMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        isDipendente: boolean;
+        isUserAdmin: boolean;
+        assignedRoles: any[];
+        permissions: string[];
+      }
+    >();
+
+    for (const p of profiles) {
+      const isUserAdmin =
+        allUserRoles.some((ur: any) => ur.user_id === p.id && ur.role === "admin") ||
+        p.username?.toLowerCase() === "admin" ||
+        p.username?.toLowerCase() === "giuse84pro";
+
+      const userRoleLinks = allUserCustomRoles.filter((ucr: any) => ucr.user_id === p.id);
+      const assignedRoles = userRoleLinks
+        .map((ucr: any) => customRolesMap.get(ucr.custom_role_id))
+        .filter(Boolean);
+
+      const permsSet = new Set<string>();
+      if (isUserAdmin) {
+        permsSet.add("admin.all");
+      }
+      assignedRoles.forEach((r: any) => {
+        (r.permissions || []).forEach((perm: string) => permsSet.add(perm));
+      });
+
+      // A user is considered a "Dipendente" if they have at least 1 permission (or is admin or has custom role)
+      const isDipendente = isUserAdmin || permsSet.size > 0 || assignedRoles.length > 0;
+
+      map.set(p.id, {
+        isDipendente,
+        isUserAdmin,
+        assignedRoles,
+        permissions: Array.from(permsSet),
+      });
+    }
+
+    return map;
+  }, [profiles, allUserRoles, allUserCustomRoles, customRolesMap]);
+
+  // Filter profiles: Only include people who have at least one permission / role ("Dipendenti")
+  const staffProfiles = useMemo(() => {
+    return profiles.filter((p) => {
+      const info = userPermissionsInfoMap.get(p.id);
+      return info?.isDipendente === true;
+    });
+  }, [profiles, userPermissionsInfoMap]);
 
   const activeSanctionsMap = useMemo(() => {
     const map = new Map<string, { type: string; expires_at: string | null; reason: string }>();
@@ -200,22 +297,22 @@ function DipendentiPage() {
     return map;
   }, [activeSessions]);
 
-  // Stat Counters
-  const totalStaff = profiles.length;
+  // Stat Counters (calculated strictly on Dipendenti members)
+  const totalStaff = staffProfiles.length;
   const inServiceCount = useMemo(() => {
-    return profiles.filter((p) => activeUserMap.has(p.id) || !!p.badge_start_time).length;
-  }, [profiles, activeUserMap]);
+    return staffProfiles.filter((p) => activeUserMap.has(p.id) || !!p.badge_start_time).length;
+  }, [staffProfiles, activeUserMap]);
 
   const inLeaveCount = useMemo(() => {
-    return profiles.filter((p) => leaveUserIds.has(p.id)).length;
-  }, [profiles, leaveUserIds]);
+    return staffProfiles.filter((p) => leaveUserIds.has(p.id)).length;
+  }, [staffProfiles, leaveUserIds]);
 
   const suspendedCount = useMemo(() => {
-    return profiles.filter((p) => {
+    return staffProfiles.filter((p) => {
       const sanc = activeSanctionsMap.get(p.id);
       return sanc && sanc.type === "sospensione";
     }).length;
-  }, [profiles, activeSanctionsMap]);
+  }, [staffProfiles, activeSanctionsMap]);
 
   // Current logged in user profile
   const currentUserProfile = useMemo(() => {
@@ -224,9 +321,9 @@ function DipendentiPage() {
 
   const offServiceCount = Math.max(0, totalStaff - inServiceCount - inLeaveCount - suspendedCount);
 
-  // Filter profiles based on search term, status filter, and exclude permanently expelled ones
+  // Filter staff profiles based on search term, status filter, and exclude permanently expelled ones
   const filteredProfiles = useMemo(() => {
-    return profiles.filter((p) => {
+    return staffProfiles.filter((p) => {
       const activeSanc = activeSanctionsMap.get(p.id);
       if (activeSanc && activeSanc.type === "espulsione") {
         return false;
@@ -252,7 +349,7 @@ function DipendentiPage() {
       return name.includes(term) || username.includes(term);
     });
   }, [
-    profiles,
+    staffProfiles,
     searchTerm,
     statusFilter,
     activeSanctionsMap,
@@ -568,6 +665,7 @@ function DipendentiPage() {
                   }
                   const isLeave = leaveUserIds.has(p.id);
                   const activeSanc = activeSanctionsMap.get(p.id);
+                  const permInfo = userPermissionsInfoMap.get(p.id);
 
                   return (
                     <div
@@ -616,6 +714,43 @@ function DipendentiPage() {
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#12141c] text-slate-400 border border-slate-800 text-[10px] font-bold uppercase tracking-wider shrink-0">
                             FUORI SERVIZIO
                           </div>
+                        )}
+                      </div>
+
+                      {/* Roles & Permissions Tag Badges */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {permInfo?.isUserAdmin && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            <Crown className="h-3 w-3 text-amber-400" /> Amministratore
+                          </span>
+                        )}
+                        {permInfo?.assignedRoles?.map((r: any) => (
+                          <span
+                            key={r.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                            style={{
+                              backgroundColor: `${r.staff_color || "#3b82f6"}20`,
+                              color: r.staff_color || "#93c5fd",
+                              borderColor: `${r.staff_color || "#3b82f6"}40`,
+                            }}
+                          >
+                            <span
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: r.staff_color || "#3b82f6" }}
+                            />
+                            {r.name}
+                            {r.is_reparto && (
+                              <span className="text-[8px] opacity-80 uppercase font-mono">
+                                (Reparto)
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                        {permInfo && !permInfo.isUserAdmin && permInfo.permissions.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono bg-slate-900 text-slate-400 border border-slate-800">
+                            <KeyRound className="h-2.5 w-2.5 text-amber-400/80" />
+                            {permInfo.permissions.length} permessi
+                          </span>
                         )}
                       </div>
 
@@ -700,6 +835,9 @@ function DipendentiPage() {
                       Dipendente
                     </TableHead>
                     <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
+                      Ruoli & Permessi
+                    </TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5">
                       Stato Servizio
                     </TableHead>
                     <TableHead className="text-slate-400 font-bold uppercase text-[11px] tracking-wider py-3.5 text-right w-44">
@@ -711,7 +849,7 @@ function DipendentiPage() {
                   {isLoadingProfiles ? (
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={4}
                         className="text-center py-10 text-slate-400 italic text-xs"
                       >
                         Caricamento dipendenti in corso...
@@ -720,7 +858,7 @@ function DipendentiPage() {
                   ) : filteredProfiles.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={4}
                         className="text-center py-10 text-slate-400 text-xs font-medium"
                       >
                         Nessun dipendente trovato per i filtri selezionati.
@@ -735,6 +873,7 @@ function DipendentiPage() {
                       }
                       const isLeave = leaveUserIds.has(p.id);
                       const activeSanc = activeSanctionsMap.get(p.id);
+                      const permInfo = userPermissionsInfoMap.get(p.id);
 
                       return (
                         <TableRow
@@ -761,6 +900,37 @@ function DipendentiPage() {
                                   @{p.username}
                                 </div>
                               </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Roles & Permissions column */}
+                          <TableCell className="py-3.5">
+                            <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
+                              {permInfo?.isUserAdmin && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                  <Crown className="h-3 w-3 text-amber-400" /> Admin
+                                </span>
+                              )}
+                              {permInfo?.assignedRoles?.map((r: any) => (
+                                <span
+                                  key={r.id}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                                  style={{
+                                    backgroundColor: `${r.staff_color || "#3b82f6"}20`,
+                                    color: r.staff_color || "#93c5fd",
+                                    borderColor: `${r.staff_color || "#3b82f6"}40`,
+                                  }}
+                                >
+                                  {r.name}
+                                </span>
+                              ))}
+                              {permInfo &&
+                                !permInfo.isUserAdmin &&
+                                permInfo.permissions.length > 0 && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono bg-slate-900 text-slate-400 border border-slate-800">
+                                    {permInfo.permissions.length} perms
+                                  </span>
+                                )}
                             </div>
                           </TableCell>
 

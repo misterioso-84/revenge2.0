@@ -686,6 +686,16 @@ function getInitialDb() {
         updated_at: new Date().toISOString(),
       },
     ],
+    master_explanations: [],
+    master_settings: [
+      {
+        id: "global",
+        explanation_group_id: null,
+        auto_kick_on_done: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
   };
 
   return db;

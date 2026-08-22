@@ -37,8 +37,12 @@ export const checkCitizenEligibility = createServerFn({ method: "POST" })
       };
     }
 
-    // 2. Check if nickname is present in the dipendenti / citizens section of the panel
-    const { data: citizens } = await supabaseAdmin.from("citizens").select("*");
+    // 2. Check if nickname is present in citizens or has existing roles/permissions in panel
+    const [{ data: citizens }, { data: userRoles }, { data: userCustomRoles }] = await Promise.all([
+      supabaseAdmin.from("citizens").select("*"),
+      supabaseAdmin.from("user_roles").select("*"),
+      supabaseAdmin.from("user_custom_roles").select("*"),
+    ]);
 
     const citizenMatch = (citizens || []).find((c: any) => {
       const nickMatch = c.nickname && c.nickname.trim().toLowerCase() === cleanNick;
@@ -50,7 +54,10 @@ export const checkCitizenEligibility = createServerFn({ method: "POST" })
       const match =
         (p.username && p.username.trim().toLowerCase() === cleanNick) ||
         (p.display_name && p.display_name.trim().toLowerCase() === cleanNick);
-      return match && (p.has_employee_access || p.show_in_staff_list);
+      if (!match) return false;
+      const hasRole = (userRoles || []).some((r: any) => r.user_id === p.id);
+      const hasCustomRole = (userCustomRoles || []).some((ucr: any) => ucr.user_id === p.id);
+      return hasRole || hasCustomRole || p.has_employee_access;
     });
 
     if (citizenMatch || employeeMatch) {
@@ -85,12 +92,19 @@ export const registerPublicUser = createServerFn({ method: "POST" })
     const cleanNick = data.nickname.trim().toLowerCase();
     const clientIp = data.ipAddress || "127.0.0.1";
 
-    // Fetch existing profiles and citizens
-    const [{ data: citizens }, { data: existingProfiles }] = await Promise.all([
+    // Fetch existing profiles, citizens, and roles
+    const [
+      { data: citizens },
+      { data: existingProfiles },
+      { data: userRoles },
+      { data: userCustomRoles },
+    ] = await Promise.all([
       supabaseAdmin.from("citizens").select("*"),
       supabaseAdmin
         .from("profiles")
         .select("id, username, display_name, has_employee_access, ip_address, telegram_connected"),
+      supabaseAdmin.from("user_roles").select("*"),
+      supabaseAdmin.from("user_custom_roles").select("*"),
     ]);
 
     // 1. IP Check: Enforce max 1 account per IP (excluding local loopback in dev)
@@ -129,7 +143,10 @@ export const registerPublicUser = createServerFn({ method: "POST" })
       const match =
         (p.username && p.username.trim().toLowerCase() === cleanNick) ||
         (p.display_name && p.display_name.trim().toLowerCase() === cleanNick);
-      return match && p.has_employee_access;
+      if (!match) return false;
+      const hasRole = (userRoles || []).some((r: any) => r.user_id === p.id);
+      const hasCustomRole = (userCustomRoles || []).some((ucr: any) => ucr.user_id === p.id);
+      return hasRole || hasCustomRole || p.has_employee_access;
     });
 
     if (!citizenMatch && !employeeMatch) {

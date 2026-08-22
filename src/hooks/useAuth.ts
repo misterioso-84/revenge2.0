@@ -271,13 +271,13 @@ export function useAuth() {
     };
   }, [user]);
 
+  // Access to the internal panel / staff features: having at least one permission or role or being admin
   const hasEmployeeAccess =
-    profile?.has_employee_access === true ||
-    profile?.show_in_staff_list === true ||
     isAdmin ||
+    permissions.length > 0 ||
     roles.length > 0 ||
     customRoleNames.length > 0 ||
-    permissions.length > 0;
+    customRoles.some((r) => (r.permissions && r.permissions.length > 0) || r.name);
 
   const loading = authLoading || (!!user && profileLoading);
 

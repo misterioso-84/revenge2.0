@@ -67,6 +67,8 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "conversioni.storico", label: "Vedere lo storico delle conversioni" },
   { key: "eventi.gestisci", label: "Accedere e Gestire l'Eventi / Corsa Cavalli" },
   { key: "dipendenti.sanzioni", label: "Gestire sanzioni dei dipendenti" },
+  { key: "master.gestisci", label: "Accedere e gestire sezione Master (Spiegazioni dipendenti)" },
+  { key: "master.visualizza", label: "Visualizzare la sezione Master & Spiegazioni dipendenti" },
   { key: "stipendi.visualizza", label: "Vedere gli stipendi e calcolo payroll" },
   { key: "stipendi.gestisci", label: "Gestire ed elaborare gli stipendi" },
   { key: "congedi.gestisci", label: "Approvare o rifiutare richieste di congedo" },

@@ -101,6 +101,13 @@ export const createPanelUser = createServerFn({ method: "POST" })
           staff_color: data.staffColor ?? "#3b82f6",
         })
         .eq("id", created.user.id);
+
+      try {
+        const { triggerRoleChangeExplanationReset } = await import("@/lib/master.functions");
+        await triggerRoleChangeExplanationReset(created.user.id);
+      } catch (e) {
+        // ignore
+      }
     }
     return { id: created.user?.id };
   });
@@ -277,6 +284,13 @@ export const assignCustomRole = createServerFn({ method: "POST" })
         .delete()
         .eq("user_id", data.userId)
         .eq("custom_role_id", data.customRoleId);
+    }
+
+    try {
+      const { triggerRoleChangeExplanationReset } = await import("@/lib/master.functions");
+      await triggerRoleChangeExplanationReset(data.userId);
+    } catch (e) {
+      // ignore
     }
 
     try {

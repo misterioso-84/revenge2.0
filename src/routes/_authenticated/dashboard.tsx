@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +42,12 @@ import {
   Moon,
   Flame,
   Zap,
+  GraduationCap,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { getUserTelegramGroups, generateGroupInviteLink } from "@/lib/telegram-groups.functions";
 import { getMaintenanceStatus, setMaintenanceMode } from "@/lib/admin.functions";
+import { getMasterStatsSummary } from "@/lib/master.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -107,6 +110,14 @@ const FEATURES: FeatureItem[] = [
     icon: Clock,
     permissions: ["badge.timbra", "badge.visualizza", "badge.settimane", "badge.gestisci"],
   }, */
+  {
+    title: "Master & Spiegazioni Staff",
+    description:
+      "Controllo spiegazione ruoli dipendenti, formazione e abilitazione temporanea nei gruppi.",
+    to: "/master",
+    icon: GraduationCap,
+    permissions: ["master.gestisci", "master.visualizza"],
+  },
   {
     title: "Gestione Dipendenti",
     description: "Monitoraggio presenze, status operativo, congedi e gestione sanzioni aziendali.",
@@ -225,6 +236,23 @@ function DashboardPage() {
 
   const displayName = profile?.display_name || profile?.username || "Collaboratore";
   const [allGroupsJoined, setAllGroupsJoined] = useState(false);
+
+  const getMasterStatsFn = useServerFn(getMasterStatsSummary);
+  const canAccessMaster =
+    isAdmin || permissions.includes("master.gestisci") || permissions.includes("master.visualizza");
+
+  const { data: masterStats } = useQuery({
+    queryKey: ["master-stats-summary"],
+    queryFn: async () => {
+      try {
+        return await getMasterStatsFn();
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!canAccessMaster,
+    refetchInterval: 12000,
+  });
 
   if (loading) {
     return (
@@ -388,6 +416,66 @@ function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Master Explanation Alert Banner (Yellow / Orange alert) */}
+      {masterStats?.hasAccess && masterStats.pendingCount > 0 && (
+        <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/80 bg-gradient-to-r from-amber-500/25 via-yellow-500/15 to-[#12141c] p-4 sm:p-6 shadow-2xl shadow-amber-500/15">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4 min-w-0">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/25 border-2 border-amber-400 flex items-center justify-center text-amber-300 shrink-0 shadow-lg shadow-amber-500/20">
+                <GraduationCap className="h-7 w-7 animate-pulse" />
+              </div>
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-base sm:text-lg font-black text-amber-300 uppercase tracking-tight flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-ping" />
+                    ATTENZIONE: {masterStats.pendingCount} DIPENDENT
+                    {masterStats.pendingCount === 1 ? "E DEVE" : "I DEVONO"} RICEVERE SPIEGAZIONE!
+                  </span>
+                  <Badge className="bg-amber-400 text-slate-950 font-black text-xs px-2.5 py-0.5 uppercase tracking-wide">
+                    Master Spiegazioni
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium">
+                  Sono presenti membri dello staff con cambio ruolo o nuovo inserimento in attesa di
+                  formazione.
+                </p>
+
+                {/* Chips of pending employees with duration elapsed */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">
+                    In attesa da:
+                  </span>
+                  {masterStats.pendingEmployees.slice(0, 4).map((emp: any) => (
+                    <span
+                      key={emp.id}
+                      className="inline-flex items-center gap-1.5 text-xs bg-[#0a0b10]/90 text-white border border-amber-500/40 px-2.5 py-1 rounded-lg font-medium shadow-sm"
+                    >
+                      <span className="font-bold">{emp.displayName}</span>
+                      <span className="text-amber-400 font-mono text-[11px]">
+                        ({emp.timeElapsed.text})
+                      </span>
+                    </span>
+                  ))}
+                  {masterStats.pendingEmployees.length > 4 && (
+                    <span className="text-xs font-bold text-amber-400/90 self-center">
+                      +{masterStats.pendingEmployees.length - 4} altri dipendenti...
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Link to="/master" className="shrink-0 w-full lg:w-auto">
+              <Button className="w-full lg:w-auto bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-xl shadow-amber-500/25 h-11 px-6 flex items-center justify-center gap-2 border border-amber-300">
+                <GraduationCap className="h-4 w-4" />
+                <span>Apri Sezione Master</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Fascicolo Sanzioni / Situazione Disciplinare */}
       {hasEmployeeAccess && <PersonalDisciplinaryStatus userSanctions={userSanctions} />}

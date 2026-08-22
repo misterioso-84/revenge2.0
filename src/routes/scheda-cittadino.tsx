@@ -66,6 +66,7 @@ import {
   formatDobloni,
   usernameToEmail,
 } from "@/lib/format";
+import { getPublicMembershipPlans, MembershipPlan } from "@/lib/membership.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/scheda-cittadino")({
@@ -87,11 +88,13 @@ type Citizen = {
   full_name: string;
   nickname: string | null;
   membership: string;
+  membership_plan_id?: string | null;
   membership_since: string | null;
   membership_expires_at?: string | null;
   telegram_handle?: string | null;
   notes: string | null;
   created_at: string;
+  isVirtual?: boolean;
 };
 
 type SafeBox = {
@@ -118,7 +121,6 @@ function SchedaCittadinoPage() {
   // Copied Nick state
   const [copiedNick, setCopiedNick] = useState(false);
   const [copiedSerial, setCopiedSerial] = useState(false);
-  const [selectedNightId, setSelectedNightId] = useState<string>("all");
 
   // Fetch all citizens to match current user's profile
   const {
@@ -149,6 +151,12 @@ function SchedaCittadinoPage() {
   const profileMap = useMemo(() => {
     return Object.fromEntries(profiles.map((p) => [p.id, p]));
   }, [profiles]);
+
+  // Fetch dynamic Membership Plans configured by employees / staff
+  const { data: membershipPlans = [] } = useQuery({
+    queryKey: ["public-membership-plans"],
+    queryFn: async () => await getPublicMembershipPlans(),
+  });
 
   // Match current user's citizen card
   const myCitizen = useMemo(() => {
@@ -190,6 +198,89 @@ function SchedaCittadinoPage() {
     };
   }, [citizens, profile, user]);
 
+  // Match active membership plan based on staff database settings
+  const activePlan = useMemo<MembershipPlan | null>(() => {
+    if (!membershipPlans || membershipPlans.length === 0) return null;
+
+    // 1. Exact match by membership_plan_id
+    if (myCitizen?.membership_plan_id) {
+      const found = membershipPlans.find((p) => p.id === myCitizen.membership_plan_id);
+      if (found) return found;
+    }
+
+    // 2. Match by membership code or name
+    if (myCitizen?.membership) {
+      const codeOrName = myCitizen.membership.toLowerCase().trim();
+      const found = membershipPlans.find(
+        (p) =>
+          p.code?.toLowerCase().trim() === codeOrName ||
+          p.name?.toLowerCase().trim() === codeOrName ||
+          p.id?.toLowerCase().trim() === codeOrName,
+      );
+      if (found) return found;
+    }
+
+    // 3. Fallback to default or standard plan
+    return (
+      membershipPlans.find((p) => p.is_default) ||
+      membershipPlans.find((p) => p.code === "standard") ||
+      membershipPlans[0]
+    );
+  }, [membershipPlans, myCitizen]);
+
+  // Expiration and renewal validity calculations set by employees
+  const membershipExpirationInfo = useMemo(() => {
+    if (
+      !myCitizen?.membership_expires_at ||
+      activePlan?.is_permanent ||
+      activePlan?.renewal_days === 0
+    ) {
+      return {
+        isPermanent: true,
+        isExpired: false,
+        daysRemaining: null,
+        formattedDate: null,
+        statusText: "Accesso Permanente",
+        statusColor: "emerald",
+      };
+    }
+
+    const expDate = new Date(myCitizen.membership_expires_at);
+    const now = new Date();
+    const diffMs = expDate.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const formattedDate = formatDate(myCitizen.membership_expires_at);
+
+    if (daysRemaining < 0) {
+      return {
+        isPermanent: false,
+        isExpired: true,
+        daysRemaining,
+        formattedDate,
+        statusText: `Scaduta il ${formattedDate}`,
+        statusColor: "rose",
+      };
+    } else if (daysRemaining <= 7) {
+      return {
+        isPermanent: false,
+        isExpired: false,
+        daysRemaining,
+        formattedDate,
+        statusText: `In scadenza tra ${daysRemaining} ${daysRemaining === 1 ? "giorno" : "giorni"} (${formattedDate})`,
+        statusColor: "amber",
+      };
+    } else {
+      return {
+        isPermanent: false,
+        isExpired: false,
+        daysRemaining,
+        formattedDate,
+        statusText: `Attiva fino al ${formattedDate} (${daysRemaining} gg rimanenti)`,
+        statusColor: "emerald",
+      };
+    }
+  }, [myCitizen?.membership_expires_at, activePlan]);
+
   const citizenId = myCitizen?.id;
   const mcNickname = profile?.username || myCitizen?.nickname || myCitizen?.full_name || "Ospite";
   const fullName = myCitizen?.full_name || profile?.display_name || mcNickname;
@@ -206,7 +297,7 @@ function SchedaCittadinoPage() {
       if (!citizenId || citizenId.startsWith("virtual-")) return [];
       const { data, error } = await supabase
         .from("conversions")
-        .select("*, nights(night_date, title)")
+        .select("*")
         .eq("citizen_id", citizenId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -229,7 +320,7 @@ function SchedaCittadinoPage() {
       if (!citizenId || citizenId.startsWith("virtual-")) return [];
       const { data, error } = await supabase
         .from("night_items")
-        .select("*, nights(night_date, title)")
+        .select("*")
         .eq("citizen_id", citizenId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -318,52 +409,6 @@ function SchedaCittadinoPage() {
       setTimeout(() => setCopiedSerial(false), 2000);
     }
   };
-
-  // Group operations by night
-  const groupedNights = useMemo(() => {
-    const nightsObj: Record<
-      string,
-      {
-        night_id: string;
-        title: string;
-        date: string;
-        purchases: any[];
-        conversions: any[];
-      }
-    > = {};
-
-    const initNightGroup = (nightId: string, rawNight: any) => {
-      if (!nightsObj[nightId]) {
-        const d = rawNight?.night_date ? new Date(rawNight.night_date) : null;
-        const formattedDate = d ? d.toLocaleDateString("it-IT") : "Data non definita";
-        nightsObj[nightId] = {
-          night_id: nightId,
-          title: rawNight?.title ?? `Serata del ${formattedDate}`,
-          date: formattedDate,
-          purchases: [],
-          conversions: [],
-        };
-      }
-    };
-
-    nightItems.forEach((item: any) => {
-      const nid = item.night_id || "other";
-      initNightGroup(nid, item.nights);
-      nightsObj[nid].purchases.push(item);
-    });
-
-    conversions.forEach((conv: any) => {
-      const nid = conv.night_id || "other";
-      initNightGroup(nid, conv.nights);
-      nightsObj[nid].conversions.push(conv);
-    });
-
-    return Object.values(nightsObj).sort((a, b) => {
-      if (a.night_id === "other") return 1;
-      if (b.night_id === "other") return -1;
-      return b.date.localeCompare(a.date);
-    });
-  }, [nightItems, conversions]);
 
   // Aggregate stats
   const totalDobloniBought = useMemo(() => {
@@ -520,7 +565,7 @@ function SchedaCittadinoPage() {
                       <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight">
                         {fullName}
                       </h2>
-                      <MembershipBadge tier={membershipTier} />
+                      <MembershipBadge plan={activePlan} tier={membershipTier} />
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-300 font-medium">
@@ -546,6 +591,32 @@ function SchedaCittadinoPage() {
                             : formatDate(myCitizen?.created_at || new Date().toISOString())}
                         </strong>
                       </span>
+                    </div>
+
+                    {/* DYNAMIC MEMBERSHIP STATUS & EXPIRATION BAR */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md ${
+                          membershipExpirationInfo.statusColor === "rose"
+                            ? "bg-rose-500/15 text-rose-300 border-rose-500/40"
+                            : membershipExpirationInfo.statusColor === "amber"
+                              ? "bg-amber-500/15 text-amber-300 border-amber-500/40"
+                              : "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
+                        }`}
+                      >
+                        {membershipExpirationInfo.statusText}
+                      </Badge>
+
+                      {activePlan && !activePlan.is_permanent && activePlan.renewal_days > 0 && (
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          Rinnovo:{" "}
+                          <strong className="text-amber-300 font-bold">
+                            {formatMoney(activePlan.renewal_cost || activePlan.cost_eur || 0)}
+                          </strong>{" "}
+                          ogni {activePlan.renewal_days} giorni
+                        </span>
+                      )}
                     </div>
 
                     {myCitizen?.notes && (
@@ -728,33 +799,6 @@ function SchedaCittadinoPage() {
                       <Crown className="h-3.5 w-3.5 mr-1.5" /> Vantaggi Membership
                     </TabsTrigger>
                   </TabsList>
-
-                  {groupedNights.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="public-night-filter"
-                        className="text-xs text-slate-400 shrink-0 font-medium"
-                      >
-                        Filtra Serata:
-                      </Label>
-                      <Select value={selectedNightId} onValueChange={setSelectedNightId}>
-                        <SelectTrigger
-                          id="public-night-filter"
-                          className="bg-[#090b12] border-slate-800 text-white text-xs h-9 w-48 rounded-xl font-medium"
-                        >
-                          <SelectValue placeholder="Tutte le serate" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#121624] border-slate-800 text-white">
-                          <SelectItem value="all">Tutte le serate</SelectItem>
-                          {groupedNights.map((n) => (
-                            <SelectItem key={n.night_id} value={n.night_id}>
-                              {n.title} ({n.date})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                 </div>
 
                 {/* TAB 1: CONVERSIONI CASSA */}
@@ -767,7 +811,7 @@ function SchedaCittadinoPage() {
                       </p>
                       <p className="text-xs text-slate-400 max-w-sm mx-auto">
                         Le tue conversioni di denaro in Dobloni o viceversa compariranno qui non
-                        appena effettuate al banco cassa durante una serata.
+                        appena effettuate al banco cassa del Casinò.
                       </p>
                     </div>
                   ) : (
@@ -776,7 +820,7 @@ function SchedaCittadinoPage() {
                         <TableHeader className="bg-[#090b12]">
                           <TableRow className="border-slate-800 hover:bg-transparent">
                             <TableHead className="text-slate-400 font-bold uppercase text-[11px] py-3.5">
-                              Data & Serata
+                              Data & Ora
                             </TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase text-[11px] py-3.5">
                               Tipo Operazione
@@ -793,53 +837,46 @@ function SchedaCittadinoPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {conversions
-                            .filter(
-                              (c: any) =>
-                                selectedNightId === "all" || c.night_id === selectedNightId,
-                            )
-                            .map((c: any) => {
-                              const isCashToDobloni = c.direction === "cash_to_dobloni";
-                              const op = c.created_by ? profileMap[c.created_by] : null;
-                              const opName = op?.display_name || op?.username || "Staff Cassa";
-                              const nightTitle = c.nights?.title || "Serata Casinò";
+                          {conversions.map((c: any) => {
+                            const isCashToDobloni = c.direction === "cash_to_dobloni";
+                            const op = c.created_by ? profileMap[c.created_by] : null;
+                            const opName = op?.display_name || op?.username || "Staff Cassa";
 
-                              return (
-                                <TableRow
-                                  key={c.id}
-                                  className="border-b border-slate-800/60 hover:bg-[#090b12]/70 transition-colors"
-                                >
-                                  <TableCell className="py-3.5">
-                                    <div className="font-bold text-white text-xs">{nightTitle}</div>
-                                    <div className="text-[11px] text-slate-400 font-mono">
-                                      {formatDateTime(c.created_at)}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="py-3.5">
-                                    <Badge
-                                      variant="secondary"
-                                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
-                                        isCashToDobloni
-                                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                          : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                                      }`}
-                                    >
-                                      {isCashToDobloni ? "Acquisto Dobloni" : "Incasso in Contanti"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right font-mono font-bold text-slate-200 text-xs">
-                                    {formatMoney(c.eur_amount)}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right font-mono font-bold text-amber-400 text-xs">
-                                    {isCashToDobloni ? "+" : "-"}
-                                    {formatDobloni(c.dobloni_amount)}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right text-xs text-slate-300 font-medium">
-                                    {opName}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                            return (
+                              <TableRow
+                                key={c.id}
+                                className="border-b border-slate-800/60 hover:bg-[#090b12]/70 transition-colors"
+                              >
+                                <TableCell className="py-3.5">
+                                  <div className="text-xs font-mono font-bold text-slate-200">
+                                    {formatDateTime(c.created_at)}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-3.5">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
+                                      isCashToDobloni
+                                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                        : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                    }`}
+                                  >
+                                    {isCashToDobloni ? "Acquisto Dobloni" : "Incasso in Contanti"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right font-mono font-bold text-slate-200 text-xs">
+                                  {formatMoney(c.eur_amount)}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right font-mono font-bold text-amber-400 text-xs">
+                                  {isCashToDobloni ? "+" : "-"}
+                                  {formatDobloni(c.dobloni_amount)}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right text-xs text-slate-300 font-medium">
+                                  {opName}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -856,7 +893,7 @@ function SchedaCittadinoPage() {
                       </p>
                       <p className="text-xs text-slate-400 max-w-sm mx-auto">
                         Le tue consumazioni al lounge bar, cene o servizi riservati addebitati
-                        durante le serate compariranno in questa sezione.
+                        compariranno in questa sezione.
                       </p>
                     </div>
                   ) : (
@@ -865,7 +902,7 @@ function SchedaCittadinoPage() {
                         <TableHeader className="bg-[#090b12]">
                           <TableRow className="border-slate-800 hover:bg-transparent">
                             <TableHead className="text-slate-400 font-bold uppercase text-[11px] py-3.5">
-                              Data & Serata
+                              Data & Ora
                             </TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase text-[11px] py-3.5">
                               Articolo / Servizio
@@ -885,45 +922,38 @@ function SchedaCittadinoPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {nightItems
-                            .filter(
-                              (p: any) =>
-                                selectedNightId === "all" || p.night_id === selectedNightId,
-                            )
-                            .map((p: any) => {
-                              const op = p.created_by ? profileMap[p.created_by] : null;
-                              const opName = op?.display_name || op?.username || "Staff";
-                              const nightTitle = p.nights?.title || "Serata Casinò";
+                          {nightItems.map((p: any) => {
+                            const op = p.created_by ? profileMap[p.created_by] : null;
+                            const opName = op?.display_name || op?.username || "Staff";
 
-                              return (
-                                <TableRow
-                                  key={p.id}
-                                  className="border-b border-slate-800/60 hover:bg-[#090b12]/70 transition-colors"
-                                >
-                                  <TableCell className="py-3.5">
-                                    <div className="font-bold text-white text-xs">{nightTitle}</div>
-                                    <div className="text-[11px] text-slate-400 font-mono">
-                                      {formatDateTime(p.created_at)}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="py-3.5 font-bold text-slate-200 text-xs">
-                                    {p.service_name}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-center font-mono text-xs font-bold text-slate-300">
-                                    {p.qty}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right font-mono text-slate-400 text-xs">
-                                    {formatMoney(p.unit_price)}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right font-mono font-bold text-sky-400 text-xs">
-                                    {formatMoney(p.subtotal)}
-                                  </TableCell>
-                                  <TableCell className="py-3.5 text-right text-xs text-slate-300 font-medium">
-                                    {opName}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                            return (
+                              <TableRow
+                                key={p.id}
+                                className="border-b border-slate-800/60 hover:bg-[#090b12]/70 transition-colors"
+                              >
+                                <TableCell className="py-3.5">
+                                  <div className="text-xs font-mono font-bold text-slate-200">
+                                    {formatDateTime(p.created_at)}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-3.5 font-bold text-slate-200 text-xs">
+                                  {p.service_name}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-center font-mono text-xs font-bold text-slate-300">
+                                  {p.qty}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right font-mono text-slate-400 text-xs">
+                                  {formatMoney(p.unit_price)}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right font-mono font-bold text-sky-400 text-xs">
+                                  {formatMoney(p.subtotal)}
+                                </TableCell>
+                                <TableCell className="py-3.5 text-right text-xs text-slate-300 font-medium">
+                                  {opName}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -932,152 +962,141 @@ function SchedaCittadinoPage() {
 
                 {/* TAB 3: PRIVILEGI & VANTAGGI MEMBERSHIP */}
                 <TabsContent value="perks" className="mt-5 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* STANDARD */}
-                    <div
-                      className={`rounded-2xl p-5 border transition-all ${
-                        membershipTier === "standard"
-                          ? "bg-amber-500/10 border-amber-500/60 shadow-lg shadow-amber-500/10"
-                          : "bg-[#090b12] border-slate-800 opacity-70"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-slate-800 text-slate-200 border-slate-700 uppercase font-bold text-[10px]">
-                          Standard
-                        </Badge>
-                        {membershipTier === "standard" && (
-                          <span className="text-[10px] font-bold text-amber-400 uppercase font-mono">
-                            Il tuo livello
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-extrabold text-white text-base mt-3">Accesso Base</h3>
-                      <ul className="mt-3 space-y-2 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Accesso ai
-                          tavoli regolari
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Conversione
-                          Dobloni base
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Accesso al bar
-                        </li>
-                      </ul>
+                  {membershipPlans.length === 0 ? (
+                    <div className="text-center py-10 bg-[#090b12] border border-slate-800 rounded-2xl p-6">
+                      <p className="text-slate-400 text-xs">
+                        Nessun livello di membership configurato al momento.
+                      </p>
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {membershipPlans.map((plan) => {
+                        const isActive =
+                          activePlan?.id === plan.id ||
+                          activePlan?.code?.toLowerCase() === plan.code?.toLowerCase();
+                        const isPermanent = plan.is_permanent || plan.renewal_days === 0;
+                        const advs =
+                          plan.advantages && plan.advantages.length > 0 ? plan.advantages : [];
+                        const color = plan.badge_color || "#f59e0b";
 
-                    {/* EXCLUSIVE */}
-                    <div
-                      className={`rounded-2xl p-5 border transition-all ${
-                        membershipTier === "exclusive"
-                          ? "bg-purple-500/10 border-purple-500/60 shadow-lg shadow-purple-500/10"
-                          : "bg-[#090b12] border-slate-800 opacity-70"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/40 uppercase font-bold text-[10px]">
-                          Exclusive
-                        </Badge>
-                        {membershipTier === "exclusive" && (
-                          <span className="text-[10px] font-bold text-purple-400 uppercase font-mono">
-                            Il tuo livello
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-extrabold text-white text-base mt-3">
-                        Privilegi Croupier
-                      </h3>
-                      <ul className="mt-3 space-y-2 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-purple-400 shrink-0" /> Sconto 10%
-                          sulle consumazioni
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-purple-400 shrink-0" /> Accesso
-                          prioritario alle corse
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-purple-400 shrink-0" /> Cassetta di
-                          sicurezza dedicata
-                        </li>
-                      </ul>
-                    </div>
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`rounded-2xl p-5 border transition-all relative flex flex-col justify-between ${
+                              isActive
+                                ? "shadow-xl"
+                                : "bg-[#090b12] border-slate-800/80 opacity-80 hover:opacity-100"
+                            }`}
+                            style={{
+                              borderColor: isActive ? color : undefined,
+                              backgroundColor: isActive ? `${color}10` : undefined,
+                              boxShadow: isActive ? `0 10px 25px -5px ${color}20` : undefined,
+                            }}
+                          >
+                            {plan.highlight_tag && (
+                              <div className="absolute -top-3 right-3 z-10">
+                                <Badge
+                                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 shadow-md"
+                                  style={{ backgroundColor: color, color: "#020617" }}
+                                >
+                                  ✨ {plan.highlight_tag}
+                                </Badge>
+                              </div>
+                            )}
 
-                    {/* ELITE */}
-                    <div
-                      className={`rounded-2xl p-5 border transition-all ${
-                        membershipTier === "elite"
-                          ? "bg-sky-500/10 border-sky-500/60 shadow-lg shadow-sky-500/10"
-                          : "bg-[#090b12] border-slate-800 opacity-70"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40 uppercase font-bold text-[10px]">
-                          Èlite
-                        </Badge>
-                        {membershipTier === "elite" && (
-                          <span className="text-[10px] font-bold text-sky-400 uppercase font-mono">
-                            Il tuo livello
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-extrabold text-white text-base mt-3">
-                        Tavoli Alti Limiti
-                      </h3>
-                      <ul className="mt-3 space-y-2 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-sky-400 shrink-0" /> Sconto 20% Lounge
-                          Bar
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-sky-400 shrink-0" /> Limiti puntata
-                          maggiorati
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-sky-400 shrink-0" /> Assistenza
-                          personalizzata
-                        </li>
-                      </ul>
-                    </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-extrabold uppercase px-2 py-0.5 tracking-wider"
+                                  style={{
+                                    color: color,
+                                    borderColor: `${color}60`,
+                                    backgroundColor: `${color}15`,
+                                  }}
+                                >
+                                  {plan.name}
+                                </Badge>
 
-                    {/* VIP */}
-                    <div
-                      className={`rounded-2xl p-5 border transition-all ${
-                        membershipTier === "vip"
-                          ? "bg-amber-500/20 border-amber-400 shadow-xl shadow-amber-500/20"
-                          : "bg-[#090b12] border-slate-800 opacity-70"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 uppercase font-black text-[10px]">
-                          VIP Platinum
-                        </Badge>
-                        {membershipTier === "vip" && (
-                          <span className="text-[10px] font-bold text-amber-400 uppercase font-mono">
-                            Il tuo livello
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-extrabold text-white text-base mt-3">
-                        Accesso Privé Totale
-                      </h3>
-                      <ul className="mt-3 space-y-2 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Accesso Privé e
-                          tavoli VIP
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Consumazioni bar
-                          gratuite
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-3.5 w-3.5 text-amber-400 shrink-0" /> Cassetta Caveau
-                          illimitata
-                        </li>
-                      </ul>
+                                {isActive && (
+                                  <span
+                                    className="text-[10px] font-black uppercase font-mono tracking-wider flex items-center gap-1"
+                                    style={{ color }}
+                                  >
+                                    <Crown className="h-3 w-3" /> Il tuo livello
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="mt-3">
+                                <h3 className="font-extrabold text-white text-base">{plan.name}</h3>
+                                <div className="mt-1 flex items-baseline gap-2">
+                                  <span className="text-xl font-black text-white">
+                                    {isPermanent
+                                      ? "Accesso Base"
+                                      : formatMoney(plan.cost_eur || plan.renewal_cost || 0)}
+                                  </span>
+                                  {!isPermanent && plan.renewal_days > 0 && (
+                                    <span className="text-[11px] text-slate-400 font-mono">
+                                      / {plan.renewal_days} giorni
+                                    </span>
+                                  )}
+                                </div>
+                                {plan.cost_dobloni && plan.cost_dobloni > 0 ? (
+                                  <div className="text-[11px] text-amber-400 font-mono font-bold mt-0.5">
+                                    oppure {formatDobloni(plan.cost_dobloni)}
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              {plan.description && (
+                                <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                                  {plan.description}
+                                </p>
+                              )}
+
+                              <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
+                                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                  Vantaggi Inclusi:
+                                </div>
+                                <ul className="space-y-2 text-xs text-slate-300">
+                                  {advs.length > 0 ? (
+                                    advs.map((adv, idx) => (
+                                      <li key={idx} className="flex items-start gap-2">
+                                        <Check
+                                          className="h-3.5 w-3.5 shrink-0 mt-0.5"
+                                          style={{ color }}
+                                        />
+                                        <span>{adv}</span>
+                                      </li>
+                                    ))
+                                  ) : (
+                                    <li className="flex items-center gap-2 text-slate-400">
+                                      <Check className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                      <span>Accesso base casinò</span>
+                                    </li>
+                                  )}
+                                </ul>
+                              </div>
+                            </div>
+
+                            {isActive && (
+                              <div className="mt-5 pt-3 border-t border-slate-800/60">
+                                <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                                  <span>Validità:</span>
+                                  <span className="font-mono" style={{ color }}>
+                                    {membershipExpirationInfo.isPermanent
+                                      ? "Permanente"
+                                      : membershipExpirationInfo.statusText}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
@@ -1138,8 +1157,33 @@ function SchedaCittadinoPage() {
   );
 }
 
-function MembershipBadge({ tier }: { tier: string }) {
-  switch (tier) {
+function MembershipBadge({ plan, tier }: { plan?: MembershipPlan | null; tier?: string }) {
+  if (plan) {
+    const color = plan.badge_color || "#f59e0b";
+    return (
+      <Badge
+        className="font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 shadow-md flex items-center gap-1.5 border"
+        style={{
+          backgroundColor: `${color}18`,
+          color: color,
+          borderColor: `${color}50`,
+        }}
+      >
+        <Crown className="h-3 w-3" style={{ color }} />
+        <span>{plan.name}</span>
+        {plan.highlight_tag && (
+          <span
+            className="text-[9px] px-1 py-0.2 rounded font-mono font-bold ml-0.5"
+            style={{ backgroundColor: `${color}35`, color }}
+          >
+            {plan.highlight_tag}
+          </span>
+        )}
+      </Badge>
+    );
+  }
+
+  switch (tier?.toLowerCase()) {
     case "vip":
       return (
         <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-0 font-black text-[10px] uppercase tracking-wider shadow-md shadow-amber-500/20 px-2.5 py-0.5">
