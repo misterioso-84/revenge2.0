@@ -144,25 +144,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isStaffMember = hasEmployeeAccess;
 
+  useEffect(() => {
+    if (!loading && !hasEmployeeAccess) {
+      navigate({ to: "/scheda-cittadino", replace: true });
+    }
+  }, [loading, hasEmployeeAccess, navigate]);
+
   const items = NAV.filter((n) => {
     if (isAdmin) return true;
     if (n.adminOnly) return false;
+    if (!isStaffMember) return false;
 
     if (n.to === "/dashboard") {
       return true;
     }
     if (n.to === "/cittadini") {
-      return true;
+      return (
+        permissions.includes("cittadini.visualizza") ||
+        permissions.includes("cittadini.modifica") ||
+        permissions.includes("cittadini.registra") ||
+        permissions.includes("cittadini.elimina")
+      );
     }
-    if (n.to === "/candidature") {
-      return true;
-    }
-
-    // Citizen-only without employee access cannot view internal employee tools
-    if (!isStaffMember) {
-      return false;
-    }
-
     if (n.to === "/serate") {
       return (
         permissions.includes("serate.crea") ||
@@ -221,29 +224,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         permissions.includes("utenti.gestisci")
       );
     }
-    return true;
-  }).map((n) => {
-    if (n.to === "/dashboard") {
-      return {
-        ...n,
-        label: isStaffMember ? "Dashboard" : "Pannello",
-      };
-    }
-    if (n.to === "/cittadini") {
-      return {
-        ...n,
-        label: isStaffMember ? "Anagrafica Cittadini" : "Tessera Cittadino",
-      };
-    }
-    return n;
+    return false;
   });
 
-  if (loading) {
+  if (loading || !hasEmployeeAccess) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-          <p className="text-sm text-slate-400">Verifica credenziali...</p>
+          <p className="text-sm text-slate-400">Verifica autorizzazioni...</p>
         </div>
       </div>
     );

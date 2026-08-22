@@ -271,13 +271,10 @@ export function useAuth() {
     };
   }, [user]);
 
-  // Access to the internal panel / staff features: having at least one permission or role or being admin
-  const hasEmployeeAccess =
-    isAdmin ||
-    permissions.length > 0 ||
-    roles.length > 0 ||
-    customRoleNames.length > 0 ||
-    customRoles.some((r) => (r.permissions && r.permissions.length > 0) || r.name);
+  // Access to the internal panel / staff features: having at least one permission or being admin
+  // Registered users with 0 permissions are strictly "Clienti" without access to the reserved management panel
+  const hasEmployeeAccess = Boolean(isAdmin || permissions.length > 0);
+  const isClient = Boolean(user && !isAdmin && permissions.length === 0);
 
   const loading = authLoading || (!!user && profileLoading);
 
@@ -288,6 +285,7 @@ export function useAuth() {
     isAdmin,
     roles,
     hasEmployeeAccess,
+    isClient,
     permissions,
     customRoleNames,
     customRoles,

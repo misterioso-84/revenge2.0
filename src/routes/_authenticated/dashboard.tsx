@@ -268,9 +268,8 @@ function DashboardPage() {
     if (isAdmin) return true;
     if (f.adminOnly) return false;
     if (f.to === "/congedi") return true; // Accessible to all authenticated employees
-    if (hasEmployeeAccess && permissions.length === 0) return true;
     // Show if user has at least one permission in the feature's permission list
-    return f.permissions.length === 0 || f.permissions.some((p) => permissions.includes(p));
+    return f.permissions.length > 0 && f.permissions.some((p) => permissions.includes(p));
   });
 
   return (

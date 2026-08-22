@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Send, Tv, MessageCircle, Anchor } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function SiteFooter() {
+  const { hasEmployeeAccess } = useAuth();
   return (
     <footer className="border-t border-amber-500/20 py-10 px-4 bg-[#0a0b0f] text-slate-400 text-xs mt-16">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -32,9 +34,11 @@ export function SiteFooter() {
           <a href="#giochi" className="hover:text-amber-400 transition-colors">
             I GIOCHI
           </a>
-          <Link to="/dashboard" className="hover:text-amber-400 transition-colors text-amber-400">
-            GESTIONALE
-          </Link>
+          {hasEmployeeAccess && (
+            <Link to="/dashboard" className="hover:text-amber-400 transition-colors text-amber-400">
+              GESTIONALE
+            </Link>
+          )}
           <a href="#membership" className="hover:text-amber-400 transition-colors">
             MEMBERSHIP
           </a>

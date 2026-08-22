@@ -158,10 +158,12 @@ function StartPage() {
                     <Globe className="h-4 w-4 mr-1.5" /> Torna alla Home
                   </Button>
                   <Button
-                    onClick={() => navigate({ to: "/dashboard" })}
+                    onClick={() =>
+                      navigate({ to: hasEmployeeAccess ? "/dashboard" : "/scheda-cittadino" })
+                    }
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10"
                   >
-                    {hasEmployeeAccess ? "Pannello Dipendenti" : "Pannello Cittadino"}{" "}
+                    {hasEmployeeAccess ? "Pannello Dipendenti" : "La Mia Scheda Cittadino"}{" "}
                     <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Button>
                 </div>
