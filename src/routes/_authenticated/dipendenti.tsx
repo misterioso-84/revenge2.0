@@ -20,6 +20,7 @@ import { SanctionsDialog } from "@/components/SanctionsDialog";
 import { ForceLeaveDialog } from "@/components/ForceLeaveDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { deletePanelUser } from "@/lib/admin.functions";
+import { getTimeBasedGreeting } from "@/lib/greeting";
 import {
   Clock,
   ShieldAlert,
@@ -320,7 +321,12 @@ function DipendentiPage() {
         </div>
 
         <div className="space-y-1 text-center sm:text-left flex-1">
-          <div className="text-sm font-bold text-white">Buongiorno,</div>
+          <div className="flex items-center justify-center sm:justify-start gap-2">
+            <span className="text-xs font-semibold text-slate-400">
+              {getTimeBasedGreeting().emoji} {getTimeBasedGreeting().badgeLabel}
+            </span>
+          </div>
+          <div className="text-sm font-bold text-white">{getTimeBasedGreeting().greeting},</div>
           <h2 className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
             {currentUserProfile?.display_name ||
               currentUserProfile?.username ||

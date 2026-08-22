@@ -19,16 +19,22 @@
     },
     {
       "id": "user-b9p6dwg58ru",
-      "username": "kyrael_",
+      "username": "Kyrael_",
       "created_at": "2026-07-14T20:27:02.308Z",
-      "updated_at": "2026-07-14T20:27:16.233Z",
-      "display_name": "Kyrael_"
+      "updated_at": "2026-08-20T08:44:52.971Z",
+      "staff_color": "#3b82f6",
+      "display_name": "Kyrael_",
+      "staff_weight": 50,
+      "telegram_handle": null,
+      "show_in_staff_list": true,
+      "telegram_connected": false,
+      "has_employee_access": true
     },
     {
       "id": "user-xoigsxonpgp",
-      "username": "Staff",
+      "username": "Macronne",
       "created_at": "2026-07-14T20:28:09.725Z",
-      "updated_at": "2026-08-16T12:01:52.848Z",
+      "updated_at": "2026-08-20T08:45:56.973Z",
       "staff_color": "#3b82f6",
       "display_name": "Staff",
       "staff_weight": 50,
@@ -39,17 +45,29 @@
     },
     {
       "id": "user-qvwd3bbq8in",
-      "username": "itz_vampire",
+      "username": "iTz_Vampire",
       "created_at": "2026-07-15T07:39:19.439Z",
-      "updated_at": "2026-07-15T07:39:19.439Z",
-      "display_name": "itz_vampire"
+      "updated_at": "2026-08-20T08:44:29.677Z",
+      "staff_color": "#3b82f6",
+      "display_name": "iTz_Vampire",
+      "staff_weight": 50,
+      "telegram_handle": null,
+      "show_in_staff_list": true,
+      "telegram_connected": false,
+      "has_employee_access": true
     },
     {
       "id": "user-pitafw9st1",
       "username": "devines",
       "created_at": "2026-07-15T09:46:08.448Z",
-      "updated_at": "2026-07-15T09:46:08.448Z",
-      "display_name": "devines"
+      "updated_at": "2026-08-20T08:44:41.762Z",
+      "staff_color": "#3b82f6",
+      "display_name": "devines",
+      "staff_weight": 50,
+      "telegram_handle": null,
+      "show_in_staff_list": true,
+      "telegram_connected": false,
+      "has_employee_access": true
     },
     {
       "id": "user-izo8yy206u9",
@@ -73,13 +91,16 @@
       "username": "COCKS",
       "created_at": "2026-08-16T17:49:58.248Z",
       "ip_address": "127.0.0.1",
-      "updated_at": "2026-08-16T19:36:24.375Z",
+      "updated_at": "2026-08-19T22:09:01.040Z",
+      "staff_color": "#3b82f6",
       "display_name": "COCKS",
+      "staff_weight": 50,
       "telegram_handle": "@CoccoRP",
       "telegram_chat_id": 8531452999,
       "telegram_user_id": 8531452999,
+      "show_in_staff_list": true,
       "telegram_connected": true,
-      "has_employee_access": false
+      "has_employee_access": true
     },
     {
       "id": "user-hd4ktkcva7h",
@@ -614,11 +635,9 @@
       "name": "Eventi",
       "created_at": "2026-08-16T15:51:40.328Z",
       "is_reparto": true,
-      "updated_at": "2026-08-16T15:52:25.375Z",
+      "updated_at": "2026-08-20T11:57:44.561Z",
       "description": null,
-      "permissions": [
-        "eventi.gestisci"
-      ],
+      "permissions": [],
       "staff_color": "#3b82f6",
       "staff_weight": 50,
       "show_in_staff_list": true
@@ -687,13 +706,6 @@
       "custom_role_id": "5d7eafafjmu"
     },
     {
-      "id": "2opdxos46ly",
-      "user_id": "user-izo8yy206u9",
-      "created_at": "2026-08-16T10:03:50.487Z",
-      "updated_at": "2026-08-16T10:03:50.487Z",
-      "custom_role_id": "7jqqvbfk763"
-    },
-    {
       "id": "3zh4bq7mu51",
       "user_id": "mock-user-id-1234",
       "created_at": "2026-08-16T15:49:29.592Z",
@@ -720,6 +732,34 @@
       "created_at": "2026-08-17T11:48:59.515Z",
       "updated_at": "2026-08-17T11:48:59.515Z",
       "custom_role_id": "2icr2rlaw69"
+    },
+    {
+      "id": "jttf5ghynrk",
+      "user_id": "user-2mzopvfeki3",
+      "created_at": "2026-08-19T22:08:46.117Z",
+      "updated_at": "2026-08-19T22:08:46.117Z",
+      "custom_role_id": "ge1iu6g3xk9"
+    },
+    {
+      "id": "l1mi91w4w4q",
+      "user_id": "user-hd4ktkcva7h",
+      "created_at": "2026-08-19T22:08:53.907Z",
+      "updated_at": "2026-08-19T22:08:53.907Z",
+      "custom_role_id": "77ofiysgn69"
+    },
+    {
+      "id": "qfzqvnyn488",
+      "user_id": "user-izo8yy206u9",
+      "created_at": "2026-08-20T11:56:38.403Z",
+      "updated_at": "2026-08-20T11:56:38.403Z",
+      "custom_role_id": "77ofiysgn69"
+    },
+    {
+      "id": "72ltere0l7",
+      "user_id": "user-izo8yy206u9",
+      "created_at": "2026-08-20T11:56:41.951Z",
+      "updated_at": "2026-08-20T11:56:41.951Z",
+      "custom_role_id": "iiiybdvrhhp"
     }
   ],
   "citizens": [
@@ -965,6 +1005,15 @@
       "created_at": "2026-08-17T12:33:02.700Z",
       "membership": "standard",
       "updated_at": "2026-08-17T12:33:02.700Z"
+    },
+    {
+      "id": "g8qi8gm9pi",
+      "notes": "",
+      "nickname": "Superficiale5",
+      "full_name": "Superficiale5",
+      "created_at": "2026-08-19T22:07:06.592Z",
+      "membership": "standard",
+      "updated_at": "2026-08-19T22:07:06.592Z"
     }
   ],
   "safe_boxes": [
@@ -1901,10 +1950,20 @@
       "notes": "Creata automaticamente dal sistema",
       "title": "Giornata del 19/08/2026",
       "total": 0,
-      "is_closed": false,
+      "is_closed": true,
       "created_at": "2026-08-19T07:57:50.255Z",
       "night_date": "2026-08-19",
-      "updated_at": "2026-08-19T07:57:50.255Z"
+      "updated_at": "2026-08-20T04:54:37.229Z"
+    },
+    {
+      "id": "night-ijlqk8g6vs",
+      "notes": "Creata automaticamente dal sistema",
+      "title": "Giornata del 20/08/2026",
+      "total": 0,
+      "is_closed": false,
+      "created_at": "2026-08-20T04:54:37.229Z",
+      "night_date": "2026-08-20",
+      "updated_at": "2026-08-20T04:54:37.229Z"
     }
   ],
   "conversion_settings": [
@@ -2423,14 +2482,16 @@
     {
       "id": "64db6a32-d375-41ec-b9ce-43953cf87411",
       "reason": "Vacanza in un'altra città delle Canarie.",
-      "status": "pending",
+      "status": "approved",
       "user_id": "user-izo8yy206u9",
       "end_date": "2026-09-03",
       "username": "imnotmich",
       "created_at": "2026-08-16T14:04:01.977Z",
       "start_date": "2026-08-21",
-      "updated_at": "2026-08-16T14:04:01.456Z",
-      "display_name": "imnotmich"
+      "updated_at": "2026-08-19T20:40:25.052Z",
+      "approved_by": "mock-user-id-1234",
+      "display_name": "imnotmich",
+      "approved_by_name": "Giuse84pro"
     }
   ],
   "night_items": [
@@ -2488,6 +2549,1536 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-pjcsf7w1n8j",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:31:23.625Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-lhv3plfl2q",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:29:39.309Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-manmp308fi",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:29:33.860Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-rvcqeb4w92",
+      "action": "delete",
+      "details": "DELETE su tabella membership_plans",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:23:12.038Z",
+      "table_name": "membership_plans",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fgokyj2r8ko",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.916Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-zcd03nm5ur",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.818Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hrd7kd5pkd",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.715Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hvclq27h4yo",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.634Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-3cxt9rf4wgz",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.523Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-rip1nsd44wi",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.439Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-og27fppycgp",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.357Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-zucow6jp47",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.252Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-zxf91788clg",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.148Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fsph38ou6lf",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:50.052Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-tc0ks3q3wyb",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:49.949Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-mui8a75n3s",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:49.836Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-toassjkwo2d",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:49.729Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-auwm16md829",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:48.837Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ydvxnjipv88",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:48.238Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-e0bsqr0adwj",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:47.289Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-8xelchldu6",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:46.277Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-vdrozjh5pwd",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:45.092Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-5tciuoy2kwu",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:44.527Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-5y3hqpvw4j8",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:44.114Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-7u6vtvz0l9g",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:43.566Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-5l6hkhpj0cx",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T12:00:43.389Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-e67rfr2w7u",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:59:41.737Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-nuqexlhxth",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:58:57.292Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-alokmck6h34",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:58:56.852Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-vrb97ewbec",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:58:11.823Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-059mv0w1lqat",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:57:44.561Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-akue0sjm4q7",
+      "action": "update",
+      "details": "Modificato ruolo personalizzato: Eventi",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:57:44.561Z",
+      "table_name": "custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-z815gf34yy",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:57:27.089Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-dlpuv0jphm",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:56:41.951Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-csohpjde39",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:56:41.706Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-n7sgeg8yggb",
+      "action": "delete",
+      "details": "DELETE su tabella user_custom_roles",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:56:38.595Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-0ecmpyvw39zu",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:56:38.403Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-sr2tkkk7dij",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:55:42.043Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-j1f0oikewi8",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:55:18.593Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-wvjz7ev3wy9",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:55:17.468Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-x0badh2zw5h",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:55:17.141Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-778uw55nb8v",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:54:29.606Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-7ay0d6raors",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:54:14.062Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-wn29e2cjark",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:53:47.039Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-gtmzq8vk3og",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:53:02.252Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-n0vv2u6kqx",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:53:01.252Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-81boaia2r22",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:15:25.837Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-8z2xi18wz6e",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:15:12.895Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hs4s7g8fvb",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:15:02.222Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-55birtye7p3",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:14:22.974Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-o7txh7mfuzh",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:13:57.812Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-sq70729tsci",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:12:56.973Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-9qsnopl0za",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:12:56.635Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-sidoxewzgm",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:12:43.934Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-0xsn53esim6s",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:12:43.139Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-83ldo25h9q",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:12:27.843Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pubh05yybf",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:11:54.736Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-o2kapz7v5a",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T11:11:43.601Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-jwq1kj42pac",
+      "action": "update",
+      "details": "Aggiornato profilo utente: Staff",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:45:56.973Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-u8nwztkksge",
+      "action": "update",
+      "details": "Aggiornato profilo utente: Kyrael_",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:44:52.971Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-2c1inicjhm4",
+      "action": "update",
+      "details": "Aggiornato profilo utente: devines",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:44:41.762Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-3hb6ufbszi1",
+      "action": "update",
+      "details": "Aggiornato profilo utente: iTz_Vampire",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:44:29.677Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ehtx49xd37p",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:43:18.501Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-b0ea0p3j42",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:43:17.621Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-wp8c71cgzn9",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T08:43:17.123Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-qje3ql2h10n",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T05:00:21.996Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-9zs8q2l6wpn",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-20T04:54:45.545Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-3j77kz2myu4",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_pending_codes",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T22:28:47.351Z",
+      "table_name": "telegram_pending_codes",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-vnkgivxi3hq",
+      "action": "update",
+      "details": "Aggiornato profilo utente: COCKS",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T22:09:01.040Z",
+      "table_name": "profiles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hb61bmelw0l",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T22:08:53.907Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ap7976kl92t",
+      "action": "upsert",
+      "details": "UPSERT su tabella user_custom_roles",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T22:08:46.117Z",
+      "table_name": "user_custom_roles",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fgvllo371dj",
+      "action": "insert",
+      "details": "Registrato nuovo cittadino: Superficiale5",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T22:07:06.592Z",
+      "table_name": "citizens",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ozxpbtuum3d",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T21:09:56.305Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-v793mgjgb2e",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T20:57:26.101Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-on9jkln5rn",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T20:54:28.027Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fi3jcylp0gv",
+      "action": "update",
+      "details": "Congedo APPROVATO per imnotmich",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T20:40:25.052Z",
+      "table_name": "leave_requests",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-1s4b9s4qz0a",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:32.287Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hx3n5mzkccg",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:32.206Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-8ok51nfyvn",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:32.126Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-kflb3yrkx7s",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:32.032Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-aejlr2qpd3c",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.895Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-qgkc1p6i2a",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.807Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-a0edh39xlde",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.715Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-r8mejjt2k4i",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.632Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-j2rm97aumtc",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.532Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-qq97jzbs13r",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.429Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-2bj6jsge473",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.349Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-sjwmjosfgme",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:31.058Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-urq1v9kstef",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.971Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-k4fkws9kyhs",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.895Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-6neonh0awgv",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.818Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-4hgo37d07rf",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.709Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pwucad1hzt9",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.619Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-7098c8qqx6m",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.523Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-dvegbg516uu",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.383Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-2865ckcbu5s",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.309Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-wspgoeqqtkk",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.236Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-tx99hyx072",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.142Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pg1l0arp3sc",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:30.068Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-v6r5sh7t3d",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:29.986Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-86jkbsrdlvq",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:29.773Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-6zbebjf1a6u",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:29.688Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-t0ll4bu2phq",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:29.363Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-xcm6c00defp",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:28.316Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-70wvjyo1gjd",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:27.824Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-gngkm4eeu6",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:26.853Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fs6747jfp3r",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:26.615Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-kr5usnmg57h",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:25.638Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-agl6u2dmq05",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:25.252Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-o6n0mly9smp",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:24.767Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-h97b91286rg",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:24.565Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-bplvv5lxpew",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:24.374Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-22qycc5mjwz",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:24.106Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pamhba4f8ol",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:48:23.933Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-8jirg28t755",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:57.742Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-7up5fahy41h",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.797Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-uxpzmcc1wf",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.718Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fbugcnf86k",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.639Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-09vvlvdjzi8",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.540Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-k96ivoywro",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.379Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-1mysv8dgehz",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:28.047Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-dmdic902yma",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.957Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-jhz0d17smg",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.842Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pid3mdj6fir",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.744Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-re41rrofxe",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.671Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ww7kjzv99kd",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.565Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ze2szzx473",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:27.128Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ovgi4cduthj",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.940Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-x3tycc7r4f",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.865Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-dn9mdmomda9",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.754Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-2wtimivq12u",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.509Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-cfshen5opvq",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.340Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-xhbhd6a21jm",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.258Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-kfa1kqh3v7",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:26.096Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-wanz074hs9p",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:25.890Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-23ku17enq4u",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:21.529Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-hbf56efjbgk",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:21.368Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-2r9es33988n",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:21.125Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-6n4o4d46mit",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:21.027Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-mdx2vbwwnxc",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:20.806Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-ey3wkhimiur",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:20.023Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-9fda7ev25q7",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:19.595Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-q6um1c5soee",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:19.052Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-tcce5vjslb",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:18.492Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-i4e4o8ncnsa",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:17.323Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-w72gujsr0o",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:17.095Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-6ymxv3kysut",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:16.150Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-a0hdlk3nid",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:15.606Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-e6cnuvnxhkk",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:15.236Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-fdolr7fbmpe",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:15.034Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-xd28q5otq",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:14.840Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-t6mgmh0k8x",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:14.657Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
+    {
+      "id": "log-pa4h7rw8se",
+      "action": "upsert",
+      "details": "UPSERT su tabella telegram_group_members",
+      "user_id": "system",
+      "username": "sistema",
+      "created_at": "2026-08-19T17:33:14.507Z",
+      "table_name": "telegram_group_members",
+      "user_display_name": "Sistema"
+    },
     {
       "id": "log-1dj29stpq9s",
       "action": "upsert",
@@ -10957,1536 +12548,6 @@
       "created_at": "2026-08-16T17:00:07.894Z",
       "table_name": "telegram_group_members",
       "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-7vraql3uqrf",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.695Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qavw6mj4uxp",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.602Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-2cgt9mpy59e",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.498Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-jb9u11eb3bl",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.451Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ajvh4pmqytd",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.290Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-w6mrscn2tx",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:07.088Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wfnigch65e",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:06.565Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-agbli5054hm",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:06.311Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-99g1kwiiywf",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:06.073Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-fxg26k2yjr",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.870Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-c0xw7gpjj4r",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.714Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-iz2a3skmg",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.524Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-5ka6rfm0wrr",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.375Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-gepg1pyjprl",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.285Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qz8pn17n4t",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.198Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3eml5odudzy",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.087Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-mia9h8fw38q",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:05.004Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-vjfs7ugrwd",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.910Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-tjaqti8p6d",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.816Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-pq0jwqocby",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.692Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-05bnz1xo1qah",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.606Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-4mxvs1xbnv",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.508Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-tqvuy8t7cnj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.422Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-t7t33kp3yb",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.315Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-gb1ut1h0ik5",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.199Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-0ej3ivk3s9mg",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:04.109Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-lzysd93qcs",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.691Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-m7nhw5qoqf",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.589Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-0jqpqjf7ln1n",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.506Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1an1e7chjmw",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.427Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-64qj9eawne",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.325Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-15xx6ad1imch",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.228Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1vvogllc4p4",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:03.010Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-p0vmtvx3iab",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.904Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-mjn6tv96c1",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.816Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-z80ill7v0kq",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.726Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-cpilxyop6bv",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.629Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-tjn1feehxsa",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.486Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ey0jd2iwo2c",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.383Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-397f22kkt88",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.239Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-i6kbucxiep",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.140Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-7gdnqdb6ogh",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:02.047Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-z4x2xevxdii",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:01.931Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-730piyljf7",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:01.816Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-nqy3vgv103",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T17:00:01.701Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-k8on2ir9faa",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T16:12:01.510Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-97uvg0jckpq",
-      "action": "insert",
-      "details": "INSERT su tabella activity_logs",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T16:11:11.089Z",
-      "table_name": "activity_logs",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-va0ipebjhw",
-      "action": "insert",
-      "details": "INSERT su tabella activity_logs",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T16:09:27.308Z",
-      "table_name": "activity_logs",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1l8ztlf50c5",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T16:07:59.528Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-v54lq4zr2d",
-      "action": "insert",
-      "details": "INSERT su tabella activity_logs",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T16:07:45.500Z",
-      "table_name": "activity_logs",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-9ztss4ml6fl",
-      "action": "upsert",
-      "details": "UPSERT su tabella user_custom_roles",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:52:40.805Z",
-      "table_name": "user_custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ieyrf0eapla",
-      "action": "update",
-      "details": "Modificato ruolo personalizzato: Eventi",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:52:25.376Z",
-      "table_name": "custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-2zf3opdak7w",
-      "action": "insert",
-      "details": "Modificato ruolo personalizzato: Eventi",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:51:40.328Z",
-      "table_name": "custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-5bjtb94db9x",
-      "action": "update",
-      "details": "Modificato ruolo personalizzato: Gorilla",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:50:42.878Z",
-      "table_name": "custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1sgn6misbp4",
-      "action": "upsert",
-      "details": "UPSERT su tabella user_custom_roles",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:49:29.592Z",
-      "table_name": "user_custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-n0m82c1q51l",
-      "action": "insert",
-      "details": "Modificato ruolo personalizzato: Gorilla",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T15:49:07.020Z",
-      "table_name": "custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3xvjb6nwmxj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:47:51.940Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-9qal7f129va",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:47:48.336Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-nafbntpez8b",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:38:57.615Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-dtz9xpiyno9",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:35:29.563Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-lhk95quj7",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:35:20.233Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-hgut9covmk",
-      "action": "insert",
-      "details": "Inviata richiesta di congedo dal 2026-08-21 al 2026-09-03",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T14:04:01.456Z",
-      "table_name": "leave_requests",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ffsrr763dew",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:52:24.234Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-33ig83l2kwr",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:51:36.830Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-r6t476de4af",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:51:23.893Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-tath6o2hvtj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:51:12.842Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-m310mwhsygf",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:51:06.324Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-cotlyb3ttl",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:49:24.805Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3eddw8k27xp",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:49:16.800Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-2yz68ssxd1j",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:49:12.939Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qf1s9khi9q",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:49:12.806Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-6a2il21q7bt",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:52.808Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-68yhs8anado",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:48.730Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-u1c815mlbgg",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:46.785Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-neh39mlljsi",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:30.957Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-pw6gru8ngq",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:30.815Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1je5bqzbgckh",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:20.882Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-88xvfisobvc",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:20.723Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-lydke496qqb",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:18.798Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qs5lqus89tq",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:14.796Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-svnmkqzw5ye",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:10.784Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-7hwvvkxrik9",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:48:00.791Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3rjyg8ubovd",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:47:52.717Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-0jbs92fw241u",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:47:50.718Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ce26mtypiml",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:47:48.784Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wsukhutake",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:46:38.765Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-hqvszp9ba8t",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:46:29.658Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wwydoeksz0m",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T13:46:22.760Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-rizuytkvelf",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:52:32.250Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-d1pwylbrizt",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:51:51.042Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-kb7hlzi0uqj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:26:14.786Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-x37u7ipr4rc",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:33.887Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-yub4iu8tuof",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:28.443Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-eq9j6eqw5vg",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:17.883Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-zpa9n22mcka",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:14.197Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ntsp2wmpe5p",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:02.952Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wbibywoqwgs",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:25:01.024Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-fpvuu95w0w4",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:24:50.942Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-irtyazreivp",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:24:50.594Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-i7uziobnpu",
-      "action": "delete",
-      "details": "DELETE su tabella user_custom_roles",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:01:59.402Z",
-      "table_name": "user_custom_roles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-vbzviwjc5g",
-      "action": "update",
-      "details": "Aggiornato profilo utente: Staff",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T12:01:52.849Z",
-      "table_name": "profiles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-klzucnf39zi",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:30.577Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-x6cm34udgj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:26.517Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qrj9dwh41d",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:24.602Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-t918283865i",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:20.422Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1006na5m5qsf",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:14.598Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-8jsl7eskrwl",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:58:06.579Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-73yz8o4ndz",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:57:56.597Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-1uhsl3qh6phi",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:57:47.454Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-v8aom2mj4c",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:57:35.964Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-744htdeiwx4",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:57:14.599Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-vfwwji27tok",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:57:10.803Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-iombv9fkexj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:26.878Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-weq1xd486y",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:14.179Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-oa7qtxhx08g",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:11.134Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-kljaiamt1l",
-      "action": "update",
-      "details": "Aggiornato profilo utente: ",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:06.062Z",
-      "table_name": "profiles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wqha31wkyd8",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:05.989Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ykbrrw4wbhf",
-      "action": "update",
-      "details": "Aggiornato profilo utente: ",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:04.467Z",
-      "table_name": "profiles",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-vytibz5vvap",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:56:04.387Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-t5gmi91427",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:55:34.071Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-xuhvji9nvi",
-      "action": "update",
-      "details": "UPDATE su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:55:33.981Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-k56pjormtb",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:55:32.222Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-2olox29jq15",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:55:32.106Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-anoer6x1fos",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:52:10.778Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-20ko5m1uuaq",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:52:10.686Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-172ggk4dkyc",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:52:03.787Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-boymrrlsd36",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:52:03.691Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3pnkxxl8e71",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:52:00.577Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-6zov5ead218",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:51:52.400Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-lchyg252ll",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:51:51.984Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-aju2s35wfcf",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:59.574Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-8k1g75971ig",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:59.081Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-asbivf419x8",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:57.920Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-h51swlv7pjn",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:57.916Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-im6dtauie8d",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:53.851Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-7uyp6k2wah6",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:53.578Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-35zirtldp2g",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:53.294Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-qjtu8vwnpm8",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:53.155Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-xs8k8pssu0h",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:53.002Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-n19o3u56h38",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.846Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-r5pnfj6l6v",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.669Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-whv9lkxk2tg",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.477Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-3w0eg0f9iee",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.342Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-iyvdg5sdjoc",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.254Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-9xxghkt7t6",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:52.145Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-d1v8xocgtns",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.727Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-slpoekhnox",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.598Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-eoxuscdvocj",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.528Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-w94ou3hw5s",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.433Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-ruopy1ahtsc",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.354Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-70a5nxs0gef",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:51.281Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-e27odktj66b",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:50.971Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
-    },
-    {
-      "id": "log-wn2o8ivk9va",
-      "action": "upsert",
-      "details": "UPSERT su tabella telegram_group_members",
-      "user_id": "system",
-      "username": "sistema",
-      "created_at": "2026-08-16T11:43:50.878Z",
-      "table_name": "telegram_group_members",
-      "user_display_name": "Sistema"
     }
   ],
   "eventi_tickets": [
@@ -13384,7 +13445,7 @@
       "is_revoked": false,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
       "device_type": "desktop",
-      "last_active": "2026-08-19T17:31:41.858Z",
+      "last_active": "2026-08-19T20:36:58.048Z",
       "country_code": "IT",
       "country_flag": "🇮🇹",
       "country_name": "Italia",
@@ -13402,7 +13463,79 @@
       "is_revoked": false,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
       "device_type": "desktop",
-      "last_active": "2026-08-19T13:18:23.349Z",
+      "last_active": "2026-08-20T12:00:07.876Z",
+      "country_code": "IT",
+      "country_flag": "🇮🇹",
+      "country_name": "Italia",
+      "display_name": "Giuse84pro",
+      "is_cloudflare": false
+    },
+    {
+      "id": "sess-user-izo8yy206u9-1787172731316",
+      "cf_ray": null,
+      "browser": "Google Chrome su Windows 11",
+      "user_id": "user-izo8yy206u9",
+      "username": "ImNotMich",
+      "created_at": "2026-08-19T20:52:11.316Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-19T20:58:06.497Z",
+      "country_code": "IT",
+      "country_flag": "🇮🇹",
+      "country_name": "Italia",
+      "display_name": "ImNotMich",
+      "is_cloudflare": false
+    },
+    {
+      "id": "sess-user-2mzopvfeki3-1787201685545",
+      "cf_ray": null,
+      "browser": "Google Chrome su Windows 11",
+      "user_id": "user-2mzopvfeki3",
+      "username": "COCKS",
+      "created_at": "2026-08-20T04:54:45.545Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-20T11:15:27.348Z",
+      "country_code": "IT",
+      "country_flag": "🇮🇹",
+      "country_name": "Italia",
+      "display_name": "COCKS",
+      "is_cloudflare": false
+    },
+    {
+      "id": "sess-user-izo8yy206u9-1787226781252",
+      "cf_ray": null,
+      "browser": "Google Chrome su Windows 11",
+      "user_id": "user-izo8yy206u9",
+      "username": "ImNotMich",
+      "created_at": "2026-08-20T11:53:01.252Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-20T11:55:42.085Z",
+      "country_code": "IT",
+      "country_flag": "🇮🇹",
+      "country_name": "Italia",
+      "display_name": "ImNotMich",
+      "is_cloudflare": false
+    },
+    {
+      "id": "sess-mock-user-id-1234-1787227305603",
+      "cf_ray": null,
+      "browser": "Google Chrome su Windows 11",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "created_at": "2026-08-20T12:01:45.604Z",
+      "ip_address": "185.220.101.5",
+      "is_revoked": false,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
+      "device_type": "desktop",
+      "last_active": "2026-08-20T12:29:44.557Z",
       "country_code": "IT",
       "country_flag": "🇮🇹",
       "country_name": "Italia",
@@ -13558,9 +13691,9 @@
       "user_id": null,
       "group_id": "tgroup-1004444354205",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:18.829Z",
+      "joined_at": "2026-08-19T17:48:24.105Z",
       "created_at": "2026-08-15T20:57:06.026Z",
-      "updated_at": "2026-08-19T17:23:18.829Z",
+      "updated_at": "2026-08-19T17:48:24.106Z",
       "telegram_handle": "@PatrickAtlantisBOT",
       "telegram_user_id": 5809005159
     },
@@ -13571,9 +13704,9 @@
       "user_id": null,
       "group_id": "tgroup-1004444354205",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:19.626Z",
+      "joined_at": "2026-08-19T17:48:24.373Z",
       "created_at": "2026-08-15T20:57:06.140Z",
-      "updated_at": "2026-08-19T17:23:19.626Z",
+      "updated_at": "2026-08-19T17:48:24.374Z",
       "telegram_handle": "@PlanktonAtlantisBOT",
       "telegram_user_id": 8078041616
     },
@@ -13584,9 +13717,9 @@
       "user_id": null,
       "group_id": "tgroup-1004444354205",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:20.434Z",
+      "joined_at": "2026-08-19T17:48:24.564Z",
       "created_at": "2026-08-15T20:57:06.199Z",
-      "updated_at": "2026-08-19T17:23:20.435Z",
+      "updated_at": "2026-08-19T17:48:24.565Z",
       "telegram_handle": "@whyyougae",
       "telegram_user_id": 889220775
     },
@@ -13597,9 +13730,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1004444354205",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:20.717Z",
+      "joined_at": "2026-08-19T17:48:24.766Z",
       "created_at": "2026-08-15T20:57:06.259Z",
-      "updated_at": "2026-08-19T17:23:20.718Z",
+      "updated_at": "2026-08-19T17:48:24.767Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -13610,9 +13743,9 @@
       "user_id": null,
       "group_id": "tgroup-1004444354205",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:21.855Z",
+      "joined_at": "2026-08-19T17:48:25.251Z",
       "created_at": "2026-08-15T20:57:06.322Z",
-      "updated_at": "2026-08-19T17:23:21.856Z",
+      "updated_at": "2026-08-19T17:48:25.252Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -13623,9 +13756,9 @@
       "user_id": null,
       "group_id": "tgroup-1004444354205",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:22.415Z",
+      "joined_at": "2026-08-19T17:48:25.637Z",
       "created_at": "2026-08-15T20:57:06.385Z",
-      "updated_at": "2026-08-19T17:23:22.416Z",
+      "updated_at": "2026-08-19T17:48:25.638Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     },
@@ -13636,9 +13769,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:23.385Z",
+      "joined_at": "2026-08-19T17:48:26.615Z",
       "created_at": "2026-08-15T20:57:06.524Z",
-      "updated_at": "2026-08-19T17:23:23.386Z",
+      "updated_at": "2026-08-19T17:48:26.615Z",
       "telegram_handle": "@PatrickAtlantisBOT",
       "telegram_user_id": 5809005159
     },
@@ -13649,9 +13782,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:23.499Z",
+      "joined_at": "2026-08-19T17:48:26.852Z",
       "created_at": "2026-08-15T20:57:06.597Z",
-      "updated_at": "2026-08-19T17:23:23.500Z",
+      "updated_at": "2026-08-19T17:48:26.853Z",
       "telegram_handle": "@kyraelz",
       "telegram_user_id": 2042713235
     },
@@ -13662,9 +13795,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:23.800Z",
+      "joined_at": "2026-08-19T17:48:27.823Z",
       "created_at": "2026-08-15T20:57:06.653Z",
-      "updated_at": "2026-08-19T17:23:23.800Z",
+      "updated_at": "2026-08-19T17:48:27.824Z",
       "telegram_handle": "@PlanktonAtlantisBOT",
       "telegram_user_id": 8078041616
     },
@@ -13675,9 +13808,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:23.868Z",
+      "joined_at": "2026-08-19T17:48:28.316Z",
       "created_at": "2026-08-15T20:57:06.706Z",
-      "updated_at": "2026-08-19T17:23:23.868Z",
+      "updated_at": "2026-08-19T17:48:28.316Z",
       "telegram_handle": "@whyyougae",
       "telegram_user_id": 889220775
     },
@@ -13688,9 +13821,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:23.989Z",
+      "joined_at": "2026-08-19T17:48:29.363Z",
       "created_at": "2026-08-15T20:57:06.781Z",
-      "updated_at": "2026-08-19T17:23:23.989Z",
+      "updated_at": "2026-08-19T17:48:29.363Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     },
@@ -13701,9 +13834,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1004480446106",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:24.077Z",
+      "joined_at": "2026-08-20T12:00:50.818Z",
       "created_at": "2026-08-15T20:57:06.841Z",
-      "updated_at": "2026-08-19T17:23:24.077Z",
+      "updated_at": "2026-08-20T12:00:50.818Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -13714,9 +13847,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.163Z",
+      "joined_at": "2026-08-19T17:48:29.772Z",
       "created_at": "2026-08-15T20:57:06.894Z",
-      "updated_at": "2026-08-19T17:23:24.164Z",
+      "updated_at": "2026-08-19T17:48:29.773Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -13727,9 +13860,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1001815625559",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:24.702Z",
+      "joined_at": "2026-08-20T11:59:41.737Z",
       "created_at": "2026-08-15T20:57:07.036Z",
-      "updated_at": "2026-08-19T17:23:24.702Z",
+      "updated_at": "2026-08-20T11:59:41.737Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -13740,9 +13873,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.435Z",
+      "joined_at": "2026-08-19T17:48:30.068Z",
       "created_at": "2026-08-15T20:57:07.101Z",
-      "updated_at": "2026-08-19T17:23:24.436Z",
+      "updated_at": "2026-08-19T17:48:30.068Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     },
@@ -13753,9 +13886,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.512Z",
+      "joined_at": "2026-08-19T17:48:30.142Z",
       "created_at": "2026-08-15T20:57:07.189Z",
-      "updated_at": "2026-08-19T17:23:24.512Z",
+      "updated_at": "2026-08-19T17:48:30.142Z",
       "telegram_handle": "@kyraelz",
       "telegram_user_id": 2042713235
     },
@@ -13766,9 +13899,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.613Z",
+      "joined_at": "2026-08-19T17:48:30.235Z",
       "created_at": "2026-08-15T20:57:07.259Z",
-      "updated_at": "2026-08-19T17:23:24.614Z",
+      "updated_at": "2026-08-19T17:48:30.236Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -13779,9 +13912,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.724Z",
+      "joined_at": "2026-08-19T17:48:30.308Z",
       "created_at": "2026-08-15T20:57:07.332Z",
-      "updated_at": "2026-08-19T17:23:24.724Z",
+      "updated_at": "2026-08-19T17:48:30.308Z",
       "telegram_handle": "@PlanktonAtlantisBOT",
       "telegram_user_id": 8078041616
     },
@@ -13792,9 +13925,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.812Z",
+      "joined_at": "2026-08-19T17:48:30.382Z",
       "created_at": "2026-08-15T20:57:07.397Z",
-      "updated_at": "2026-08-19T17:23:24.812Z",
+      "updated_at": "2026-08-19T17:48:30.383Z",
       "telegram_handle": "@PatrickAtlantisBOT",
       "telegram_user_id": 5809005159
     },
@@ -13805,9 +13938,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.981Z",
+      "joined_at": "2026-08-19T17:48:30.522Z",
       "created_at": "2026-08-15T20:57:07.519Z",
-      "updated_at": "2026-08-19T17:23:24.982Z",
+      "updated_at": "2026-08-19T17:48:30.523Z",
       "telegram_handle": "@PatrickAtlantisBOT",
       "telegram_user_id": 5809005159
     },
@@ -13818,9 +13951,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.063Z",
+      "joined_at": "2026-08-19T17:48:30.619Z",
       "created_at": "2026-08-15T20:57:07.599Z",
-      "updated_at": "2026-08-19T17:23:25.063Z",
+      "updated_at": "2026-08-19T17:48:30.619Z",
       "telegram_handle": "@kyraelz",
       "telegram_user_id": 2042713235
     },
@@ -13831,9 +13964,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.146Z",
+      "joined_at": "2026-08-19T17:48:30.709Z",
       "created_at": "2026-08-15T20:57:07.663Z",
-      "updated_at": "2026-08-19T17:23:25.147Z",
+      "updated_at": "2026-08-19T17:48:30.709Z",
       "telegram_handle": "@PlanktonAtlantisBOT",
       "telegram_user_id": 8078041616
     },
@@ -13844,9 +13977,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.238Z",
+      "joined_at": "2026-08-19T17:48:30.817Z",
       "created_at": "2026-08-15T20:57:07.741Z",
-      "updated_at": "2026-08-19T17:23:25.238Z",
+      "updated_at": "2026-08-19T17:48:30.818Z",
       "telegram_handle": "@whyyougae",
       "telegram_user_id": 889220775
     },
@@ -13857,9 +13990,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1004334505365",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:25.312Z",
+      "joined_at": "2026-08-19T17:48:30.894Z",
       "created_at": "2026-08-15T20:57:07.809Z",
-      "updated_at": "2026-08-19T17:23:25.312Z",
+      "updated_at": "2026-08-19T17:48:30.895Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -13870,9 +14003,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.391Z",
+      "joined_at": "2026-08-19T17:48:30.971Z",
       "created_at": "2026-08-15T20:57:07.887Z",
-      "updated_at": "2026-08-19T17:23:25.391Z",
+      "updated_at": "2026-08-19T17:48:30.971Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -13883,9 +14016,9 @@
       "user_id": null,
       "group_id": "tgroup-1004334505365",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.477Z",
+      "joined_at": "2026-08-19T17:48:31.058Z",
       "created_at": "2026-08-15T20:57:07.973Z",
-      "updated_at": "2026-08-19T17:23:25.477Z",
+      "updated_at": "2026-08-19T17:48:31.058Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     },
@@ -13896,9 +14029,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.606Z",
+      "joined_at": "2026-08-19T17:48:31.349Z",
       "created_at": "2026-08-15T20:57:08.165Z",
-      "updated_at": "2026-08-19T17:23:25.607Z",
+      "updated_at": "2026-08-19T17:48:31.349Z",
       "telegram_handle": "@whyyougae",
       "telegram_user_id": 889220775
     },
@@ -13909,9 +14042,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.682Z",
+      "joined_at": "2026-08-19T17:48:31.429Z",
       "created_at": "2026-08-15T20:57:08.226Z",
-      "updated_at": "2026-08-19T17:23:25.682Z",
+      "updated_at": "2026-08-19T17:48:31.429Z",
       "telegram_handle": "@kyraelz",
       "telegram_user_id": 2042713235
     },
@@ -13922,9 +14055,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.776Z",
+      "joined_at": "2026-08-19T17:48:31.532Z",
       "created_at": "2026-08-15T20:57:08.311Z",
-      "updated_at": "2026-08-19T17:23:25.777Z",
+      "updated_at": "2026-08-19T17:48:31.532Z",
       "telegram_handle": "@𝐰𝐨𝐣𝐢𝐣𝐢𝐧𝐨#MathiasPentito_5616988636",
       "telegram_user_id": 5616988636
     },
@@ -13935,9 +14068,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.951Z",
+      "joined_at": "2026-08-19T17:48:31.632Z",
       "created_at": "2026-08-15T20:57:08.377Z",
-      "updated_at": "2026-08-19T17:23:25.951Z",
+      "updated_at": "2026-08-19T17:48:31.632Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -13948,9 +14081,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:26.054Z",
+      "joined_at": "2026-08-19T17:48:31.714Z",
       "created_at": "2026-08-15T20:57:08.425Z",
-      "updated_at": "2026-08-19T17:23:26.055Z",
+      "updated_at": "2026-08-19T17:48:31.715Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     },
@@ -13961,9 +14094,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:26.508Z",
+      "joined_at": "2026-08-19T17:48:31.807Z",
       "created_at": "2026-08-15T20:57:08.745Z",
-      "updated_at": "2026-08-19T17:23:26.509Z",
+      "updated_at": "2026-08-19T17:48:31.807Z",
       "telegram_handle": "@PlanktonAtlantisBOT",
       "telegram_user_id": 8078041616
     },
@@ -13974,9 +14107,9 @@
       "user_id": null,
       "group_id": "tgroup-1003625594442",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:26.605Z",
+      "joined_at": "2026-08-19T17:48:31.895Z",
       "created_at": "2026-08-15T20:57:08.810Z",
-      "updated_at": "2026-08-19T17:23:26.605Z",
+      "updated_at": "2026-08-19T17:48:31.895Z",
       "telegram_handle": "@PatrickAtlantisBOT",
       "telegram_user_id": 5809005159
     },
@@ -13987,9 +14120,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:24.997Z",
+      "joined_at": "2026-08-20T12:00:44.113Z",
       "created_at": "2026-08-15T21:01:23.021Z",
-      "updated_at": "2026-08-19T17:23:24.998Z",
+      "updated_at": "2026-08-20T12:00:44.114Z",
       "telegram_handle": "@CapitanZucchina",
       "telegram_user_id": 8231161503
     },
@@ -14000,9 +14133,9 @@
       "user_id": "user-hd4ktkcva7h",
       "group_id": "tgroup-1001815625559",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:24.911Z",
+      "joined_at": "2026-08-20T12:00:49.836Z",
       "created_at": "2026-08-15T21:19:08.429Z",
-      "updated_at": "2026-08-19T17:23:24.912Z",
+      "updated_at": "2026-08-20T12:00:49.836Z",
       "telegram_handle": "@infestatrice",
       "telegram_user_id": 1534342773
     },
@@ -14013,9 +14146,9 @@
       "user_id": "user-2mzopvfeki3",
       "group_id": "tgroup-1001815625559",
       "verified": true,
-      "joined_at": "2026-08-19T13:20:35.300Z",
+      "joined_at": "2026-08-20T11:58:56.852Z",
       "created_at": "2026-08-15T21:19:31.966Z",
-      "updated_at": "2026-08-19T13:20:35.300Z",
+      "updated_at": "2026-08-20T11:58:56.852Z",
       "telegram_handle": "@CoccoRP",
       "telegram_user_id": 8531452999
     },
@@ -14026,9 +14159,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1003625594442",
       "verified": true,
-      "joined_at": "2026-08-17T20:28:48.152Z",
+      "joined_at": "2026-08-20T12:00:50.357Z",
       "created_at": "2026-08-15T21:24:28.420Z",
-      "updated_at": "2026-08-17T20:28:48.152Z",
+      "updated_at": "2026-08-20T12:00:50.357Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -14039,9 +14172,9 @@
       "user_id": "user-izo8yy206u9",
       "group_id": "tgroup-1001815625559",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:25.489Z",
+      "joined_at": "2026-08-20T12:00:50.147Z",
       "created_at": "2026-08-15T21:44:14.247Z",
-      "updated_at": "2026-08-19T17:23:25.490Z",
+      "updated_at": "2026-08-20T12:00:50.148Z",
       "telegram_handle": "@DiciassetteMich",
       "telegram_user_id": 5589357796
     },
@@ -14052,9 +14185,9 @@
       "user_id": "user-hd4ktkcva7h",
       "group_id": "tgroup-1004444354205",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:18.451Z",
+      "joined_at": "2026-08-19T17:48:23.932Z",
       "created_at": "2026-08-15T21:44:39.130Z",
-      "updated_at": "2026-08-19T17:23:18.451Z",
+      "updated_at": "2026-08-19T17:48:23.933Z",
       "telegram_handle": "@infestatrice",
       "telegram_user_id": 1534342773
     },
@@ -14075,12 +14208,12 @@
       "id": "tgm-tgroup-1004480446106-8531452999",
       "status": "member",
       "chat_id": -1004480446106,
-      "user_id": null,
+      "user_id": "user-2mzopvfeki3",
       "group_id": "tgroup-1004480446106",
-      "verified": false,
-      "joined_at": "2026-08-16T17:41:08.764Z",
+      "verified": true,
+      "joined_at": "2026-08-20T08:43:17.123Z",
       "created_at": "2026-08-15T21:44:40.102Z",
-      "updated_at": "2026-08-16T17:41:08.764Z",
+      "updated_at": "2026-08-20T08:43:17.123Z",
       "telegram_handle": "@CoccoRP",
       "telegram_user_id": 8531452999
     },
@@ -14104,9 +14237,9 @@
       "user_id": "user-izo8yy206u9",
       "group_id": "tgroup-1004480446106",
       "verified": true,
-      "joined_at": "2026-08-16T11:57:14.599Z",
+      "joined_at": "2026-08-20T12:00:50.916Z",
       "created_at": "2026-08-15T21:44:40.393Z",
-      "updated_at": "2026-08-16T11:57:14.599Z",
+      "updated_at": "2026-08-20T12:00:50.916Z",
       "telegram_handle": "@DiciassetteMich",
       "telegram_user_id": 5589357796
     },
@@ -14117,9 +14250,9 @@
       "user_id": null,
       "group_id": "tgroup-1004480446106",
       "verified": false,
-      "joined_at": "2026-08-16T18:14:21.565Z",
+      "joined_at": "2026-08-20T04:54:45.545Z",
       "created_at": "2026-08-15T21:44:40.456Z",
-      "updated_at": "2026-08-16T18:14:21.566Z",
+      "updated_at": "2026-08-20T04:54:45.545Z",
       "telegram_handle": "@Superficiale5",
       "telegram_user_id": 6043080366
     },
@@ -14130,9 +14263,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T11:50:50.975Z",
+      "joined_at": "2026-08-20T12:00:45.092Z",
       "created_at": "2026-08-15T21:44:41.329Z",
-      "updated_at": "2026-08-19T11:50:50.975Z",
+      "updated_at": "2026-08-20T12:00:45.092Z",
       "telegram_handle": "@Superficiale5",
       "telegram_user_id": 6043080366
     },
@@ -14143,9 +14276,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-16T17:23:54.687Z",
+      "joined_at": "2026-08-20T12:00:49.728Z",
       "created_at": "2026-08-15T21:44:41.388Z",
-      "updated_at": "2026-08-16T17:23:54.688Z",
+      "updated_at": "2026-08-20T12:00:49.728Z",
       "telegram_handle": "@MotoreASarlion",
       "telegram_user_id": 5842953872
     },
@@ -14302,9 +14435,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T07:57:51.042Z",
+      "joined_at": "2026-08-20T12:31:23.624Z",
       "created_at": "2026-08-15T21:44:42.470Z",
-      "updated_at": "2026-08-19T07:57:51.043Z",
+      "updated_at": "2026-08-20T12:31:23.625Z",
       "telegram_handle": "@FireDoggo1224",
       "telegram_user_id": 6139716285
     },
@@ -14380,9 +14513,9 @@
       "user_id": null,
       "group_id": "tgroup-1001815625559",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:25.587Z",
+      "joined_at": "2026-08-20T11:11:43.601Z",
       "created_at": "2026-08-16T10:17:15.567Z",
-      "updated_at": "2026-08-19T17:23:25.588Z",
+      "updated_at": "2026-08-20T11:11:43.601Z",
       "telegram_handle": "@nevischioo",
       "telegram_user_id": 8436540834
     },
@@ -14419,9 +14552,9 @@
       "user_id": "mock-user-id-1234",
       "group_id": "tgroup-1003942508605",
       "verified": true,
-      "joined_at": "2026-08-19T17:23:27.301Z",
+      "joined_at": "2026-08-19T17:48:32.126Z",
       "created_at": "2026-08-16T21:17:35.076Z",
-      "updated_at": "2026-08-19T17:23:27.302Z",
+      "updated_at": "2026-08-19T17:48:32.126Z",
       "telegram_handle": "@Blatnoms",
       "telegram_user_id": 8565037802
     },
@@ -14432,9 +14565,9 @@
       "user_id": null,
       "group_id": "tgroup-1003942508605",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:27.156Z",
+      "joined_at": "2026-08-19T17:48:32.032Z",
       "created_at": "2026-08-17T07:49:55.180Z",
-      "updated_at": "2026-08-19T17:23:27.156Z",
+      "updated_at": "2026-08-19T17:48:32.032Z",
       "telegram_handle": "@kyraelz",
       "telegram_user_id": 2042713235
     },
@@ -14471,9 +14604,9 @@
       "user_id": null,
       "group_id": "tgroup-1003942508605",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:27.382Z",
+      "joined_at": "2026-08-19T17:48:32.206Z",
       "created_at": "2026-08-19T17:23:27.382Z",
-      "updated_at": "2026-08-19T17:23:27.382Z",
+      "updated_at": "2026-08-19T17:48:32.206Z",
       "telegram_handle": "@strafottuto",
       "telegram_user_id": 1823528312
     },
@@ -14484,9 +14617,9 @@
       "user_id": null,
       "group_id": "tgroup-1003942508605",
       "verified": false,
-      "joined_at": "2026-08-19T17:23:27.471Z",
+      "joined_at": "2026-08-19T17:48:32.286Z",
       "created_at": "2026-08-19T17:23:27.471Z",
-      "updated_at": "2026-08-19T17:23:27.471Z",
+      "updated_at": "2026-08-19T17:48:32.287Z",
       "telegram_handle": "@iTzVampire",
       "telegram_user_id": 377913887
     }
@@ -14561,6 +14694,15 @@
       "verified_at": "2026-08-17T12:33:33.120Z",
       "telegram_chat_id": 1534342773,
       "telegram_user_id": 1534342773
+    },
+    {
+      "id": "124377",
+      "code": "124377",
+      "user_id": null,
+      "verified": false,
+      "created_at": "2026-08-19T22:28:47.351Z",
+      "expires_at": "2026-08-20T22:28:47.351Z",
+      "updated_at": "2026-08-19T22:28:47.351Z"
     }
   ],
   "maintenance_settings": [
@@ -14638,5 +14780,6 @@
       "updated_at": "2026-08-17T12:16:05.811Z"
     }
   ],
+  "membership_plans": [],
   "user_permissions": []
 }

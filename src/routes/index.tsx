@@ -46,6 +46,13 @@ import {
   Flame,
   ClipboardList,
   User,
+  Settings2,
+  Globe,
+  Check,
+  Pencil,
+  Building2,
+  Info,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -60,7 +67,17 @@ import {
   cancelTelegramVerificationCode,
   verifyTelegramCode,
 } from "@/lib/registration.functions";
-import { usernameToEmail } from "@/lib/format";
+import { usernameToEmail, formatMoney, formatDobloni } from "@/lib/format";
+import {
+  getPublicMembershipPlans,
+  getHomepageMembershipConfig,
+  saveHomepageMembershipConfig,
+  saveMembershipPlan,
+  MembershipPlan,
+  HomepageMembershipConfig,
+  DEFAULT_HOMEPAGE_MEMBERSHIP_CONFIG,
+  DEFAULT_MEMBERSHIP_PLANS,
+} from "@/lib/membership.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -901,129 +918,8 @@ function LandingPage() {
           <InteractiveGamesSection />
         </motion.div>
 
-        {/* SECTION: MEMBERSHIP CARDS */}
-        <motion.section
-          id="membership"
-          className="py-20 px-4 bg-slate-900/30 border-t border-amber-500/10"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="max-w-6xl mx-auto space-y-12">
-            <div className="text-center space-y-3">
-              <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1">
-                Livelli di Abbonamento
-              </Badge>
-              <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase">
-                Membership & Privilege Cards
-              </h2>
-              <p className="text-slate-400 text-sm max-w-xl mx-auto">
-                Sblocca vantaggi esclusivi, accessi riservati e maggiordomo dedicato.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-4 gap-6">
-              <Card className="bg-slate-950 border-slate-800 relative">
-                <CardHeader className="pb-2">
-                  <Badge
-                    variant="outline"
-                    className="w-fit text-slate-400 border-slate-700 text-[10px]"
-                  >
-                    STANDARD
-                  </Badge>
-                  <CardTitle className="text-xl font-bold text-white mt-1">Gratuito</CardTitle>
-                  <CardDescription className="text-xs text-slate-400">Accesso Base</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 space-y-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Sala Principale
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Tavoli & Slot Classic
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-950 border-amber-500/40 relative shadow-xl shadow-amber-500/5">
-                <CardHeader className="pb-2">
-                  <Badge className="w-fit bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
-                    VIP CARD
-                  </Badge>
-                  <CardTitle className="text-xl font-bold text-amber-400 mt-1">10.000 €</CardTitle>
-                  <CardDescription className="text-xs text-slate-400">
-                    Lusso & Privé
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 space-y-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Accesso Privé VIP
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Priorità alle casse
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> 5% Bonus cambio dobloni
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-950 border-amber-400 relative shadow-xl shadow-amber-500/10">
-                <div className="absolute -top-3 right-4">
-                  <Badge className="bg-amber-500 text-slate-950 font-black text-[9px] uppercase">
-                    Consigliata
-                  </Badge>
-                </div>
-                <CardHeader className="pb-2">
-                  <Badge className="w-fit bg-amber-400/20 text-amber-300 border-amber-400/40 text-[10px]">
-                    EXCLUSIVE
-                  </Badge>
-                  <CardTitle className="text-xl font-bold text-amber-300 mt-1">25.000 €</CardTitle>
-                  <CardDescription className="text-xs text-slate-400">
-                    Trattamento Riservato
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 space-y-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Maggiordomo dedicato
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Cassetta di Sicurezza
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Tavoli ad alti limiti
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-950 border-amber-300 relative shadow-2xl shadow-amber-500/20">
-                <CardHeader className="pb-2">
-                  <Badge className="w-fit bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[10px]">
-                    ÉLITE CARD
-                  </Badge>
-                  <CardTitle className="text-xl font-bold text-amber-200 mt-1">45.000 €</CardTitle>
-                  <CardDescription className="text-xs text-slate-400">
-                    Massimo Prestigio
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-slate-300 space-y-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Guardia del corpo
-                    personale
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Balconata privata
-                    esclusiva
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Servizio eventi
-                    riservati
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </motion.section>
+        {/* SECTION: MEMBERSHIP CARDS (DYNAMIC) */}
+        <HomepageMembershipSection canManage={isAdmin || hasEmployeeAccess} />
 
         {/* SECTION: LA NOSTRA CIURMA (DELEGATED TO SEPARATE PAGE) */}
         <motion.section
@@ -1459,5 +1355,458 @@ function LandingPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*             SEZIONE DINAMICA MEMBERSHIP & VANTAGGI HOMEPAGE                */
+/* -------------------------------------------------------------------------- */
+
+function HomepageMembershipSection({ canManage }: { canManage?: boolean }) {
+  const [customizerOpen, setCustomizerOpen] = useState(false);
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["public-membership-plans"],
+    queryFn: async () => await getPublicMembershipPlans(),
+  });
+
+  const { data: config = DEFAULT_HOMEPAGE_MEMBERSHIP_CONFIG } = useQuery({
+    queryKey: ["homepage-membership-config"],
+    queryFn: async () => await getHomepageMembershipConfig(),
+  });
+
+  const isVisible = config.is_section_visible ?? true;
+
+  if (!isVisible && !canManage) {
+    return null;
+  }
+
+  return (
+    <>
+      <motion.section
+        id="membership"
+        className="py-20 px-4 bg-slate-900/30 border-t border-amber-500/10 relative"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-6xl mx-auto space-y-10">
+          {/* Admin Banner if Section is Hidden */}
+          {!isVisible && canManage && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs text-amber-300">
+              <span className="font-bold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Sezione Membership attualmente nascosta al pubblico.
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCustomizerOpen(true)}
+                className="bg-transparent border-amber-500/40 text-amber-300 text-xs h-7 rounded-lg"
+              >
+                <Settings2 className="h-3.5 w-3.5 mr-1" /> Modifica Visibilità
+              </Button>
+            </div>
+          )}
+
+          {/* Section Header */}
+          <div className="text-center space-y-3 relative">
+            <div className="flex items-center justify-center gap-2">
+              <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3.5 py-1 text-xs uppercase tracking-wider font-bold">
+                {config.badge_text || "Livelli di Abbonamento"}
+              </Badge>
+
+              {canManage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCustomizerOpen(true)}
+                  className="bg-slate-900/80 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs h-7 px-2.5 rounded-lg shadow-sm"
+                >
+                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Personalizza Sezione
+                </Button>
+              )}
+            </div>
+
+            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight uppercase">
+              {config.section_title || "Membership & Privilege Cards"}
+            </h2>
+
+            <p className="text-slate-400 text-sm max-w-2xl mx-auto leading-relaxed">
+              {config.section_subtitle ||
+                "Sblocca vantaggi esclusivi, accessi riservati, maggiordomo e cassetta di sicurezza."}
+            </p>
+          </div>
+
+          {/* Membership Cards Grid */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(
+              plans.length || 4,
+              4,
+            )} gap-6`}
+          >
+            {plans.map((p) => {
+              const isStd = p.code === "standard" || p.id === "plan-standard" || p.is_permanent;
+              const hasHighlight = Boolean(p.highlight_tag);
+              const advs = p.advantages && p.advantages.length > 0 ? p.advantages : [];
+
+              return (
+                <Card
+                  key={p.id}
+                  className={`bg-slate-950 border relative transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between ${
+                    hasHighlight
+                      ? "border-amber-400 shadow-2xl shadow-amber-500/15"
+                      : "border-slate-800 hover:border-amber-500/40"
+                  }`}
+                  style={{
+                    borderColor: hasHighlight ? p.badge_color || "#f59e0b" : undefined,
+                  }}
+                >
+                  {hasHighlight && (
+                    <div className="absolute -top-3.5 right-4 z-10">
+                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] uppercase shadow-md tracking-wider px-2.5 py-0.5">
+                        ✨ {p.highlight_tag}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Badge
+                          variant="outline"
+                          className="w-fit text-[10px] font-extrabold uppercase px-2.5 py-0.5 tracking-wider"
+                          style={{
+                            color: p.badge_color || "#f59e0b",
+                            borderColor: p.badge_color
+                              ? `${p.badge_color}60`
+                              : "rgba(245, 158, 11, 0.4)",
+                            backgroundColor: p.badge_color
+                              ? `${p.badge_color}15`
+                              : "rgba(245, 158, 11, 0.1)",
+                          }}
+                        >
+                          {p.name}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-2">
+                        {isStd ? (
+                          <div>
+                            <CardTitle className="text-2xl font-black text-white">
+                              Gratuito
+                            </CardTitle>
+                            <CardDescription className="text-xs text-slate-400 mt-0.5">
+                              Accesso Base Permanente
+                            </CardDescription>
+                          </div>
+                        ) : (
+                          <div>
+                            <CardTitle className="text-2xl font-black text-amber-400">
+                              {formatMoney(p.cost_eur || p.renewal_cost || 0)}
+                            </CardTitle>
+                            {config.show_dobloni_price && p.cost_dobloni && p.cost_dobloni > 0 && (
+                              <div className="text-xs font-mono text-amber-300/80 font-bold mt-0.5">
+                                oppure {formatDobloni(p.cost_dobloni)}
+                              </div>
+                            )}
+                            <CardDescription className="text-xs text-sky-400 font-medium mt-1">
+                              Durata: {p.renewal_days} giorni
+                            </CardDescription>
+                          </div>
+                        )}
+                      </div>
+
+                      {p.description && (
+                        <p className="text-xs text-slate-400 mt-2 line-clamp-2">{p.description}</p>
+                      )}
+                    </CardHeader>
+
+                    {/* Vantaggi preceded by checkmark ✓ on every line */}
+                    <CardContent className="pt-2 pb-5 space-y-2.5">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 pb-1 border-b border-slate-900">
+                        Vantaggi Inclusi:
+                      </div>
+
+                      {advs.length > 0 ? (
+                        <div className="space-y-2">
+                          {advs.map((adv, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-2.5 text-xs text-slate-200 leading-snug"
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{adv}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-2 text-xs text-slate-400">
+                          <div className="flex items-start gap-2.5">
+                            <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                            <span>Accesso al casinò e tavoli da gioco</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </div>
+
+                  {/* Informative Footer Badge instead of button */}
+                  <div className="p-4 pt-0">
+                    {isStd ? (
+                      <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center text-[11px] text-slate-400 font-medium">
+                        Incluso alla registrazione
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/25 rounded-xl text-center text-[11px] text-amber-300 font-bold flex items-center justify-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        Richiedi in Cassa al Casinò Revenge
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Prominent Notice Banner: Per abbonarsi rivolgersi in cassa al Casinò Revenge */}
+          <div className="p-5 md:p-6 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/15 border border-amber-500/40 text-center max-w-3xl mx-auto shadow-2xl shadow-amber-500/10 space-y-2">
+            <div className="flex items-center justify-center gap-2 text-amber-400 font-black text-sm md:text-base uppercase tracking-wider">
+              <Building2 className="h-5 w-5 text-amber-400" /> Come Abbonarsi al Casinò Revenge
+            </div>
+            <p className="text-xs md:text-sm text-slate-200 leading-relaxed max-w-2xl mx-auto">
+              Per abbonarsi o rinnovare la propria Privilege Card è necessario{" "}
+              <strong className="text-amber-300 underline decoration-amber-500/50 underline-offset-2">
+                rivolgersi direttamente in cassa al Casinò Revenge
+              </strong>
+              . Il nostro personale di cassa provvederà alla verifica e all'attivazione immediata
+              della tua tessera e di tutti i relativi vantaggi.
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Admin Homepage Customizer Modal */}
+      {canManage && (
+        <HomepageMembershipConfigDialog
+          open={customizerOpen}
+          onOpenChange={setCustomizerOpen}
+          initialConfig={config}
+          plans={plans}
+        />
+      )}
+    </>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*         DIALOG PERSONALIZZAZIONE HOMEPAGE & VANTAGGI (ADMIN/STAFF)         */
+/* -------------------------------------------------------------------------- */
+
+function HomepageMembershipConfigDialog({
+  open,
+  onOpenChange,
+  initialConfig,
+  plans,
+}: {
+  open: boolean;
+  onOpenChange: (b: boolean) => void;
+  initialConfig: HomepageMembershipConfig;
+  plans: MembershipPlan[];
+}) {
+  const [badgeText, setBadgeText] = useState(initialConfig.badge_text || "Livelli di Abbonamento");
+  const [title, setTitle] = useState(initialConfig.section_title || "Membership & Privilege Cards");
+  const [subtitle, setSubtitle] = useState(
+    initialConfig.section_subtitle ||
+      "Sblocca vantaggi esclusivi, accessi riservati, maggiordomo e cassetta di sicurezza.",
+  );
+  const [isVisible, setIsVisible] = useState(initialConfig.is_section_visible ?? true);
+  const [showDobloni, setShowDobloni] = useState(initialConfig.show_dobloni_price ?? true);
+  const [ctaText, setCtaText] = useState(initialConfig.cta_button_text || "");
+  const [ctaLink, setCtaLink] = useState(initialConfig.cta_button_link || "");
+
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialConfig) {
+      setBadgeText(initialConfig.badge_text || "Livelli di Abbonamento");
+      setTitle(initialConfig.section_title || "Membership & Privilege Cards");
+      setSubtitle(
+        initialConfig.section_subtitle ||
+          "Sblocca vantaggi esclusivi, accessi riservati, maggiordomo e cassetta di sicurezza.",
+      );
+      setIsVisible(initialConfig.is_section_visible ?? true);
+      setShowDobloni(initialConfig.show_dobloni_price ?? true);
+      setCtaText(initialConfig.cta_button_text || "");
+      setCtaLink(initialConfig.cta_button_link || "");
+    }
+  }, [initialConfig]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await saveHomepageMembershipConfig({
+        data: {
+          badge_text: badgeText.trim(),
+          section_title: title.trim(),
+          section_subtitle: subtitle.trim(),
+          is_section_visible: isVisible,
+          show_dobloni_price: showDobloni,
+          cta_button_text: ctaText.trim(),
+          cta_button_link: ctaLink.trim(),
+        },
+      });
+      toast.success("Configurazione vetrina homepage salvata con successo!");
+      onOpenChange(false);
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err?.message || "Errore durante il salvataggio");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#12141c] border-slate-800 text-white max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Globe className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-black uppercase tracking-wider text-white">
+                Personalizza Vetrina Homepage
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-400">
+                Modifica testi, visibilità e visualizzazione dei prezzi delle membership
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={handleSave} className="space-y-4 pt-2">
+          <div>
+            <Label className="text-xs font-bold text-slate-300">Testo Badge Superiore</Label>
+            <Input
+              value={badgeText}
+              onChange={(e) => setBadgeText(e.target.value)}
+              placeholder="Es: Livelli di Abbonamento"
+              className="bg-[#0a0b10] border-slate-800 text-white rounded-xl mt-1 text-xs"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-slate-300">Titolo Principale Sezione *</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Es: Membership & Privilege Cards"
+              required
+              className="bg-[#0a0b10] border-slate-800 text-white rounded-xl mt-1 text-xs"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-slate-300">Sottotitolo Descrittivo</Label>
+            <Input
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              placeholder="Es: Sblocca vantaggi esclusivi, accessi riservati e maggiordomo dedicato."
+              className="bg-[#0a0b10] border-slate-800 text-white rounded-xl mt-1 text-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-bold text-slate-300">
+                Testo Pulsante CTA (Opzionale)
+              </Label>
+              <Input
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                placeholder="Es: Scopri di Più"
+                className="bg-[#0a0b10] border-slate-800 text-white rounded-xl mt-1 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-slate-300">Link Pulsante CTA</Label>
+              <Input
+                value={ctaLink}
+                onChange={(e) => setCtaLink(e.target.value)}
+                placeholder="Es: #valute oppure /candidature"
+                className="bg-[#0a0b10] border-slate-800 text-white rounded-xl mt-1 text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer bg-[#0a0b10] border border-slate-800 p-3 rounded-xl hover:border-slate-700">
+              <input
+                type="checkbox"
+                checked={isVisible}
+                onChange={(e) => setIsVisible(e.target.checked)}
+                className="rounded border-slate-700 text-amber-500 focus:ring-amber-500 h-4 w-4"
+              />
+              <span className="font-semibold">Mostra Sezione sulla Homepage</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer bg-[#0a0b10] border border-slate-800 p-3 rounded-xl hover:border-slate-700">
+              <input
+                type="checkbox"
+                checked={showDobloni}
+                onChange={(e) => setShowDobloni(e.target.checked)}
+                className="rounded border-slate-700 text-amber-500 focus:ring-amber-500 h-4 w-4"
+              />
+              <span className="font-semibold">Mostra anche Prezzo in Dobloni</span>
+            </label>
+          </div>
+
+          {/* Quick link to Cittadini page for in-depth plan management */}
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1 text-amber-300">
+            <span className="font-bold flex items-center gap-1.5">
+              <Crown className="h-4 w-4" />
+              Vuoi modificare i vantaggi, i prezzi o l'ordine dei singoli piani?
+            </span>
+            <p className="text-[11px] text-slate-300">
+              Puoi configurare ogni singola tessera, i suoi vantaggi con spunta ✓ e il tag in
+              evidenza dal gestionale nella pagina <b>Cittadini & Membership</b>.
+            </p>
+            <div className="pt-1">
+              <Link to="/cittadini">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="bg-[#12141c] border-amber-500/40 text-amber-300 hover:bg-amber-500/20 text-xs h-7 rounded-lg"
+                >
+                  Vai alla Gestione Completa Piani <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="bg-transparent border-slate-800 text-slate-300 hover:text-white rounded-xl"
+            >
+              Annulla
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-md shadow-amber-500/20"
+            >
+              {saving ? "Salvataggio..." : "Salva Modifiche Homepage"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

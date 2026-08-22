@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getTimeBasedGreeting } from "@/lib/greeting";
 import {
   Users,
   CalendarDays,
@@ -34,6 +35,12 @@ import {
   Copy,
   MessageSquare,
   QrCode,
+  Crown,
+  Shield,
+  Sun,
+  Moon,
+  Flame,
+  Zap,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { getUserTelegramGroups, generateGroupInviteLink } from "@/lib/telegram-groups.functions";
@@ -140,8 +147,19 @@ const FEATURES: FeatureItem[] = [
 ];
 
 function DashboardPage() {
-  const { profile, isAdmin, permissions, userSanctions, hasEmployeeAccess, loading } = useAuth();
+  const {
+    profile,
+    isAdmin,
+    permissions,
+    userSanctions,
+    hasEmployeeAccess,
+    customRoles = [],
+    customRoleNames = [],
+    roles = [],
+    loading,
+  } = useAuth();
   const qc = useQueryClient();
+  const timeGreeting = getTimeBasedGreeting();
 
   const { data: maintenanceData } = useQuery({
     queryKey: ["maintenance-settings"],
@@ -248,38 +266,126 @@ function DashboardPage() {
       </div>
 
       {/* User Greeting Block */}
-      <div className="rounded-2xl border border-slate-800/90 bg-[#12141c] p-6 relative overflow-hidden shadow-2xl flex flex-col sm:flex-row items-center gap-6">
-        <div className="h-20 w-20 rounded-2xl bg-[#0a0b10] border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-inner">
-          <img
-            src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/64`}
-            alt="Avatar Minecraft"
-            className="h-16 w-16 object-contain rounded-xl drop-shadow-md"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/64.png";
-            }}
-          />
-        </div>
+      <div className="rounded-3xl border border-slate-800/90 bg-[#12141c] p-6 relative overflow-hidden shadow-2xl backdrop-blur-sm">
+        {/* Ambient background glow depending on time of day */}
+        <div
+          className={`absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none ${
+            timeGreeting.period === "morning"
+              ? "bg-amber-500"
+              : timeGreeting.period === "afternoon"
+                ? "bg-sky-500"
+                : "bg-indigo-600"
+          }`}
+        />
 
-        <div className="space-y-1 text-center sm:text-left flex-1">
-          <div className="text-xl md:text-2xl font-black text-white">
-            Buongiorno, <span className="text-amber-400">{displayName}</span>!
+        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
+          {/* Avatar with Minecraft Head and Level Glow */}
+          <div className="relative group shrink-0">
+            <div className="h-24 w-24 rounded-2xl bg-[#0a0b10] border-2 border-amber-500/40 p-2 flex items-center justify-center shadow-xl relative overflow-hidden group-hover:border-amber-400 transition-colors">
+              <img
+                src={`https://mc-heads.net/avatar/${encodeURIComponent(profile?.username || "Steve")}/80`}
+                alt="Avatar Minecraft"
+                className="h-20 w-20 object-contain rounded-xl drop-shadow-lg transform group-hover:scale-105 transition-transform"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://minotar.net/helm/Steve/80.png";
+                }}
+              />
+            </div>
+            {isAdmin && (
+              <div className="absolute -top-2 -right-2 bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 p-1.5 rounded-full shadow-lg border border-amber-300">
+                <Crown className="h-3.5 w-3.5" />
+              </div>
+            )}
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
-            {hasEmployeeAccess
-              ? "Benvenuto nel gestionale ufficiale del Casinò. Di seguito trovi l'elenco delle sezioni a te abilitate con il dettaglio delle tue funzioni operative."
-              : "Benvenuto nel portale ufficiale del Casinò Revenge. Di seguito trovi i tuoi servizi cittadini, la tua tessera e le sezioni dedicate."}
-          </p>
-        </div>
 
-        <div className="shrink-0 flex items-center gap-2 bg-[#0a0b10] border border-slate-800 px-3.5 py-2 rounded-xl">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-            {isAdmin
-              ? "Amministratore"
-              : hasEmployeeAccess
-                ? "Collaboratore Attivo"
-                : "Cittadino Registrato"}
-          </span>
+          {/* User Information & Time Greeting */}
+          <div className="space-y-3 text-center md:text-left flex-1 min-w-0">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-slate-900 border border-slate-700/80 text-slate-300 shadow-inner">
+                <span>{timeGreeting.emoji}</span>
+                <span>{timeGreeting.badgeLabel}</span>
+              </span>
+
+              <div className="flex items-center gap-1.5 bg-[#0a0b10] border border-slate-800 px-3 py-1 rounded-full shadow-inner">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                  {isAdmin
+                    ? "Amministratore"
+                    : hasEmployeeAccess
+                      ? "Staff Operativo"
+                      : "Cittadino Registrato"}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                {timeGreeting.greeting},{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500">
+                  {displayName}
+                </span>
+                !
+              </div>
+              <p className="text-xs md:text-sm text-slate-400 leading-relaxed max-w-2xl mt-1">
+                {timeGreeting.phrase}.{" "}
+                {hasEmployeeAccess
+                  ? "Di seguito trovi il tuo pannello operativo, i ruoli assegnati e le abilitazioni attive."
+                  : "Consulta i tuoi servizi cittadini e la tua tessera ufficiale di gioco."}
+              </p>
+            </div>
+
+            {/* Roles & Extrapex Visualization */}
+            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-2 border-t border-slate-800/80">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Shield className="h-3 w-3 text-amber-400" /> Ruoli & Incarichi:
+              </span>
+
+              {isAdmin && (
+                <Badge className="bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border border-amber-500/40 text-xs font-bold px-2.5 py-0.5 rounded-lg shadow-sm">
+                  👑 Amministratore
+                </Badge>
+              )}
+
+              {customRoles.map((cr) => {
+                const roleColor = cr.staff_color || (cr.is_reparto ? "#a855f7" : "#3b82f6");
+                return (
+                  <span
+                    key={cr.id || cr.name}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-lg border transition-all shadow-sm"
+                    style={{
+                      backgroundColor: `${roleColor}18`,
+                      borderColor: `${roleColor}50`,
+                      color: "#ffffff",
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0 shadow-sm"
+                      style={{ backgroundColor: roleColor }}
+                    />
+                    <span>{cr.name}</span>
+                    {cr.is_reparto && (
+                      <span className="text-[9px] uppercase px-1 py-0 rounded bg-purple-500/20 text-purple-300 ml-0.5">
+                        Extrapex
+                      </span>
+                    )}
+                  </span>
+                );
+              })}
+
+              {!isAdmin && customRoles.length === 0 && (
+                <Badge variant="outline" className="text-slate-400 border-slate-700 text-xs">
+                  {hasEmployeeAccess ? "Membro della Ciurma" : "Cittadino di Liberty Bay"}
+                </Badge>
+              )}
+
+              {permissions.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400/90 border border-amber-500/20">
+                  <Zap className="h-3 w-3 text-amber-400" />
+                  {permissions.length} permessi
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

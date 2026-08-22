@@ -34,6 +34,19 @@ import {
   MessageSquare,
   Sparkles,
   Crown,
+  Search,
+  Shield,
+  Zap,
+  Layers,
+  UserPlus,
+  AlertTriangle,
+  XCircle,
+  ShieldOff,
+  Check,
+  Info,
+  AtSign,
+  Gamepad2,
+  X,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { toast } from "sonner";
@@ -48,19 +61,6 @@ import {
   syncTelegramGroupsNow,
   checkGroupBotPermissionsFn,
 } from "@/lib/telegram-groups.functions";
-import {
-  AlertTriangle,
-  XCircle,
-  Shield,
-  ShieldOff,
-  Check,
-  Info,
-  AtSign,
-  Gamepad2,
-  X,
-  Search,
-  UserPlus,
-} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
@@ -89,6 +89,7 @@ function RolesPage() {
   const [roleToDelete, setRoleToDelete] = useState<any | null>(null);
   const [addManualGroupOpen, setAddManualGroupOpen] = useState(false);
   const [managingRepartoMembers, setManagingRepartoMembers] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: roles = [] } = useQuery({
     queryKey: ["custom-roles"],
@@ -122,6 +123,26 @@ function RolesPage() {
 
   const baseRoles = (roles || []).filter((r: any) => !r.is_reparto);
   const reparti = (roles || []).filter((r: any) => r.is_reparto === true);
+
+  const filteredBaseRoles = baseRoles.filter((r: any) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      r.name?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q) ||
+      (r.permissions ?? []).some((p: string) => p.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredReparti = reparti.filter((r: any) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      r.name?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q) ||
+      (r.permissions ?? []).some((p: string) => p.toLowerCase().includes(q))
+    );
+  });
 
   const {
     data: telegramGroups = [],
@@ -182,6 +203,59 @@ function RolesPage() {
         </p>
       </div>
 
+      {/* Top Role & Hierarchy Statistics Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-[#12141c] border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3.5 shadow-xl relative overflow-hidden">
+          <div className="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+            <Crown className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xl font-black text-white">{baseRoles.length}</div>
+            <div className="text-[11px] font-bold text-amber-400/90 uppercase tracking-wider">
+              Ruoli Base Sito
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#12141c] border border-purple-500/30 rounded-2xl p-4 flex items-center gap-3.5 shadow-xl relative overflow-hidden">
+          <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0 shadow-inner">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xl font-black text-white">{reparti.length}</div>
+            <div className="text-[11px] font-bold text-purple-400/90 uppercase tracking-wider">
+              Reparti Extrapex
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 flex items-center gap-3.5 shadow-xl relative overflow-hidden">
+          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xl font-black text-white">
+              {new Set((userCustomRoles || []).map((u: any) => u.user_id)).size}
+            </div>
+            <div className="text-[11px] font-bold text-emerald-400/90 uppercase tracking-wider">
+              Staff con Incarichi
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#12141c] border border-sky-500/30 rounded-2xl p-4 flex items-center gap-3.5 shadow-xl relative overflow-hidden">
+          <div className="h-10 w-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0 shadow-inner">
+            <Send className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xl font-black text-white">{telegramGroups.length}</div>
+            <div className="text-[11px] font-bold text-sky-400/90 uppercase tracking-wider">
+              Gruppi Telegram Bot
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation Tabs */}
       <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
         <button
@@ -232,9 +306,9 @@ function RolesPage() {
       {activeTab === "roles" ? (
         <>
           {/* Control Header Box */}
-          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center md:text-left w-full md:w-auto">
+              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center justify-center md:justify-start gap-2">
                 <Crown className="h-5 w-5 text-amber-400" />
                 RUOLI BASE SITO
               </h2>
@@ -243,129 +317,235 @@ function RolesPage() {
               </p>
             </div>
 
-            <Button
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 w-full sm:w-auto"
-              onClick={() => {
-                setEditing(null);
-                setIsRepartoDialog(false);
-                setOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> Nuovo ruolo base
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cerca ruolo o permesso..."
+                  className="pl-9 bg-[#0a0b10] border-slate-800 text-xs rounded-xl text-white placeholder:text-slate-500"
+                />
+              </div>
+
+              <Button
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-amber-500/10 w-full sm:w-auto shrink-0"
+                onClick={() => {
+                  setEditing(null);
+                  setIsRepartoDialog(false);
+                  setOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> Nuovo ruolo base
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {baseRoles.length === 0 && (
+            {filteredBaseRoles.length === 0 && (
               <Card className="md:col-span-2 bg-[#12141c] border-slate-800">
-                <CardContent className="text-center text-slate-400 py-8">
-                  Nessun ruolo base configurato.
+                <CardContent className="text-center text-slate-400 py-10 space-y-2">
+                  <ShieldCheck className="h-8 w-8 text-slate-600 mx-auto" />
+                  <div className="font-bold text-white text-sm">
+                    {searchQuery
+                      ? "Nessun ruolo trovato per la ricerca"
+                      : "Nessun ruolo base configurato"}
+                  </div>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    {searchQuery
+                      ? "Prova a modificare i termini di ricerca."
+                      : "Crea il primo ruolo base cliccando sul pulsante 'Nuovo ruolo base'."}
+                  </p>
                 </CardContent>
               </Card>
             )}
-            {baseRoles.map((r: any) => (
-              <Card key={r.id} className="relative overflow-hidden border border-slate-800">
-                <div
-                  className="h-1.5 w-full"
-                  style={{ backgroundColor: r.staff_color || "#3b82f6" }}
-                />
-                <CardContent className="pt-5 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{r.name}</h3>
-                        {r.show_in_staff_list ? (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
-                            ⚓ In Ciurma (Peso: {r.staff_weight ?? 50})
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-slate-500 text-[10px]">
-                            Nascosto in Ciurma
-                          </Badge>
-                        )}
+            {filteredBaseRoles.map((r: any) => {
+              const roleColor = r.staff_color || "#3b82f6";
+              const assignedUserLinks = (userCustomRoles || []).filter(
+                (ucr: any) => ucr.custom_role_id === r.id,
+              );
+              const assignedProfiles = (allProfiles || []).filter((p: any) =>
+                assignedUserLinks.some((link: any) => link.user_id === p.id),
+              );
+
+              return (
+                <Card
+                  key={r.id}
+                  className="relative overflow-hidden border border-slate-800/90 bg-[#12141c] shadow-xl hover:border-slate-700 transition-all group"
+                >
+                  <div className="h-2 w-full shadow-sm" style={{ backgroundColor: roleColor }} />
+                  <CardContent className="pt-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className="h-3.5 w-3.5 rounded-full shrink-0 shadow-md border border-white/20"
+                            style={{ backgroundColor: roleColor }}
+                          />
+                          <h3 className="font-black text-lg text-white tracking-tight truncate">
+                            {r.name}
+                          </h3>
+                          {r.show_in_staff_list ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+                              ⚓ In Ciurma (Peso: {r.staff_weight ?? 50})
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-slate-500 border-slate-700 text-[10px]"
+                            >
+                              Nascosto in Ciurma
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                          {r.description ?? "Nessuna descrizione impostata"}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{r.description ?? "—"}</p>
+
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(r);
+                            setIsRepartoDialog(false);
+                            setOpen(true);
+                          }}
+                          className="hover:bg-slate-800 text-slate-300 h-8 w-8"
+                          title="Modifica Ruolo"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setRoleToDelete(r)}
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 w-8"
+                          title="Elimina Ruolo"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(r);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setRoleToDelete(r)}
-                        className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {(r.permissions ?? []).length === 0 && (
-                      <span className="text-xs text-muted-foreground">Nessun permesso</span>
+
+                    {/* Assigned Staff Preview */}
+                    {assignedProfiles.length > 0 && (
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5 text-amber-400" />
+                          Membri ({assignedProfiles.length}):
+                        </div>
+                        <div className="flex items-center -space-x-1.5 overflow-hidden">
+                          {assignedProfiles.slice(0, 5).map((p: any) => (
+                            <img
+                              key={p.id}
+                              src={`https://mc-heads.net/avatar/${encodeURIComponent(p.username || "Steve")}/24`}
+                              alt={p.display_name || p.username}
+                              title={p.display_name || p.username}
+                              className="h-6 w-6 rounded-full border-2 border-[#12141c] object-cover bg-slate-900"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://minotar.net/helm/Steve/24.png";
+                              }}
+                            />
+                          ))}
+                          {assignedProfiles.length > 5 && (
+                            <span className="h-6 px-1.5 rounded-full bg-slate-800 border-2 border-[#12141c] text-[9px] font-bold text-slate-300 flex items-center justify-center">
+                              +{assignedProfiles.length - 5}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
-                    {(r.permissions ?? []).map((p: string) => (
-                      <Badge key={p} variant="secondary" className="text-xs">
-                        {PERMISSIONS.find((x) => x.key === p)?.label ?? p}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    {/* Permissions list */}
+                    <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-400" />
+                        Permessi Operativi:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {(r.permissions ?? []).length === 0 && (
+                          <span className="text-xs text-slate-500 italic">
+                            Nessun permesso assegnato
+                          </span>
+                        )}
+                        {(r.permissions ?? []).map((p: string) => (
+                          <Badge
+                            key={p}
+                            className="text-[11px] bg-slate-900/90 text-slate-300 border-slate-700/80"
+                          >
+                            {PERMISSIONS.find((x) => x.key === p)?.label ?? p}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </>
       ) : activeTab === "reparti" ? (
         <>
           {/* REPARTI & EXTRAPEX TAB */}
-          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+          <div className="bg-[#12141c] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center md:text-left w-full md:w-auto">
+              <h2 className="text-lg font-extrabold uppercase text-white tracking-wider flex items-center justify-center md:justify-start gap-2">
                 <Sparkles className="h-5 w-5 text-purple-400" />
                 REPARTI & EXTRAPEX
               </h2>
               <p className="text-xs text-slate-400">
                 I reparti (extrapex) concedono permessi aggiuntivi cumulativi oltre al ruolo base
-                dell'utente e sono visibili nella pagina della Ciurma.
+                dell'utente
               </p>
             </div>
 
-            <Button
-              className="bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-purple-500/20 w-full sm:w-auto"
-              onClick={() => {
-                setEditing(null);
-                setIsRepartoDialog(true);
-                setOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> Nuovo Reparto (Extrapex)
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-purple-400/60" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cerca reparto o extrapex..."
+                  className="pl-9 bg-[#0a0b10] border-slate-800 text-xs rounded-xl text-white placeholder:text-slate-500"
+                />
+              </div>
+
+              <Button
+                className="bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl uppercase tracking-wider shadow-lg shadow-purple-500/20 w-full sm:w-auto shrink-0"
+                onClick={() => {
+                  setEditing(null);
+                  setIsRepartoDialog(true);
+                  setOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> Nuovo Reparto (Extrapex)
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {reparti.length === 0 && (
+            {filteredReparti.length === 0 && (
               <Card className="md:col-span-2 bg-[#12141c] border-slate-800">
                 <CardContent className="text-center text-slate-400 py-10 space-y-2">
                   <Sparkles className="h-8 w-8 text-purple-400 mx-auto opacity-80" />
                   <div className="font-bold text-white text-sm">
-                    Nessun Reparto / Extrapex Creato
+                    {searchQuery
+                      ? "Nessun reparto trovato per la ricerca"
+                      : "Nessun Reparto / Extrapex Creato"}
                   </div>
                   <p className="text-xs max-w-sm mx-auto text-slate-400">
-                    Crea reparti speciali come "Sicurezza", "Eventi" o "Cassa" per assegnare
-                    mansioni e permessi extra allo staff.
+                    {searchQuery
+                      ? "Prova a modificare i termini di ricerca."
+                      : "Crea reparti speciali come 'Sicurezza', 'Eventi' o 'Cassa' per assegnare mansioni e permessi extra allo staff."}
                   </p>
                 </CardContent>
               </Card>
             )}
 
-            {reparti.map((rep: any) => {
+            {filteredReparti.map((rep: any) => {
               const assignedUserLinks = (userCustomRoles || []).filter(
                 (ucr: any) => ucr.custom_role_id === rep.id,
               );

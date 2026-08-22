@@ -86,8 +86,10 @@ type Citizen = {
   id: string;
   full_name: string;
   nickname: string | null;
-  membership: "standard" | "exclusive" | "elite" | "vip";
+  membership: string;
   membership_since: string | null;
+  membership_expires_at?: string | null;
+  telegram_handle?: string | null;
   notes: string | null;
   created_at: string;
 };

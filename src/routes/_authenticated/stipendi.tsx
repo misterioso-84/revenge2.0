@@ -21,6 +21,8 @@ import {
   RefreshCw,
   Sliders,
   Trash2,
+  Coins,
+  Crown,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,8 +43,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatDobloni } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
+import { listMembershipSales, MembershipSaleRecord } from "@/lib/membership.functions";
 
 const STORAGE_KEY_CSV_TEXT = "stipendi_cached_csv_text";
 const STORAGE_KEY_CSV_FILENAME = "stipendi_cached_csv_filename";
@@ -200,6 +203,18 @@ export function StipendiPage() {
     },
   });
 
+  // Fetch membership sales from DB to auto-sync revenues from memberships (EUR & Dobloni)
+  const {
+    data: dbMembershipSales = [],
+    isLoading: isLoadingMembershipSales,
+    refetch: refetchMembershipSales,
+  } = useQuery({
+    queryKey: ["all-membership-sales-stipendi"],
+    queryFn: async () => {
+      return await listMembershipSales();
+    },
+  });
+
   // Calculate CSV total turnover (Entrate da fatturato)
   const csvFatturatoTotal = useMemo(() => {
     return parsedRows.reduce((acc, r) => acc + (r.fatturatoPassato || 0), 0);
@@ -218,6 +233,19 @@ export function StipendiPage() {
     }, 0);
   }, [dbConversions]);
 
+  // Calculate Membership Sales revenue (EUR & Dobloni)
+  const membershipSalesEurTotal = useMemo(() => {
+    return dbMembershipSales.reduce((acc, sale) => acc + Number(sale.amount_eur || 0), 0);
+  }, [dbMembershipSales]);
+
+  const membershipSalesDobloniTotal = useMemo(() => {
+    return dbMembershipSales.reduce((acc, sale) => acc + Number(sale.amount_dobloni || 0), 0);
+  }, [dbMembershipSales]);
+
+  const membershipSalesTotalRevenue = useMemo(() => {
+    return membershipSalesEurTotal + membershipSalesDobloniTotal;
+  }, [membershipSalesEurTotal, membershipSalesDobloniTotal]);
+
   // Calculate Uscite/Conversioni totals from DB records (direction: dobloni_to_cash)
   const dbUsciteTotal = useMemo(() => {
     return dbConversions.reduce((acc, curr: any) => {
@@ -231,11 +259,11 @@ export function StipendiPage() {
     }, 0);
   }, [dbConversions]);
 
-  // Automatic Entrate & Uscite
+  // Automatic Entrate & Uscite (incorporates CSV turnover, conversions, and dual-currency membership sales)
   const autoEntrate = useMemo(() => {
-    const total = csvFatturatoTotal + dbConversionEntrateTotal;
+    const total = csvFatturatoTotal + dbConversionEntrateTotal + membershipSalesTotalRevenue;
     return total > 0 ? total : 50000;
-  }, [csvFatturatoTotal, dbConversionEntrateTotal]);
+  }, [csvFatturatoTotal, dbConversionEntrateTotal, membershipSalesTotalRevenue]);
 
   const autoUscite = useMemo(() => {
     return dbUsciteTotal;
@@ -275,9 +303,12 @@ export function StipendiPage() {
 
   const handleResetAutoCalculations = () => {
     refetchConversions();
+    refetchMembershipSales();
     setManualEntrateInput(null);
     setManualUsciteInput(null);
-    toast.success("Ripristinato il calcolo automatico basato su Fatturato e Conversioni!");
+    toast.success(
+      "Ripristinato il calcolo automatico basato su Fatturato, Conversioni e Membership!",
+    );
   };
 
   // Handle local file upload & save to client cache (localStorage)
@@ -927,7 +958,7 @@ export function StipendiPage() {
                       variant="outline"
                       className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 font-mono text-[10px] py-1"
                     >
-                      ⚡ Auto-Calcolato da Fatturato + DB
+                      ⚡ Auto: Fatturato + Conversioni + Membership
                     </Badge>
                   )}
                 </div>
@@ -951,9 +982,13 @@ export function StipendiPage() {
                     onChange={(e) => setManualEntrateInput(Number(e.target.value) || 0)}
                     className="h-8 font-mono text-xs bg-slate-900 border-slate-700"
                   />
-                  <div className="text-[9px] text-muted-foreground font-mono">
-                    CSV: {formatMoney(csvFatturatoTotal)} | DB:{" "}
-                    {formatMoney(dbConversionEntrateTotal)}
+                  <div
+                    className="text-[9px] text-muted-foreground font-mono truncate"
+                    title={`CSV: ${formatMoney(csvFatturatoTotal)} | Conv: ${formatMoney(dbConversionEntrateTotal)} | Member EUR: ${formatMoney(membershipSalesEurTotal)} | Member Dobloni: ${formatDobloni(membershipSalesDobloniTotal)}`}
+                  >
+                    CSV: {formatMoney(csvFatturatoTotal)} | Conv:{" "}
+                    {formatMoney(dbConversionEntrateTotal)} | Memb:{" "}
+                    {formatMoney(membershipSalesTotalRevenue)}
                   </div>
                 </div>
 

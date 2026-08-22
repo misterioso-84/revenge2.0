@@ -17,6 +17,15 @@ export type Profile = {
   ip_address?: string;
 };
 
+export type AuthCustomRole = {
+  id: string;
+  name: string;
+  staff_color?: string;
+  staff_weight?: number;
+  is_reparto?: boolean;
+  description?: string;
+};
+
 export interface ClientNetworkInfo {
   ip: string;
   countryCode: string;
@@ -38,6 +47,7 @@ export function useAuth() {
   const [roles, setRoles] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [customRoleNames, setCustomRoleNames] = useState<string[]>([]);
+  const [customRoles, setCustomRoles] = useState<AuthCustomRole[]>([]);
   const [activeSuspension, setActiveSuspension] = useState<any | null>(null);
   const [activeLeave, setActiveLeave] = useState<any | null>(null);
   const [userSanctions, setUserSanctions] = useState<any[]>([]);
@@ -168,7 +178,10 @@ export function useAuth() {
             .maybeSingle(),
           supabase.from("user_roles").select("role").eq("user_id", user.id),
           supabase.rpc("user_permissions", { _user_id: user.id }),
-          supabase.from("user_custom_roles").select("custom_roles(name)").eq("user_id", user.id),
+          supabase
+            .from("user_custom_roles")
+            .select("custom_roles(id, name, staff_color, staff_weight, is_reparto, description)")
+            .eq("user_id", user.id),
           supabase
             .from("sanctions")
             .select("*")
@@ -192,10 +205,13 @@ export function useAuth() {
         setRoles(rolesList);
 
         const permsList = (perms as string[] | null) ?? [];
-        const names = ((cr as Array<{ custom_roles: { name: string } | null }> | null) ?? [])
-          .map((r) => r.custom_roles?.name)
-          .filter((n): n is string => !!n);
-        setCustomRoleNames(names);
+        const rawCustomRoles = ((cr as Array<{ custom_roles: AuthCustomRole | null }> | null) ?? [])
+          .map((r) => r.custom_roles)
+          .filter((n): n is AuthCustomRole => !!n);
+
+        const customRoleNamesList = rawCustomRoles.map((r) => r.name);
+        setCustomRoles(rawCustomRoles);
+        setCustomRoleNames(customRoleNamesList);
 
         const userRoleAdmin = rolesList.some(
           (r: string) => r === "admin" || r === "gestore" || r === "capitano" || r === "direzione",
@@ -205,7 +221,7 @@ export function useAuth() {
           profileData?.username?.toLowerCase() === "giuse84pro" ||
           user?.email?.toLowerCase() === "beppemonti84@gmail.com" ||
           user?.user_metadata?.username?.toLowerCase() === "admin";
-        const customRoleAdmin = names.some((n) => {
+        const customRoleAdmin = customRoleNamesList.some((n) => {
           const lower = n.toLowerCase();
           return (
             lower.includes("amministratore") ||
@@ -274,6 +290,7 @@ export function useAuth() {
     hasEmployeeAccess,
     permissions,
     customRoleNames,
+    customRoles,
     activeSuspension,
     activeLeave,
     userSanctions,

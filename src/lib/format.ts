@@ -43,7 +43,12 @@ export const MEMBERSHIP_LABEL: Record<string, string> = {
 
 export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "cittadini.read", label: "Vedere cittadini" },
-  { key: "cittadini.write", label: "Modificare cittadini" },
+  { key: "cittadini.write", label: "Modificare anagrafica cittadini" },
+  { key: "cittadini.membership", label: "Assegnare e rinnovare membership ai cittadini" },
+  {
+    key: "membership.gestisci",
+    label: "Creare e configurare piani Membership (Costi, Valuta e Durata)",
+  },
   { key: "serate.crea", label: "Creare nuove serate" },
   { key: "serate.gestisci", label: "Aggiungere cittadini e pass alle serate" },
   { key: "serate.consulta", label: "Consultare pass e membership di un cittadino in serata" },

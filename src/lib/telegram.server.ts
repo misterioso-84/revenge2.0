@@ -1144,6 +1144,16 @@ export async function runDaily1700TelegramAudit() {
       `[Telegram Audit 17:00] Completed. Reminders sent: ${remindersSent}, Unauthorized kicked: ${unauthorizedKicked}`,
     );
 
+    try {
+      const { executeMembershipDailyReminders } = await import("./membership.functions");
+      const memRes = await executeMembershipDailyReminders();
+      console.log(
+        `[Telegram Audit 17:00] Membership expiring reminders sent: ${memRes.remindedCount}`,
+      );
+    } catch (memErr) {
+      console.error("[Telegram Audit 17:00] Error sending membership expiring reminders:", memErr);
+    }
+
     return {
       success: true,
       remindersSent,

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { getTimeBasedGreeting } from "@/lib/greeting";
 import { useServerFn } from "@tanstack/react-start";
 import { requestTelegramVerificationCode, verifyTelegramCode } from "@/lib/registration.functions";
 import { getMaintenanceStatus } from "@/lib/admin.functions";
@@ -72,7 +73,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     profile,
     isAdmin,
     hasEmployeeAccess,
-    customRoleNames,
+    customRoles = [],
+    customRoleNames = [],
     activeSuspension,
     activeLeave,
     permissions = [],
@@ -272,7 +274,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Area Riservata allo Staff
             </h1>
             <p className="text-sm text-slate-400">
-              Benvenuto,{" "}
+              {getTimeBasedGreeting().greeting},{" "}
               <strong className="text-amber-400">
                 {profile?.display_name || profile?.username}
               </strong>
@@ -647,17 +649,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div className="font-semibold truncate text-slate-100 group-hover:text-amber-400 transition-colors">
                     {profile?.display_name ?? profile?.username}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
                     {isAdmin && (
-                      <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
-                        Admin
-                      </Badge>
+                      <span className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                        👑 Admin
+                      </span>
                     )}
-                    {customRoleNames.map((n) => (
-                      <Badge key={n} variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {n}
-                      </Badge>
-                    ))}
+                    {customRoles.map((cr) => {
+                      const color = cr.staff_color || (cr.is_reparto ? "#a855f7" : "#3b82f6");
+                      return (
+                        <span
+                          key={cr.id || cr.name}
+                          className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded border"
+                          style={{
+                            backgroundColor: `${color}18`,
+                            borderColor: `${color}50`,
+                            color: "#ffffff",
+                          }}
+                        >
+                          <span
+                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="truncate max-w-[90px]">{cr.name}</span>
+                        </span>
+                      );
+                    })}
+                    {!isAdmin && customRoles.length === 0 && (
+                      <span className="text-[10px] text-slate-400">
+                        {hasEmployeeAccess ? "Staff Casinò" : "Cittadino"}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>
