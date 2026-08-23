@@ -244,8 +244,8 @@ function CandidaturePage() {
   // Filter available forms based on user role and granular access control (whitelist / staff / public)
   const availableForms = useMemo(() => {
     return forms.filter((f) => {
-      // Draft forms are not available for submission or listing to clients
-      if (f.status === "draft" && !canManageForms && !isAdmin) {
+      // Draft forms are NEVER shown in the public/available list for candidate applications
+      if (f.status === "draft") {
         return false;
       }
       const { allowed } = checkFormAccess(f, {
@@ -1137,11 +1137,13 @@ function CandidaturePage() {
                       </SelectTrigger>
                       <SelectContent className="bg-[#12141c] border-slate-800 text-white text-xs">
                         <SelectItem value="all">Tutti i Moduli / Bandi</SelectItem>
-                        {forms.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>
-                            {f.title}
-                          </SelectItem>
-                        ))}
+                        {forms
+                          .filter((f) => f.status !== "draft" || canManageForms)
+                          .map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.title} {f.status === "draft" ? "🟡 (Bozza)" : ""}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1679,12 +1681,14 @@ function CandidaturePage() {
             />
 
             {/* Create / Edit Form Dialog (Admin & Managers) */}
-            <FormBuilderDialog
-              form={editingForm}
-              open={formBuilderOpen}
-              onOpenChange={setFormBuilderOpen}
-              currentUserId={user?.id}
-            />
+            {canManageForms && (
+              <FormBuilderDialog
+                form={editingForm}
+                open={formBuilderOpen}
+                onOpenChange={setFormBuilderOpen}
+                currentUserId={user?.id}
+              />
+            )}
 
             {/* Delete Form Confirmation */}
             <ConfirmDialog
