@@ -237,18 +237,98 @@ export function getStoredChatMessages(chatId: string | number): ChatMessageRecor
   return chatMessagesStore.get(cId) || [];
 }
 
+export async function getStoredChatMessagesAsync(
+  chatId: string | number,
+): Promise<ChatMessageRecord[]> {
+  const cId = String(chatId);
+  let list = getStoredChatMessages(cId);
+
+  // If memory cache is empty, attempt to hydrate from database
+  if (list.length === 0) {
+    try {
+      const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+      const { data: dbMessages } = await supabaseAdmin
+        .from("telegram_chat_messages")
+        .select("*")
+        .eq("chat_id", cId)
+        .order("date", { ascending: true })
+        .limit(150);
+
+      if (Array.isArray(dbMessages) && dbMessages.length > 0) {
+        list = dbMessages;
+        chatMessagesStore.set(cId, list);
+      }
+    } catch (e) {
+      // Ignore fallback errors
+    }
+  }
+
+  return list;
+}
+
 export function storeChatMessage(msg: ChatMessageRecord) {
   const cId = String(msg.chat_id);
-  const list = getStoredChatMessages(cId);
+  let list = getStoredChatMessages(cId);
+
+  // Auto-resolve reply_to_message details if only ID was provided
+  if (msg.reply_to_message_id && !msg.reply_to_message) {
+    const parentMsg = list.find((m) => m.message_id === msg.reply_to_message_id);
+    if (parentMsg) {
+      msg.reply_to_message = {
+        id: parentMsg.id,
+        message_id: parentMsg.message_id,
+        sender_name: parentMsg.sender_name || "Utente",
+        text: parentMsg.text || "",
+      };
+    }
+  }
+
   const existingIdx = list.findIndex((m) => m.message_id === msg.message_id || m.id === msg.id);
   if (existingIdx >= 0) {
     list[existingIdx] = { ...list[existingIdx], ...msg };
   } else {
     list.push(msg);
   }
+
   // Sort chronologically
-  list.sort((a, b) => a.date - b.date);
+  list.sort((a, b) => (a.date || 0) - (b.date || 0));
+
+  // Cap in-memory storage to max 150 items per chat to prevent memory bloat
+  if (list.length > 150) {
+    list = list.slice(-150);
+  }
   chatMessagesStore.set(cId, list);
+
+  // Non-blocking persistent write to database
+  (async () => {
+    try {
+      const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+      await supabaseAdmin.from("telegram_chat_messages").upsert({
+        id: msg.id || `tg-${msg.chat_id}-${msg.message_id}`,
+        chat_id: String(msg.chat_id),
+        message_id: msg.message_id,
+        sender_type: msg.sender_type || "user",
+        sender_name: msg.sender_name || "Utente",
+        sender_username: msg.sender_username || null,
+        sender_avatar: msg.sender_avatar || null,
+        sender_role: msg.sender_role || null,
+        sender_id: msg.sender_id || null,
+        text: msg.text || "",
+        created_at: msg.created_at || new Date().toISOString(),
+        date: msg.date || Math.floor(Date.now() / 1000),
+        is_pinned: !!msg.is_pinned,
+        pinned_at: msg.pinned_at || null,
+        reply_to_message_id: msg.reply_to_message_id || null,
+        reply_to_message: msg.reply_to_message || null,
+        reactions: msg.reactions || [],
+        inline_buttons: msg.inline_buttons || [],
+        delivery_status: msg.delivery_status || "delivered",
+      });
+    } catch (e) {
+      // ignore
+    }
+  })();
+
   return msg;
 }
 
@@ -323,6 +403,20 @@ export function deleteChatMessageFromStore(chatId: string | number, messageId: n
   const list = getStoredChatMessages(cId);
   const nextList = list.filter((m) => m.message_id !== messageId);
   chatMessagesStore.set(cId, nextList);
+
+  (async () => {
+    try {
+      const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("telegram_chat_messages")
+        .delete()
+        .eq("chat_id", cId)
+        .eq("message_id", messageId);
+    } catch (e) {
+      // ignore
+    }
+  })();
+
   return nextList;
 }
 
@@ -2705,5 +2799,1159 @@ if (typeof window === "undefined") {
     startBackgroundPolling();
   } catch (e) {
     // ignore
+  }
+}
+
+// ============================================================================
+// TELEGRAM NOTIFICATION ROUTER SYSTEM (Configuratore Notifiche per Sezione)
+// ============================================================================
+
+export interface TelegramNotificationRule {
+  id: string;
+  section:
+    | "candidature"
+    | "cittadini"
+    | "cassa"
+    | "eventi"
+    | "staff"
+    | "congedi"
+    | "stipendi"
+    | "sicurezza";
+  section_title: string;
+  event_type: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+  chat_id: string; // Target Telegram Chat/Group ID or "" (unassigned)
+  custom_chat_id?: string;
+  silent: boolean;
+  min_amount_threshold?: number;
+  template_override?: string;
+  icon?: string;
+  updated_at?: string;
+}
+
+export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[] {
+  return [
+    // 1. CANDIDATURE
+    {
+      id: "rule_candidature_new",
+      section: "candidature",
+      section_title: "Candidature & Selezioni Staff",
+      event_type: "candidature_new",
+      title: "Nuova Candidatura Inviata",
+      description:
+        "Notifica istantanea quando un utente invia una candidatura per un bando staff aperto.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "FileText",
+    },
+    {
+      id: "rule_candidature_evaluated",
+      section: "candidature",
+      section_title: "Candidature & Selezioni Staff",
+      event_type: "candidature_evaluated",
+      title: "Esito Valutazione Candidatura",
+      description: "Notifica quando un esaminatore approva o respinge formalmente una candidatura.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Award",
+    },
+    {
+      id: "rule_candidature_second_chance",
+      section: "candidature",
+      section_title: "Candidature & Selezioni Staff",
+      event_type: "candidature_second_chance",
+      title: "Seconda Possibilità / Reset Cooldown",
+      description:
+        "Notifica quando viene concesso un nuovo tentativo a un candidato precedentemente respinto.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "RotateCcw",
+    },
+    {
+      id: "rule_candidature_form_published",
+      section: "candidature",
+      section_title: "Candidature & Selezioni Staff",
+      event_type: "candidature_form_published",
+      title: "Nuovo Bando Candidature Creato",
+      description:
+        "Notifica quando viene pubblicato un nuovo bando di selezione per ruoli o mansioni.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "PlusCircle",
+    },
+
+    // 2. CITTADINI & ANAGRAFICA
+    {
+      id: "rule_citizen_created",
+      section: "cittadini",
+      section_title: "Cittadini & Tesseramenti",
+      event_type: "citizen_created",
+      title: "Nuovo Cittadino Registrato",
+      description:
+        "Notifica quando un nuovo cliente/cittadino viene aggiunto all'anagrafica del casinò.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "UserPlus",
+    },
+    {
+      id: "rule_citizen_sanctioned",
+      section: "cittadini",
+      section_title: "Cittadini & Tesseramenti",
+      event_type: "citizen_sanctioned",
+      title: "Sanzione / Provvedimento a Cittadino",
+      description:
+        "Notifica immediata di richiami, allontanamenti temporanei o sanzioni pecuniarie.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "AlertTriangle",
+    },
+    {
+      id: "rule_membership_activated",
+      section: "cittadini",
+      section_title: "Cittadini & Tesseramenti",
+      event_type: "membership_activated",
+      title: "Attivazione / Rinnovo Tessera VIP",
+      description:
+        "Notifica quando un cittadino acquista o rinnova un piano di tesseramento VIP o Standard.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Crown",
+    },
+    {
+      id: "rule_membership_expired_alert",
+      section: "cittadini",
+      section_title: "Cittadini & Tesseramenti",
+      event_type: "membership_expired_alert",
+      title: "Avviso Scadenza Tessera VIP",
+      description: "Notifica di avviso quando un abbonamento VIP raggiunge la data di scadenza.",
+      enabled: false,
+      chat_id: "",
+      silent: true,
+      icon: "Clock",
+    },
+
+    // 3. CASSA & CONVERSIONI
+    {
+      id: "rule_conversion_completed",
+      section: "cassa",
+      section_title: "Cassa, Dobloni & Economia",
+      event_type: "conversion_completed",
+      title: "Conversione Valuta (Dobloni ⇄ Euro)",
+      description: "Notifica per ogni cambio fiches/valuta completato dai cassieri abilitati.",
+      enabled: true,
+      chat_id: "",
+      min_amount_threshold: 0,
+      silent: false,
+      icon: "ArrowLeftRight",
+    },
+    {
+      id: "rule_cassa_night_opened",
+      section: "cassa",
+      section_title: "Cassa, Dobloni & Economia",
+      event_type: "cassa_night_opened",
+      title: "Apertura Serata di Gioco",
+      description:
+        "Notifica quando il responsabile apre ufficialmente i tavoli da gioco e la cassa.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Play",
+    },
+    {
+      id: "rule_cassa_night_closed",
+      section: "cassa",
+      section_title: "Cassa, Dobloni & Economia",
+      event_type: "cassa_night_closed",
+      title: "Chiusura Serata & Report Incassi",
+      description:
+        "Notifica con il report consuntivo di chiusura: incasso totale, payout e bilancio fiches.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "CheckCircle2",
+    },
+
+    // 4. EVENTI & TORNEI
+    {
+      id: "rule_event_created",
+      section: "eventi",
+      section_title: "Eventi, Gare & Corse",
+      event_type: "event_created",
+      title: "Nuovo Evento o Torneo Programmato",
+      description:
+        "Notifica quando viene annunciato un nuovo torneo di poker, corsa o evento speciale.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Calendar",
+    },
+    {
+      id: "rule_event_ticket_bought",
+      section: "eventi",
+      section_title: "Eventi, Gare & Corse",
+      event_type: "event_ticket_bought",
+      title: "Acquisto Biglietto / Scommessa Evento",
+      description:
+        "Notifica quando un partecipante acquista una schedina o si iscrive a un torneo.",
+      enabled: true,
+      chat_id: "",
+      silent: true,
+      icon: "Ticket",
+    },
+    {
+      id: "rule_event_winner_announced",
+      section: "eventi",
+      section_title: "Eventi, Gare & Corse",
+      event_type: "event_winner_announced",
+      title: "Vincitori Torneo / Gara Proclamati",
+      description:
+        "Notifica con il podio finale, i vincitori e il montepremi erogato per l'evento.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Trophy",
+    },
+
+    // 5. STAFF & DIPENDENTI
+    {
+      id: "rule_staff_hired",
+      section: "staff",
+      section_title: "Staff, Dipendenti & Ruoli",
+      event_type: "staff_hired",
+      title: "Nuova Assunzione Staff",
+      description:
+        "Notifica quando viene creato un nuovo dipendente o abilitato un profilo per lo staff.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "UserCheck",
+    },
+    {
+      id: "rule_staff_fired",
+      section: "staff",
+      section_title: "Staff, Dipendenti & Ruoli",
+      event_type: "staff_fired",
+      title: "Licenziamento / Revoca Dipendente",
+      description:
+        "Notifica quando un membro viene licenziato dall'organico con revoca credenziali.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "UserX",
+    },
+    {
+      id: "rule_staff_sanction",
+      section: "staff",
+      section_title: "Staff, Dipendenti & Ruoli",
+      event_type: "staff_sanction",
+      title: "Provvedimento Disciplinare a Staff",
+      description: "Notifica per sanzioni, multe o note di biasimo emesse contro un collaboratore.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "ShieldAlert",
+    },
+    {
+      id: "rule_staff_role_promoted",
+      section: "staff",
+      section_title: "Staff, Dipendenti & Ruoli",
+      event_type: "staff_role_promoted",
+      title: "Promozione Ruolo o Permessi Staff",
+      description: "Notifica quando un dipendente riceve una promozione di grado o ruoli speciali.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "ShieldCheck",
+    },
+
+    // 6. FERIE & CONGEDI
+    {
+      id: "rule_leave_request_new",
+      section: "congedi",
+      section_title: "Ferie & Congedi",
+      event_type: "leave_request_new",
+      title: "Nuova Richiesta Ferie Inviata",
+      description:
+        "Notifica immediata alla direzione quando un dipendente richiede un periodo di assenza.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "CalendarDays",
+    },
+    {
+      id: "rule_leave_request_evaluated",
+      section: "congedi",
+      section_title: "Ferie & Congedi",
+      event_type: "leave_request_evaluated",
+      title: "Esito Richiesta Ferie (Approvata / Respinta)",
+      description: "Notifica quando la direzione approva o respinge una richiesta di congedo.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "CheckSquare",
+    },
+
+    // 7. STIPENDI & BUSTE PAGA
+    {
+      id: "rule_salary_paid",
+      section: "stipendi",
+      section_title: "Stipendi & Buste Paga",
+      event_type: "salary_paid",
+      title: "Pagamento Stipendio Dipendente",
+      description:
+        "Notifica quando viene saldato il compenso mensile o straordinari a un collaboratore.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Banknote",
+    },
+
+    // 8. SICUREZZA & BOT
+    {
+      id: "rule_security_unauthorized_kick",
+      section: "sicurezza",
+      section_title: "Sicurezza & Bot Telegram",
+      event_type: "security_unauthorized_kick",
+      title: "Espulsione Automatica Non Autorizzati",
+      description:
+        "Notifica quando la guardia automatica espelle dai gruppi Telegram un account non in regola.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "UserMinus",
+    },
+    {
+      id: "rule_system_daily_audit",
+      section: "sicurezza",
+      section_title: "Sicurezza & Bot Telegram",
+      event_type: "system_daily_audit",
+      title: "Report Audit Giornaliero (Ore 17:00)",
+      description:
+        "Notifica periodica di riepilogo con lo stato di sincronizzazione gruppi e tesseramenti.",
+      enabled: true,
+      chat_id: "",
+      silent: false,
+      icon: "Activity",
+    },
+  ];
+}
+
+export async function getTelegramNotificationRules(): Promise<TelegramNotificationRule[]> {
+  try {
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+    const { data: dbRules } = await supabaseAdmin.from("telegram_notification_rules").select("*");
+
+    const defaultRules = getDefaultTelegramNotificationRules();
+    if (!dbRules || dbRules.length === 0) {
+      // Seed default rules
+      try {
+        await supabaseAdmin.from("telegram_notification_rules").upsert(defaultRules);
+      } catch {
+        // ignore
+      }
+      return defaultRules;
+    }
+
+    // Merge default rules with stored rules to ensure newly added rules are present
+    const ruleMap = new Map<string, TelegramNotificationRule>();
+    for (const d of defaultRules) {
+      ruleMap.set(d.id, d);
+    }
+    for (const r of dbRules) {
+      const existing = ruleMap.get(r.id);
+      ruleMap.set(r.id, {
+        ...(existing || {}),
+        ...r,
+      });
+    }
+
+    return Array.from(ruleMap.values());
+  } catch (err) {
+    console.error("Error getting telegram notification rules:", err);
+    return getDefaultTelegramNotificationRules();
+  }
+}
+
+export async function saveTelegramNotificationRule(
+  rule: Partial<TelegramNotificationRule> & { id: string },
+): Promise<TelegramNotificationRule> {
+  const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+  const fullRule = {
+    ...rule,
+    updated_at: new Date().toISOString(),
+  };
+  await supabaseAdmin.from("telegram_notification_rules").upsert(fullRule);
+  return fullRule as TelegramNotificationRule;
+}
+
+export async function saveAllTelegramNotificationRules(
+  rules: TelegramNotificationRule[],
+): Promise<TelegramNotificationRule[]> {
+  const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+  const now = new Date().toISOString();
+  const rulesToSave = rules.map((r) => ({ ...r, updated_at: now }));
+  await supabaseAdmin.from("telegram_notification_rules").upsert(rulesToSave);
+  return rulesToSave;
+}
+
+export async function resetTelegramNotificationRules(): Promise<TelegramNotificationRule[]> {
+  const defaults = getDefaultTelegramNotificationRules();
+  const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+  await supabaseAdmin.from("telegram_notification_rules").upsert(defaults);
+  return defaults;
+}
+
+// Formats rich HTML Telegram message with nice aesthetics and dynamic fields
+export function formatTelegramNotificationPayload(
+  eventType: string,
+  payload: Record<string, any>,
+): { title: string; html: string; defaultSilent: boolean } {
+  const nowStr = new Date().toLocaleString("it-IT", {
+    timeZone: "Europe/Rome",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  switch (eventType) {
+    case "candidature_new":
+      return {
+        title: "Nuova Candidatura Inviata",
+        defaultSilent: false,
+        html:
+          `📋 <b>NUOVA CANDIDATURA STAFF RICEVUTA</b>\n\n` +
+          `👤 <b>Candidato:</b> <code>${escapeHtml(payload.applicant_name || payload.nickname || "Candidato")}</code>\n` +
+          `📌 <b>Bando / Ruolo:</b> <b>${escapeHtml(payload.form_title || payload.bando || "Candidatura Staff")}</b>\n` +
+          `💬 <b>Telegram:</b> ${payload.telegram_handle ? `@${escapeHtml(payload.telegram_handle.replace("@", ""))}` : "<i>Non specificato</i>"}\n` +
+          `🆔 <b>Codice Cittadino:</b> #${escapeHtml(payload.citizen_code || payload.citizen_id || "N/D")}\n` +
+          (payload.answers_preview
+            ? `📝 <b>Sintesi Risposte:</b>\n<i>${escapeHtml(payload.answers_preview)}</i>\n`
+            : "") +
+          `\n⏱️ <i>Inviata il ${nowStr} • Casinò Revenge System</i>`,
+      };
+
+    case "candidature_evaluated": {
+      const isApproved =
+        String(payload.status).toLowerCase() === "approved" ||
+        String(payload.status).toLowerCase() === "approvata";
+      const statusBadge = isApproved ? "✅ APPROVATA" : "❌ RESPINTA";
+      return {
+        title: "Esito Candidatura Staff",
+        defaultSilent: false,
+        html:
+          `⚖️ <b>ESITO CANDIDATURA STAFF REGISTRATO</b>\n\n` +
+          `👤 <b>Candidato:</b> <code>${escapeHtml(payload.applicant_name || "Candidato")}</code>\n` +
+          `📌 <b>Bando:</b> <b>${escapeHtml(payload.form_title || "Bando Staff")}</b>\n` +
+          `🏷️ <b>Esito:</b> <b>${statusBadge}</b>\n` +
+          `👨‍⚖️ <b>Valutato da:</b> ${escapeHtml(payload.reviewer_name || "Direzione")}\n` +
+          (payload.reviewer_notes
+            ? `💬 <b>Motivazione:</b> <i>${escapeHtml(payload.reviewer_notes)}</i>\n`
+            : "") +
+          `\n⏱️ <i>Registrato il ${nowStr}</i>`,
+      };
+    }
+
+    case "candidature_second_chance":
+      return {
+        title: "Seconda Possibilità Candidato",
+        defaultSilent: false,
+        html:
+          `🔄 <b>SECONDA POSSIBILITÀ CONCESSA</b>\n\n` +
+          `👤 <b>Candidato:</b> <code>${escapeHtml(payload.applicant_name || "Candidato")}</code>\n` +
+          `📌 <b>Bando:</b> <b>${escapeHtml(payload.form_title || "Bando Staff")}</b>\n` +
+          `🔓 <b>Azione:</b> Il periodo di blocco/cooldown è stato azzerato.\n` +
+          `👮‍♂️ <b>Autorizzato da:</b> ${escapeHtml(payload.authorized_by || "Amministrazione")}\n` +
+          `\n⏱️ <i>Operazione eseguita il ${nowStr}</i>`,
+      };
+
+    case "candidature_form_published":
+      return {
+        title: "Nuovo Bando Candidature",
+        defaultSilent: false,
+        html:
+          `📢 <b>NUOVO BANDO CANDIDATURE APERTO</b>\n\n` +
+          `📜 <b>Titolo Bando:</b> <b>${escapeHtml(payload.title || "Nuovo Bando")}</b>\n` +
+          `💼 <b>Mansione / Ruolo:</b> ${escapeHtml(payload.target_role || "Staff")}\n` +
+          (payload.description
+            ? `ℹ️ <b>Dettagli:</b> <i>${escapeHtml(payload.description)}</i>\n`
+            : "") +
+          `\n🌐 <i>Le candidature sono ora aperte sul portale ufficiale del Casinò Revenge.</i>`,
+      };
+
+    case "citizen_created":
+      return {
+        title: "Nuovo Cittadino Registrato",
+        defaultSilent: false,
+        html:
+          `👤 <b>NUOVO CITTADINO REGISTRATO</b>\n\n` +
+          `💳 <b>Nominativo:</b> <b>${escapeHtml(payload.full_name || "Cittadino")}</b>\n` +
+          `🆔 <b>ID / Codice:</b> <code>${escapeHtml(payload.code || payload.id || "N/D")}</code>\n` +
+          `📱 <b>Telegram:</b> ${payload.telegram_handle ? `@${escapeHtml(payload.telegram_handle.replace("@", ""))}` : "<i>Non collegato</i>"}\n` +
+          (payload.phone ? `📞 <b>Telefono:</b> ${escapeHtml(payload.phone)}\n` : "") +
+          (payload.notes ? `📝 <b>Note:</b> <i>${escapeHtml(payload.notes)}</i>\n` : "") +
+          `\n⏱️ <i>Aggiunto al registro anagrafico il ${nowStr}</i>`,
+      };
+
+    case "citizen_sanctioned": {
+      const sType = payload.sanction_type || payload.type || "Richiamo Ufficiale";
+      return {
+        title: "Sanzione Disciplinare Cittadino",
+        defaultSilent: false,
+        html:
+          `⚠️ <b>SANZIONE DISCIPLINARE EMESSA</b>\n\n` +
+          `👤 <b>Destinatario:</b> <b>${escapeHtml(payload.citizen_name || payload.full_name || "Cittadino")}</b>\n` +
+          `🛑 <b>Tipologia:</b> <code>${escapeHtml(sType)}</code>\n` +
+          `📜 <b>Motivazione:</b> <i>${escapeHtml(payload.reason || "Violazione del regolamento interno del Casinò")}</i>\n` +
+          `👮‍♂️ <b>Emessa da:</b> ${escapeHtml(payload.issued_by || payload.created_by || "Sicurezza Casinò")}\n` +
+          (payload.expires_at ? `⏳ <b>Scadenza:</b> ${escapeHtml(payload.expires_at)}\n` : "") +
+          `\n⏱️ <i>Provvedimento protocollato il ${nowStr}</i>`,
+      };
+    }
+
+    case "membership_activated":
+      return {
+        title: "Attivazione Tessera VIP",
+        defaultSilent: false,
+        html:
+          `👑 <b>NUOVO TESSERAMENTO / ABBONAMENTO VIP</b>\n\n` +
+          `👤 <b>Titolare:</b> <b>${escapeHtml(payload.citizen_name || "Cittadino")}</b>\n` +
+          `💎 <b>Piano Attivato:</b> <code>${escapeHtml(payload.plan_name || "Tessera VIP")}</code>\n` +
+          (payload.price
+            ? `💰 <b>Costo / Valuta:</b> ${escapeHtml(String(payload.price))}\n`
+            : "") +
+          `📅 <b>Data Attivazione:</b> ${nowStr}\n` +
+          (payload.expires_at
+            ? `⏳ <b>Scadenza:</b> ${escapeHtml(payload.expires_at)}\n`
+            : "♾️ <b>Durata:</b> Permanente\n") +
+          `\n✨ <i>Benvenuto tra i clienti esclusivi del Casinò Revenge!</i>`,
+      };
+
+    case "conversion_completed": {
+      const dir =
+        payload.direction === "eur_to_dobloni" ? "💶 Euro ➔ 🪙 Dobloni" : "🪙 Dobloni ➔ 💶 Euro";
+      const eur = Number(payload.eur_amount || payload.eur || 0).toLocaleString("it-IT");
+      const dob = Number(payload.dobloni_amount || payload.dobloni || 0).toLocaleString("it-IT");
+      return {
+        title: "Conversione Cassa Dobloni ⇄ Euro",
+        defaultSilent: false,
+        html:
+          `💱 <b>TRANSAZIONE DI CASSA REGISTRATA</b>\n\n` +
+          `🔄 <b>Operazione:</b> <b>${dir}</b>\n` +
+          `💵 <b>Controvalore Euro:</b> € ${eur}\n` +
+          `🪙 <b>Controvalore Dobloni:</b> 🪙 ${dob}\n` +
+          `👤 <b>Cliente:</b> ${escapeHtml(payload.citizen_name || payload.client || "Cliente al banco")}\n` +
+          `💼 <b>Operatore Cassa:</b> ${escapeHtml(payload.operator_name || payload.created_by || "Cassiere")}\n` +
+          `\n⏱️ <i>Registrata il ${nowStr}</i>`,
+      };
+    }
+
+    case "cassa_night_opened":
+      return {
+        title: "Apertura Serata Casinò",
+        defaultSilent: false,
+        html:
+          `🎰 <b>APERTURA SERATA DI GIOCO & CASSA</b>\n\n` +
+          `🌙 <b>Data Serata:</b> <b>${escapeHtml(payload.night_label || payload.date || nowStr)}</b>\n` +
+          `🎲 <b>Tavoli e Servizi:</b> Attivi e operativi\n` +
+          `💼 <b>Responsabile di Turno:</b> ${escapeHtml(payload.responsible_name || "Direzione")}\n` +
+          (payload.starting_float
+            ? `💰 <b>Fondo Cassa Iniziale:</b> € ${escapeHtml(String(payload.starting_float))}\n`
+            : "") +
+          `\n🎉 <i>Le sale da gioco del Casinò Revenge sono ufficialmente aperte!</i>`,
+      };
+
+    case "cassa_night_closed": {
+      const incasso = Number(payload.total_revenue || payload.totale || 0).toLocaleString("it-IT");
+      const chipRemain = Number(payload.chips_remaining || 0).toLocaleString("it-IT");
+      return {
+        title: "Chiusura Serata & Bilancio Cassa",
+        defaultSilent: false,
+        html:
+          `🏁 <b>CHIUSURA UFFICIALE SERATA DI GIOCO</b>\n\n` +
+          `🌙 <b>Serata:</b> <b>${escapeHtml(payload.night_label || "Sessione di Gioco")}</b>\n` +
+          `💰 <b>Incasso Totale Registrato:</b> <b>€ ${incasso}</b>\n` +
+          (payload.chips_remaining
+            ? `🪙 <b>Fiches Residue nei Tavoli:</b> 🪙 ${chipRemain}\n`
+            : "") +
+          `💼 <b>Chiusura Registrata da:</b> ${escapeHtml(payload.closed_by || "Responsabile Cassa")}\n` +
+          `\n📊 <i>Sessione archiviata e bilanci allineati con successo.</i>`,
+      };
+    }
+
+    case "event_created":
+      return {
+        title: "Nuovo Evento Programmato",
+        defaultSilent: false,
+        html:
+          `🎲 <b>NUOVO EVENTO PROGRAMMATO AL CASINÒ</b>\n\n` +
+          `🏆 <b>Titolo Evento:</b> <b>${escapeHtml(payload.title || "Torneo Speciale")}</b>\n` +
+          `📅 <b>Data e Ora:</b> ${escapeHtml(payload.scheduled_date || payload.event_date || "Prossimamente")}\n` +
+          (payload.prize_pool
+            ? `💰 <b>Montepremi Totale:</b> <b>${escapeHtml(String(payload.prize_pool))}</b>\n`
+            : "") +
+          (payload.ticket_price
+            ? `🎟️ <b>Costo Iscrizione:</b> ${escapeHtml(String(payload.ticket_price))}\n`
+            : "") +
+          (payload.description
+            ? `ℹ️ <b>Descrizione:</b> <i>${escapeHtml(payload.description)}</i>\n`
+            : "") +
+          `\n🎫 <i>Iscrizioni e schedine aperte presso il personale autorizzato!</i>`,
+      };
+
+    case "event_ticket_bought":
+      return {
+        title: "Iscrizione / Scommessa Evento",
+        defaultSilent: true,
+        html:
+          `🎟️ <b>NUOVO BIGLIETTO EVENTO ACQUISTATO</b>\n\n` +
+          `🏆 <b>Evento:</b> <b>${escapeHtml(payload.event_title || "Torneo Casinò")}</b>\n` +
+          `👤 <b>Partecipante:</b> ${escapeHtml(payload.player_name || payload.buyer_name || "Giocatore")}\n` +
+          `🔢 <b>Numero Ticket:</b> #${escapeHtml(payload.ticket_number || payload.id || "1")}\n` +
+          (payload.amount
+            ? `💵 <b>Importo Versato:</b> € ${escapeHtml(String(payload.amount))}\n`
+            : "") +
+          `\n⏱️ <i>Registrato il ${nowStr}</i>`,
+      };
+
+    case "event_winner_announced":
+      return {
+        title: "Vincitori Evento Proclamati",
+        defaultSilent: false,
+        html:
+          `🥇 <b>PROCLAMAZIONE VINCITORI EVENTO</b>\n\n` +
+          `🏆 <b>Evento:</b> <b>${escapeHtml(payload.event_title || "Gara Speciale")}</b>\n` +
+          `🥇 <b>1° Classificato:</b> <b>${escapeHtml(payload.first_place || "Campione")}</b>\n` +
+          (payload.second_place
+            ? `🥈 <b>2° Classificato:</b> ${escapeHtml(payload.second_place)}\n`
+            : "") +
+          (payload.third_place
+            ? `🥉 <b>3° Classificato:</b> ${escapeHtml(payload.third_place)}\n`
+            : "") +
+          (payload.prize_awarded
+            ? `💰 <b>Premio Erogato:</b> <b>${escapeHtml(String(payload.prize_awarded))}</b>\n`
+            : "") +
+          `\n🎉 <i>Congratulazioni a tutti i partecipanti!</i>`,
+      };
+
+    case "staff_hired":
+      return {
+        title: "Nuova Assunzione Staff",
+        defaultSilent: false,
+        html:
+          `👥 <b>NUOVO MEMBRO DELLO STAFF ASSUNTO</b>\n\n` +
+          `👤 <b>Nome:</b> <b>${escapeHtml(payload.name || payload.username || "Nuovo Dipendente")}</b>\n` +
+          `💼 <b>Ruolo Assegnato:</b> <code>${escapeHtml(payload.role_name || payload.role || "Staff")}</code>\n` +
+          `📱 <b>Telegram:</b> ${payload.telegram_handle ? `@${escapeHtml(payload.telegram_handle.replace("@", ""))}` : "<i>N/D</i>"}\n` +
+          `👮‍♂️ <b>Autorizzato da:</b> ${escapeHtml(payload.hired_by || "Direzione Risorse Umane")}\n` +
+          `\n🤝 <i>Benvenuto nella squadra del Casinò Revenge!</i>`,
+      };
+
+    case "staff_fired":
+      return {
+        title: "Licenziamento Membro Staff",
+        defaultSilent: false,
+        html:
+          `🚫 <b>REVOCA MEMBRO DELLO STAFF</b>\n\n` +
+          `👤 <b>Ex Dipendente:</b> <b>${escapeHtml(payload.name || payload.username || "Membro Staff")}</b>\n` +
+          `📜 <b>Motivazione:</b> <i>${escapeHtml(payload.reason || "Cessazione del rapporto di collaborazione")}</i>\n` +
+          `🔒 <b>Stato:</b> Credenziali disattivate e rimozione dai canali interni avviata.\n` +
+          `👮‍♂️ <b>Eseguito da:</b> ${escapeHtml(payload.fired_by || "Direzione")}\n` +
+          `\n⏱️ <i>Data provvedimento: ${nowStr}</i>`,
+      };
+
+    case "staff_sanction":
+      return {
+        title: "Provvedimento Disciplinare Staff",
+        defaultSilent: false,
+        html:
+          `🛡️ <b>PROVVEDIMENTO DISCIPLINARE STAFF</b>\n\n` +
+          `👤 <b>Dipendente:</b> <b>${escapeHtml(payload.employee_name || "Membro Staff")}</b>\n` +
+          `🛑 <b>Tipo Provvedimento:</b> <code>${escapeHtml(payload.sanction_type || "Richiamo Formale")}</code>\n` +
+          `📝 <b>Descrizione / Fatti:</b> <i>${escapeHtml(payload.reason || "Comportamento non conforme agli standard")}</i>\n` +
+          `👮‍♂️ <b>Rilasciato da:</b> ${escapeHtml(payload.issued_by || "Amministrazione")} \n` +
+          `\n⏱️ <i>Notifica interna protocollata il ${nowStr}</i>`,
+      };
+
+    case "staff_role_promoted":
+      return {
+        title: "Promozione Ruolo Staff",
+        defaultSilent: false,
+        html:
+          `🎖️ <b>PROMOZIONE DI RUOLO STAFF</b>\n\n` +
+          `👤 <b>Dipendente:</b> <b>${escapeHtml(payload.employee_name || "Membro Staff")}</b>\n` +
+          `⭐ <b>Nuovo Ruolo:</b> <b>${escapeHtml(payload.new_role || "Ruolo Superiore")}</b>\n` +
+          (payload.old_role
+            ? `⏮️ <b>Ruolo Precedente:</b> ${escapeHtml(payload.old_role)}\n`
+            : "") +
+          `👮‍♂️ <b>Promosso da:</b> ${escapeHtml(payload.promoted_by || "Direzione Generale")}\n` +
+          `\n👏 <i>Complimenti per il traguardo raggiunto!</i>`,
+      };
+
+    case "leave_request_new":
+      return {
+        title: "Nuova Richiesta Ferie Dipendente",
+        defaultSilent: false,
+        html:
+          `🏖️ <b>NUOVA RICHIESTA FERIE / CONGEDO INVIATA</b>\n\n` +
+          `👤 <b>Dipendente:</b> <b>${escapeHtml(payload.employee_name || "Dipendente")}</b>\n` +
+          `📅 <b>Periodo Richiesto:</b> dal <b>${escapeHtml(payload.start_date || "Inizio")}</b> al <b>${escapeHtml(payload.end_date || "Fine")}</b>\n` +
+          (payload.reason ? `💬 <b>Motivazione:</b> <i>${escapeHtml(payload.reason)}</i>\n` : "") +
+          `\n📌 <i>In attesa di valutazione da parte della direzione nella sezione Congedi.</i>`,
+      };
+
+    case "leave_request_evaluated": {
+      const isApproved =
+        String(payload.status).toLowerCase() === "approved" ||
+        String(payload.status).toLowerCase() === "approvata";
+      const statusBadge = isApproved ? "✅ APPROVATA" : "❌ RESPINTA";
+      return {
+        title: "Esito Richiesta Ferie",
+        defaultSilent: false,
+        html:
+          `🏖️ <b>ESITO RICHIESTA FERIE / CONGEDO</b>\n\n` +
+          `👤 <b>Dipendente:</b> <b>${escapeHtml(payload.employee_name || "Dipendente")}</b>\n` +
+          `📅 <b>Periodo:</b> dal ${escapeHtml(payload.start_date || "N/D")} al ${escapeHtml(payload.end_date || "N/D")}\n` +
+          `🏷️ <b>Stato:</b> <b>${statusBadge}</b>\n` +
+          `👮‍♂️ <b>Valutato da:</b> ${escapeHtml(payload.reviewed_by || "Direzione")}\n` +
+          (payload.review_notes
+            ? `💬 <b>Note:</b> <i>${escapeHtml(payload.review_notes)}</i>\n`
+            : "") +
+          `\n⏱️ <i>Data decisione: ${nowStr}</i>`,
+      };
+    }
+
+    case "salary_paid":
+      return {
+        title: "Stipendio Erogato",
+        defaultSilent: false,
+        html:
+          `💶 <b>PAGAMENTO STIPENDIO REGISTRATO</b>\n\n` +
+          `👤 <b>Dipendente:</b> <b>${escapeHtml(payload.employee_name || "Dipendente")}</b>\n` +
+          `💰 <b>Importo Erogato:</b> <b>€ ${Number(payload.amount || 0).toLocaleString("it-IT")}</b>\n` +
+          `📅 <b>Mese / Periodo:</b> ${escapeHtml(payload.period || "Mese Corrente")}\n` +
+          `💼 <b>Registrato da:</b> ${escapeHtml(payload.paid_by || "Amministrazione")}\n` +
+          `\n⏱️ <i>Contabile emessa il ${nowStr}</i>`,
+      };
+
+    case "security_unauthorized_kick":
+      return {
+        title: "Espulsione Sicurezza Bot",
+        defaultSilent: false,
+        html:
+          `🛡️ <b>ESPULSIONE AUTOMATICA SICUREZZA ESEGUITA</b>\n\n` +
+          `👤 <b>Account Espulso:</b> <code>${escapeHtml(payload.target_handle || payload.target_name || "Utente Non Autorizzato")}</code>\n` +
+          `👥 <b>Gruppo Telegram:</b> <b>${escapeHtml(payload.group_title || "Gruppo Riservato")}</b>\n` +
+          `⚠️ <b>Causa:</b> Account non presente in organico o licenziato\n` +
+          `\n🤖 <i>Azione automatica di protezione Revenge Bot eseguita alle ${nowStr}</i>`,
+      };
+
+    case "system_daily_audit":
+      return {
+        title: "Report Audit Giornaliero Gruppi",
+        defaultSilent: false,
+        html:
+          `📊 <b>REPORT AUDIT AUTOMATICO GIORNALIERO (ORE 17:00)</b>\n\n` +
+          `👥 <b>Gruppi Ufficiali Scansionati:</b> ${escapeHtml(String(payload.groups_count || "Tutti"))}\n` +
+          `🛡️ <b>Membri Verificati in Regola:</b> ${escapeHtml(String(payload.valid_members || "100%"))}\n` +
+          `🚫 <b>Espulsioni Eseguite:</b> ${escapeHtml(String(payload.kicked_count || 0))}\n` +
+          `👑 <b>Tessere VIP Attive:</b> ${escapeHtml(String(payload.active_vip || "N/D"))}\n` +
+          `\n✅ <i>Integrità del sistema e controllo permessi verificati con successo.</i>`,
+      };
+
+    default:
+      return {
+        title: escapeHtml(payload.title || "Notifica di Sistema"),
+        defaultSilent: false,
+        html:
+          `🔔 <b>${escapeHtml(payload.title || "NOTIFICA CASINÒ REVENGE")}</b>\n\n` +
+          `${escapeHtml(payload.text || payload.message || "Evento registrato nel sistema.")}\n\n` +
+          `⏱️ <i>${nowStr}</i>`,
+      };
+  }
+}
+
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export async function dispatchTelegramNotification(
+  eventType: string,
+  payload: Record<string, any>,
+  options?: { customChatId?: string | number },
+): Promise<{ success: boolean; sentTo: string[]; error?: string }> {
+  try {
+    const rules = await getTelegramNotificationRules();
+    const rule = rules.find((r) => r.event_type === eventType || r.id === eventType);
+
+    if (!rule) {
+      return { success: false, sentTo: [], error: `Nessuna regola configurata per '${eventType}'` };
+    }
+
+    if (!rule.enabled && !options?.customChatId) {
+      return {
+        success: false,
+        sentTo: [],
+        error: `Notifica '${rule.title}' disabilitata nelle impostazioni`,
+      };
+    }
+
+    // Amount threshold check if specified
+    if (rule.min_amount_threshold && rule.min_amount_threshold > 0) {
+      const amt = Number(
+        payload.eur_amount || payload.amount || payload.price || payload.total_revenue || 0,
+      );
+      if (amt < rule.min_amount_threshold && !options?.customChatId) {
+        return {
+          success: false,
+          sentTo: [],
+          error: `Importo sotto soglia minima (${amt} < ${rule.min_amount_threshold})`,
+        };
+      }
+    }
+
+    // Determine target chat ID
+    const targetChatId = options?.customChatId || rule.custom_chat_id || rule.chat_id;
+
+    if (!targetChatId) {
+      return {
+        success: false,
+        sentTo: [],
+        error: `Nessun gruppo Telegram assegnato alla regola '${rule.title}'`,
+      };
+    }
+
+    const { html, defaultSilent } = formatTelegramNotificationPayload(eventType, payload);
+    const silent = rule.silent !== undefined ? rule.silent : defaultSilent;
+
+    const res = await sendTelegramMessage(targetChatId, html, undefined, {
+      disableNotification: silent,
+    });
+
+    if (res && res.ok) {
+      return { success: true, sentTo: [String(targetChatId)] };
+    } else {
+      return {
+        success: false,
+        sentTo: [],
+        error: res?.description || "Errore sconosciuto durante l'invio su Telegram",
+      };
+    }
+  } catch (err: any) {
+    console.error("Error dispatching telegram notification:", err);
+    return { success: false, sentTo: [], error: err.message || String(err) };
+  }
+}
+
+export async function testTelegramNotificationRule(
+  ruleIdOrEventType: string,
+  targetChatId?: string | number,
+): Promise<{ success: boolean; messageText: string; sentTo?: string; error?: string }> {
+  try {
+    const rules = await getTelegramNotificationRules();
+    const rule = rules.find(
+      (r) => r.id === ruleIdOrEventType || r.event_type === ruleIdOrEventType,
+    );
+
+    if (!rule) {
+      throw new Error(`Regola '${ruleIdOrEventType}' non trovata.`);
+    }
+
+    const chatIdToSend = targetChatId || rule.custom_chat_id || rule.chat_id;
+    if (!chatIdToSend) {
+      throw new Error("Seleziona prima un gruppo Telegram per testare l'invio della notifica.");
+    }
+
+    // Sample payload for realistic testing preview
+    const samplePayloads: Record<string, any> = {
+      candidature_new: {
+        applicant_name: "Marco_Rossi",
+        form_title: "Staff Dealer & Sicurezza - Stagione Autunno",
+        telegram_handle: "marcorossi_tg",
+        citizen_code: "REV-8924",
+        answers_preview:
+          "Disponibilità serale 4 giorni a settimana, esperienza pregressa come croupier.",
+      },
+      candidature_evaluated: {
+        applicant_name: "Marco_Rossi",
+        form_title: "Staff Dealer & Sicurezza",
+        status: "approved",
+        reviewer_name: "Amministratore",
+        reviewer_notes: "Ottimo profilo e disponibilità confermata via colloquio.",
+      },
+      candidature_second_chance: {
+        applicant_name: "Luca_Bianchi",
+        form_title: "Croupier Roulette",
+        authorized_by: "Direzione Generale",
+      },
+      candidature_form_published: {
+        title: "Bando Selezioni Croupier Blackjack & Roulette",
+        target_role: "Croupier Ufficiale",
+        description: "Aperte le selezioni per 3 nuovi tavoli esclusivi in Sala Privé.",
+      },
+      citizen_created: {
+        full_name: "Alessandro Del Piero",
+        code: "CIT-7819",
+        telegram_handle: "alessandro_dp",
+        phone: "+39 340 1234567",
+        notes: "Cliente referenziato per ingresso tavoli alti limiti.",
+      },
+      citizen_sanctioned: {
+        citizen_name: "Giuseppe Verdi",
+        sanction_type: "Allontanamento 7 Giorni",
+        reason: "Comportamento scorretto e disturbo agli altri giocatori al tavolo roulette.",
+        issued_by: "Capo Sicurezza",
+        expires_at: "30/08/2026",
+      },
+      membership_activated: {
+        citizen_name: "Roberto Baggio",
+        plan_name: "Exclusive VIP Club",
+        price: "10.000 € / 1.000 Dobloni",
+        expires_at: "23/09/2026",
+      },
+      membership_expired_alert: {
+        citizen_name: "Mario Rossi",
+        plan_name: "VIP Diamond",
+        days_remaining: 0,
+      },
+      conversion_completed: {
+        direction: "eur_to_dobloni",
+        eur_amount: 500,
+        dobloni_amount: 50,
+        citizen_name: "Francesco Totti",
+        operator_name: "Cassiere Turno 1",
+      },
+      cassa_night_opened: {
+        night_label: "Serata Sabato Notte Gran Casinò",
+        responsible_name: "Direttore di Sala",
+        starting_float: "25.000",
+      },
+      cassa_night_closed: {
+        night_label: "Serata Sabato Notte Gran Casinò",
+        total_revenue: "148.500",
+        chips_remaining: "1.250",
+        closed_by: "Responsabile Cassa",
+      },
+      event_created: {
+        title: "Gran Torneo Poker Texas Hold'em - 100.000€ GTD",
+        scheduled_date: "Venerdì ore 21:30",
+        prize_pool: "100.000 €",
+        ticket_price: "2.500 €",
+        description: "Struttura deepstack, blind 15 min, re-entry consentito fino al 6° livello.",
+      },
+      event_ticket_bought: {
+        event_title: "Gran Torneo Poker Texas Hold'em",
+        player_name: "Andrea Pirlo",
+        ticket_number: "TK-042",
+        amount: 2500,
+      },
+      event_winner_announced: {
+        event_title: "Gran Torneo Poker Texas Hold'em",
+        first_place: "Andrea Pirlo",
+        second_place: "Filippo Inzaghi",
+        third_place: "Gennaro Gattuso",
+        prize_awarded: "50.000 €",
+      },
+      staff_hired: {
+        name: "Matteo_Staff",
+        role_name: "Croupier Professionista",
+        telegram_handle: "matteostaff_tg",
+        hired_by: "Responsabile Risorse Umane",
+      },
+      staff_fired: {
+        name: "Ex_Dipendente_1",
+        reason: "Mancato rispetto degli orari e assenze ingiustificate.",
+        fired_by: "Direzione",
+      },
+      staff_sanction: {
+        employee_name: "Stefano_Dealer",
+        sanction_type: "Decurtazione 10% e Richiamo Scritto",
+        reason: "Ritardo all'apertura tavolo senza preavviso.",
+        issued_by: "Responsabile Sala",
+      },
+      staff_role_promoted: {
+        employee_name: "Matteo_Staff",
+        new_role: "Capo Tavolo & Pit Boss",
+        old_role: "Croupier",
+        promoted_by: "Direttore Generale",
+      },
+      leave_request_new: {
+        employee_name: "Elena_Bar",
+        start_date: "01/09/2026",
+        end_date: "08/09/2026",
+        reason: "Ferie estive concordate con il turno.",
+      },
+      leave_request_evaluated: {
+        employee_name: "Elena_Bar",
+        start_date: "01/09/2026",
+        end_date: "08/09/2026",
+        status: "approved",
+        reviewed_by: "Direzione Personale",
+        review_notes: "Copertura turni garantita dal collega di sala.",
+      },
+      salary_paid: {
+        employee_name: "Elena_Bar",
+        amount: 1850,
+        period: "Agosto 2026",
+        paid_by: "Amministrazione Contabile",
+      },
+      security_unauthorized_kick: {
+        target_handle: "@utente_non_autorizzato",
+        target_name: "Ex Dipendente Rimasto",
+        group_title: "Casinò Revenge - Staff Privato",
+      },
+      system_daily_audit: {
+        groups_count: 5,
+        valid_members: "48 membri in regola",
+        kicked_count: 0,
+        active_vip: 14,
+      },
+    };
+
+    const payload = samplePayloads[rule.event_type] || {
+      title: `Test per ${rule.title}`,
+      text: `Questo è un messaggio di test inviato dal Centro Notifiche del Casinò Revenge per verificare il funzionamento del bot su questo gruppo.`,
+    };
+
+    const { html } = formatTelegramNotificationPayload(rule.event_type, payload);
+    const testHeader = `🧪 <b>[TEST NOTIFICA TELEGRAM]</b>\n` + html;
+
+    const res = await sendTelegramMessage(chatIdToSend, testHeader, undefined, {
+      disableNotification: rule.silent,
+    });
+
+    if (res && res.ok) {
+      return {
+        success: true,
+        messageText: html,
+        sentTo: String(chatIdToSend),
+      };
+    } else {
+      throw new Error(res?.description || "Telegram API ha rifiutato l'invio.");
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      messageText: "",
+      error: err.message || String(err),
+    };
+  }
+}
+
+// Global DB Event Notifications dispatcher hook
+export async function dispatchDbEventNotifications(
+  operation: "insert" | "update" | "upsert" | "delete",
+  table: string,
+  rows: any[] | any,
+  _db: any,
+) {
+  try {
+    const list = Array.isArray(rows) ? rows : [rows];
+    if (list.length === 0) return;
+
+    for (const item of list) {
+      if (!item) continue;
+
+      if (table === "applications" && operation === "insert") {
+        await dispatchTelegramNotification("candidature_new", {
+          applicant_name: item.applicant_name || item.name || "Nuovo Candidato",
+          form_title: item.form_title || "Bando Staff",
+          telegram_handle: item.telegram_handle,
+          citizen_code: item.citizen_id || item.citizen_code,
+          answers_preview: item.answers ? JSON.stringify(item.answers).slice(0, 150) : undefined,
+        });
+      } else if (table === "applications" && operation === "update" && item.status) {
+        await dispatchTelegramNotification("candidature_evaluated", {
+          applicant_name: item.applicant_name || item.name || "Candidato",
+          form_title: item.form_title || "Bando Staff",
+          status: item.status,
+          reviewer_name: item.reviewer_name || "Esaminatore",
+          reviewer_notes: item.reviewer_notes || item.notes,
+        });
+      } else if (table === "citizens" && operation === "insert") {
+        await dispatchTelegramNotification("citizen_created", {
+          full_name: item.full_name,
+          code: item.code || item.id,
+          telegram_handle: item.telegram_handle,
+          phone: item.phone,
+          notes: item.notes,
+        });
+      } else if (table === "sanctions" && operation === "insert") {
+        await dispatchTelegramNotification("citizen_sanctioned", {
+          citizen_name: item.citizen_name || item.user_name || "Cittadino",
+          sanction_type: item.sanction_type || item.type,
+          reason: item.reason,
+          issued_by: item.issued_by || item.created_by,
+          expires_at: item.expires_at,
+        });
+      } else if (table === "conversions" && operation === "insert") {
+        await dispatchTelegramNotification("conversion_completed", {
+          direction: item.direction || "eur_to_dobloni",
+          eur_amount: item.eur_amount || item.eur,
+          dobloni_amount: item.dobloni_amount || item.dobloni,
+          citizen_name: item.citizen_name,
+          operator_name: item.operator_name || item.created_by,
+        });
+      } else if (table === "leave_requests" && operation === "insert") {
+        await dispatchTelegramNotification("leave_request_new", {
+          employee_name: item.employee_name || item.user_name || "Dipendente",
+          start_date: item.start_date,
+          end_date: item.end_date,
+          reason: item.reason,
+        });
+      } else if (table === "leave_requests" && operation === "update" && item.status) {
+        await dispatchTelegramNotification("leave_request_evaluated", {
+          employee_name: item.employee_name || item.user_name || "Dipendente",
+          start_date: item.start_date,
+          end_date: item.end_date,
+          status: item.status,
+          reviewed_by: item.reviewed_by || "Direzione",
+          review_notes: item.review_notes,
+        });
+      } else if (table === "nights" && operation === "insert") {
+        await dispatchTelegramNotification("cassa_night_opened", {
+          night_label: item.label || item.name || "Nuova Serata",
+          responsible_name: item.created_by || "Responsabile Cassa",
+          starting_float: item.initial_cash,
+        });
+      } else if (
+        table === "nights" &&
+        operation === "update" &&
+        (item.closed || item.status === "closed")
+      ) {
+        await dispatchTelegramNotification("cassa_night_closed", {
+          night_label: item.label || item.name || "Serata",
+          total_revenue: item.total_revenue || item.total_eur,
+          chips_remaining: item.chips_remaining,
+          closed_by: item.closed_by || "Responsabile Cassa",
+        });
+      } else if (table === "events" && operation === "insert") {
+        await dispatchTelegramNotification("event_created", {
+          title: item.title || item.name,
+          scheduled_date: item.event_date || item.date,
+          prize_pool: item.prize_pool,
+          ticket_price: item.ticket_price || item.entry_fee,
+          description: item.description,
+        });
+      }
+    }
+  } catch (e) {
+    // Non-blocking notification hook
   }
 }

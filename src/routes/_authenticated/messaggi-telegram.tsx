@@ -61,7 +61,9 @@ import {
   UserX,
   Info,
   Quote,
+  Bell,
 } from "lucide-react";
+import { TelegramNotificationSettingsDialog } from "@/components/TelegramNotificationSettingsDialog";
 
 export const Route = createFileRoute("/_authenticated/messaggi-telegram")({
   component: TelegramMessagesPage,
@@ -338,6 +340,9 @@ function TelegramMessagesPage() {
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
 
+  // Notification Router Dialog State
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+
   // Broadcast Multi-select mode
   const [broadcastMode, setBroadcastMode] = useState(false);
   const [selectedBroadcastIds, setSelectedBroadcastIds] = useState<string[]>([]);
@@ -369,6 +374,7 @@ function TelegramMessagesPage() {
 
   // Highlighted message ref
   const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null);
+  const [messageLimit, setMessageLimit] = useState<number>(50);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const expandedTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -400,25 +406,33 @@ function TelegramMessagesPage() {
     }
   }, [chats]);
 
-  // 2. Fetch Message History for the Selected Chat
+  // 2. Fetch Message History for the Selected Chat (with limit)
   const {
     data: messagesData,
     isLoading: loadingMessages,
     refetch: refetchMessages,
   } = useQuery({
-    queryKey: ["telegram-chat-messages", selectedChat?.chat_id],
+    queryKey: ["telegram-chat-messages", selectedChat?.chat_id, messageLimit],
     queryFn: async () => {
-      if (!selectedChat?.chat_id) return [];
+      if (!selectedChat?.chat_id) return { messages: [], totalInStore: 0 };
       const res = await getTelegramChatMessages({
-        data: { chatId: selectedChat.chat_id },
+        data: { chatId: selectedChat.chat_id, limit: messageLimit },
       });
-      return res?.messages || [];
+      return res || { messages: [], totalInStore: 0 };
     },
     enabled: !!selectedChat?.chat_id,
     refetchInterval: 3000,
   });
 
-  const messages = useMemo(() => messagesData || [], [messagesData]);
+  const messages = useMemo(() => {
+    if (Array.isArray(messagesData)) return messagesData;
+    return messagesData?.messages || [];
+  }, [messagesData]);
+
+  const totalInStore = useMemo(() => {
+    if (Array.isArray(messagesData)) return messagesData.length;
+    return messagesData?.totalInStore || messages.length;
+  }, [messagesData, messages.length]);
 
   // 3. Fetch Group Members for Selected Group
   const {
@@ -704,10 +718,21 @@ function TelegramMessagesPage() {
   };
 
   const jumpToMessage = (messageId: number) => {
+    if (!messageId) return;
     setHighlightedMessageId(messageId);
     const element = document.getElementById(`msg-${messageId}`);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      // If message is beyond current visible limit, automatically expand visible messages
+      setMessageLimit((prev) => Math.max(prev + 50, 150));
+      toast.info("Caricamento cronologia per visualizzare il messaggio citato...");
+      setTimeout(() => {
+        const el = document.getElementById(`msg-${messageId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 500);
     }
     setTimeout(() => {
       setHighlightedMessageId(null);
@@ -836,6 +861,18 @@ function TelegramMessagesPage() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setNotificationDialogOpen(true)}
+            className="text-xs gap-1.5 h-8 font-semibold px-2.5 sm:px-3 border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200"
+            title="Configura quali eventi inviare e a quali gruppi Telegram"
+          >
+            <Bell className="h-3.5 w-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Centro Notifiche</span>
+            <span className="sm:hidden">Notifiche</span>
+          </Button>
+
           <Button
             size="sm"
             variant={broadcastMode ? "default" : "outline"}
@@ -1261,6 +1298,32 @@ function TelegramMessagesPage() {
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                  {/* Message Limit Selector */}
+                  <div className="flex items-center gap-1 bg-[#182533] border border-slate-700/80 rounded-md px-2 py-1 text-xs">
+                    <span className="text-[10px] text-slate-400 font-medium hidden md:inline">
+                      Limite:
+                    </span>
+                    <select
+                      value={messageLimit}
+                      onChange={(e) => setMessageLimit(Number(e.target.value))}
+                      className="bg-transparent text-sky-400 text-xs font-semibold focus:outline-none cursor-pointer"
+                      title="Limite di messaggi per chat per ottimizzare le prestazioni"
+                    >
+                      <option value={30} className="bg-slate-900 text-slate-200">
+                        30 msg
+                      </option>
+                      <option value={50} className="bg-slate-900 text-slate-200">
+                        50 msg
+                      </option>
+                      <option value={100} className="bg-slate-900 text-slate-200">
+                        100 msg
+                      </option>
+                      <option value={150} className="bg-slate-900 text-slate-200">
+                        150 msg
+                      </option>
+                    </select>
+                  </div>
+
                   {/* Toggle Members Panel Button */}
                   <Button
                     size="sm"
@@ -1335,6 +1398,21 @@ function TelegramMessagesPage() {
 
               {/* MESSAGE STREAM */}
               <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4 custom-scrollbar bg-[radial-gradient(#1c2a38_1px,transparent_1px)] [background-size:16px_16px]">
+                {/* LOAD OLDER MESSAGES BUTTON */}
+                {totalInStore > messages.length && (
+                  <div className="flex justify-center pb-2">
+                    <button
+                      onClick={() => setMessageLimit((prev) => Math.min(prev + 50, 150))}
+                      className="bg-[#1e293b] hover:bg-[#334155] text-sky-400 hover:text-sky-300 text-xs px-3.5 py-1.5 rounded-full border border-sky-500/30 flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      <span>
+                        Mostra messaggi precedenti ({messages.length} di {totalInStore})
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 {loadingMessages ? (
                   <div className="flex items-center justify-center h-full text-slate-500 text-xs">
                     <RefreshCw className="h-5 w-5 animate-spin mr-2 text-sky-400" />
@@ -1427,20 +1505,39 @@ function TelegramMessagesPage() {
                           </div>
 
                           {/* QUOTED / REPLIED MESSAGE PREVIEW */}
-                          {msg.reply_to_message && (
-                            <div
-                              onClick={() => jumpToMessage(msg.reply_to_message.message_id)}
-                              className="border-l-4 border-amber-400 bg-slate-950/40 rounded-r-lg p-2 text-xs space-y-0.5 cursor-pointer hover:bg-slate-950/60 transition-colors"
-                            >
-                              <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
-                                <Reply className="h-3 w-3" />
-                                <span>{msg.reply_to_message.sender_name || "Utente"}</span>
+                          {(() => {
+                            const replyTarget =
+                              msg.reply_to_message ||
+                              (msg.reply_to_message_id
+                                ? messages.find(
+                                    (m: any) => m.message_id === msg.reply_to_message_id,
+                                  )
+                                : null);
+
+                            if (!replyTarget && !msg.reply_to_message_id) return null;
+
+                            const targetId = replyTarget?.message_id || msg.reply_to_message_id;
+
+                            return (
+                              <div
+                                onClick={() => {
+                                  if (targetId) jumpToMessage(targetId);
+                                }}
+                                className="border-l-4 border-amber-400 bg-slate-950/40 rounded-r-lg p-2 text-xs space-y-0.5 cursor-pointer hover:bg-slate-950/60 transition-colors"
+                                title="Clicca per saltare al messaggio citato"
+                              >
+                                <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
+                                  <Reply className="h-3 w-3" />
+                                  <span>{replyTarget?.sender_name || "Messaggio Telegram"}</span>
+                                </div>
+                                <p className="text-slate-300 text-[11px] line-clamp-1 italic">
+                                  {replyTarget?.text
+                                    ? replyTarget.text.replace(/<[^>]*>?/gm, "")
+                                    : `Risposta al messaggio #${msg.reply_to_message_id}`}
+                                </p>
                               </div>
-                              <p className="text-slate-300 text-[11px] line-clamp-1 italic">
-                                {msg.reply_to_message.text?.replace(/<[^>]*>?/gm, "")}
-                              </p>
-                            </div>
-                          )}
+                            );
+                          })()}
 
                           {/* MESSAGE BODY */}
                           <div className="text-sm">
@@ -2529,6 +2626,13 @@ function TelegramMessagesPage() {
           </div>
         </div>
       )}
+
+      {/* TELEGRAM NOTIFICATION ROUTER SETTINGS DIALOG */}
+      <TelegramNotificationSettingsDialog
+        open={notificationDialogOpen}
+        onOpenChange={setNotificationDialogOpen}
+        groups={chats.filter((c: any) => c.category === "groups")}
+      />
     </div>
   );
 }

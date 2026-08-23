@@ -574,6 +574,8 @@ function getInitialDb() {
     telegram_groups: [],
     telegram_group_members: [],
     telegram_pending_codes: [],
+    telegram_chat_messages: [],
+    telegram_notification_rules: [],
     membership_plans: [
       {
         id: "plan-standard",
@@ -2042,6 +2044,15 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     logOperation(db, operation, table, query, { data: insertedRows });
     await saveDb(db);
 
+    // Asynchronously dispatch any active Telegram Notification rules without blocking DB response
+    if (typeof window === "undefined") {
+      import("../../lib/telegram.server")
+        .then(({ dispatchDbEventNotifications }) => {
+          dispatchDbEventNotifications(operation, table, insertedRows, db).catch(() => {});
+        })
+        .catch(() => {});
+    }
+
     return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
   }
 
@@ -2084,6 +2095,19 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
             String(item.code || item.id || "").trim() === targetCode ||
             (row.id && String(item.id).trim() === String(row.id).trim()),
         );
+      } else if (table === "telegram_chat_messages") {
+        existingIndex = db[table].findIndex(
+          (item: any) =>
+            item.id === row.id ||
+            (String(item.chat_id) === String(row.chat_id) &&
+              item.message_id !== undefined &&
+              item.message_id === row.message_id),
+        );
+      } else if (table === "telegram_notification_rules") {
+        existingIndex = db[table].findIndex(
+          (item: any) =>
+            item.id === row.id || (row.event_type && item.event_type === row.event_type),
+        );
       }
 
       if (existingIndex !== -1) {
@@ -2106,11 +2130,36 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       }
     }
 
+    if (table === "telegram_chat_messages" && Array.isArray(db.telegram_chat_messages)) {
+      // Auto-prune per chat to maintain max 150 recent messages per chat to keep db ultra lightweight
+      const chatBuckets: Record<string, any[]> = {};
+      for (const m of db.telegram_chat_messages) {
+        const cKey = String(m.chat_id || "");
+        if (!chatBuckets[cKey]) chatBuckets[cKey] = [];
+        chatBuckets[cKey].push(m);
+      }
+      const prunedList: any[] = [];
+      for (const cKey in chatBuckets) {
+        chatBuckets[cKey].sort((a: any, b: any) => (a.date || 0) - (b.date || 0));
+        prunedList.push(...chatBuckets[cKey].slice(-150));
+      }
+      db.telegram_chat_messages = prunedList;
+    }
+
     if (table === "sanctions" || table === "leave_requests") {
       results.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
     logOperation(db, operation, table, query, { data: results });
     await saveDb(db);
+
+    if (typeof window === "undefined") {
+      import("../../lib/telegram.server")
+        .then(({ dispatchDbEventNotifications }) => {
+          dispatchDbEventNotifications(operation, table, results, db).catch(() => {});
+        })
+        .catch(() => {});
+    }
+
     return { data: Array.isArray(insertData) ? results : results[0], error: null };
   }
 
@@ -2173,6 +2222,15 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     }
     logOperation(db, operation, table, query, { data: updatedRows });
     await saveDb(db);
+
+    if (typeof window === "undefined") {
+      import("../../lib/telegram.server")
+        .then(({ dispatchDbEventNotifications }) => {
+          dispatchDbEventNotifications(operation, table, updatedRows, db).catch(() => {});
+        })
+        .catch(() => {});
+    }
+
     return { data: updatedRows, error: null };
   }
 

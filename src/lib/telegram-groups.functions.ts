@@ -1016,19 +1016,27 @@ export const listAllTelegramChats = createServerFn({ method: "GET" })
     return { chats };
   });
 
-// 13. Get Message History for a specific chat (with quotes/replies, reactions, pinned state)
+// 13. Get Message History for a specific chat (with quotes/replies, reactions, pinned state and configurable limit)
 export const getTelegramChatMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .validator((d: { chatId: string | number }) => d)
+  .validator((d: { chatId: string | number; limit?: number }) => d)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { getStoredChatMessages, fetchTelegramUpdates } = await import("@/lib/telegram.server");
+    const { getStoredChatMessagesAsync, fetchTelegramUpdates } =
+      await import("@/lib/telegram.server");
 
     // Fetch live userbot/bot updates before returning messages
     await fetchTelegramUpdates().catch(() => {});
 
-    const messages = getStoredChatMessages(data.chatId);
-    return { messages };
+    const allMessages = await getStoredChatMessagesAsync(data.chatId);
+    const limit = data.limit && data.limit > 0 ? Number(data.limit) : 50;
+    const messages = allMessages.slice(-limit);
+
+    return {
+      messages,
+      totalInStore: allMessages.length,
+      limit,
+    };
   });
 
 // 14. Send Message in a Chat (supports Reply-to, Pinned on send, Silent, Inline URL buttons)
@@ -1617,4 +1625,67 @@ export const promoteTelegramMemberInGroupFn = createServerFn({ method: "POST" })
     }
 
     return { success: ok, userId: data.userId, isPromote: data.isPromote };
+  });
+
+// 22. Get all Telegram Notification Rules
+export const getTelegramNotificationRulesFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { getTelegramNotificationRules } = await import("@/lib/telegram.server");
+    const rules = await getTelegramNotificationRules();
+    return { rules };
+  });
+
+// 23. Save or Update Single Telegram Notification Rule
+export const updateTelegramNotificationRuleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (d: {
+      id: string;
+      enabled?: boolean;
+      chat_id?: string;
+      custom_chat_id?: string;
+      silent?: boolean;
+      min_amount_threshold?: number;
+      template_override?: string;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { saveTelegramNotificationRule } = await import("@/lib/telegram.server");
+    const updated = await saveTelegramNotificationRule(data);
+    return { rule: updated };
+  });
+
+// 24. Save All Telegram Notification Rules (Batch Save)
+export const saveAllTelegramNotificationRulesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { rules: any[] }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { saveAllTelegramNotificationRules } = await import("@/lib/telegram.server");
+    const updatedRules = await saveAllTelegramNotificationRules(data.rules);
+    return { rules: updatedRules, count: updatedRules.length };
+  });
+
+// 25. Reset Notification Rules to Factory Defaults
+export const resetTelegramNotificationRulesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { resetTelegramNotificationRules } = await import("@/lib/telegram.server");
+    const defaults = await resetTelegramNotificationRules();
+    return { rules: defaults };
+  });
+
+// 26. Test Send Notification Rule
+export const testTelegramNotificationRuleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: { ruleId: string; targetChatId?: string | number }) => d)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { testTelegramNotificationRule } = await import("@/lib/telegram.server");
+    const res = await testTelegramNotificationRule(data.ruleId, data.targetChatId);
+    return res;
   });
