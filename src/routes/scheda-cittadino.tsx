@@ -72,11 +72,11 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/scheda-cittadino")({
   head: () => ({
     meta: [
-      { title: "La Mia Scheda Cittadino — Casinò Revenge" },
+      { title: "Tessera Giocatore & Profilo — Casinò Revenge" },
       {
         name: "description",
         content:
-          "Consulta la tua tessera ufficiale, saldo conversioni Dobloni, cassetta di sicurezza e vantaggi membership del Casinò Revenge.",
+          "Consulta la tua tessera ufficiale di giocatore del Casinò Revenge, saldo conversioni Dobloni, cassetta di sicurezza e vantaggi della tua Membership.",
       },
     ],
   }),
@@ -471,12 +471,12 @@ function SchedaCittadinoPage() {
                 <CreditCard className="h-8 w-8" />
               </div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white uppercase">
-                Tessera Ufficiale Cittadino
+                Tessera Giocatore Casinò Revenge
               </h1>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Accedi per consultare in tempo reale il tuo passaporto di gioco del Casinò Revenge,
-                verificare il saldo Dobloni, visualizzare lo storico delle conversioni registrate
-                alla cassa e usufruire dei privilegi della tua Membership.
+                Accedi per consultare in tempo reale la tua tessera ufficiale di gioco del Casinò
+                Revenge, verificare il saldo Dobloni, visualizzare lo storico delle conversioni
+                registrate alla cassa e usufruire dei privilegi della tua Membership.
               </p>
               <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                 <Button
@@ -517,7 +517,7 @@ function SchedaCittadinoPage() {
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-amber-400 animate-pulse shadow-md shadow-amber-500" />
                   <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-amber-400">
-                    CASINÒ REVENGE • PASSAPORTO CITTADINO LIBERTY BAY
+                    CASINÒ REVENGE • PASSAPORTO UFFICIALE GIOCATORE
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
@@ -657,7 +657,7 @@ function SchedaCittadinoPage() {
                         </div>
                         <div className="text-xs font-bold text-sky-300 font-mono">
                           {profile?.telegram_handle
-                            ? `@${profile.telegram_handle}`
+                            ? `@${profile.telegram_handle.replace(/^@/, "")}`
                             : "Non collegato"}
                         </div>
                       </div>

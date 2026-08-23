@@ -163,7 +163,7 @@ function StartPage() {
                     }
                     className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10"
                   >
-                    {hasEmployeeAccess ? "Pannello Dipendenti" : "La Mia Scheda Cittadino"}{" "}
+                    {hasEmployeeAccess ? "Pannello Dipendenti" : "Tessera & Profilo Giocatore"}{" "}
                     <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Button>
                 </div>

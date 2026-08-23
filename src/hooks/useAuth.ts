@@ -172,15 +172,17 @@ export function useAuth() {
           supabase
             .from("profiles")
             .select(
-              "id, username, display_name, has_employee_access, telegram_connected, telegram_handle, show_in_staff_list, staff_weight, staff_color, ip_address",
+              "id, username, display_name, has_employee_access, is_fired, telegram_connected, telegram_handle, show_in_staff_list, staff_weight, staff_color, ip_address",
             )
             .eq("id", user.id)
             .maybeSingle(),
           supabase.from("user_roles").select("role").eq("user_id", user.id),
-          supabase.rpc("user_permissions", { _user_id: user.id }),
+          supabase.rpc("user_permissions", { _user_id: user.id }).catch(() => ({ data: [] })),
           supabase
             .from("user_custom_roles")
-            .select("custom_roles(id, name, staff_color, staff_weight, is_reparto, description)")
+            .select(
+              "custom_roles(id, name, permissions, staff_color, staff_weight, is_reparto, description)",
+            )
             .eq("user_id", user.id),
           supabase
             .from("sanctions")
@@ -204,10 +206,13 @@ export function useAuth() {
         );
         setRoles(rolesList);
 
-        const permsList = (perms as string[] | null) ?? [];
+        const directPermsList = (perms as string[] | null) ?? [];
         const rawCustomRoles = ((cr as Array<{ custom_roles: AuthCustomRole | null }> | null) ?? [])
           .map((r) => r.custom_roles)
           .filter((n): n is AuthCustomRole => !!n);
+
+        const customRolePerms = rawCustomRoles.flatMap((r) => (r.permissions as string[]) || []);
+        const permsList = Array.from(new Set([...directPermsList, ...customRolePerms]));
 
         const customRoleNamesList = rawCustomRoles.map((r) => r.name);
         setCustomRoles(rawCustomRoles);
@@ -271,10 +276,11 @@ export function useAuth() {
     };
   }, [user]);
 
-  // Access to the internal panel / staff features: having at least one permission or being admin
-  // Registered users with 0 permissions are strictly "Clienti" without access to the reserved management panel
-  const hasEmployeeAccess = Boolean(isAdmin || permissions.length > 0);
-  const isClient = Boolean(user && !isAdmin && permissions.length === 0);
+  // Access to the internal panel / staff features: allowed for all authenticated users unless explicitly disabled/fired (has_employee_access === false or is_fired === true)
+  const isExplicitlyDenied =
+    profile?.has_employee_access === false || (profile as any)?.is_fired === true;
+  const hasEmployeeAccess = Boolean(user && !isExplicitlyDenied);
+  const isClient = Boolean(user && !hasEmployeeAccess);
 
   const loading = authLoading || (!!user && profileLoading);
 

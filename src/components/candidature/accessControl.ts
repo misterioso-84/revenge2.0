@@ -29,6 +29,15 @@ export function checkFormAccess(
     return { allowed: true };
   }
 
+  // Draft forms are strictly restricted to staff with form management privileges
+  if (form.status === "draft") {
+    return {
+      allowed: false,
+      reason:
+        "Questo questionario è una bozza in lavorazione ed è accessibile solo allo Staff autorizzato.",
+    };
+  }
+
   // 1. PUBLIC VISIBILITY
   if (form.visibility === "public" || !form.visibility) {
     return { allowed: true };

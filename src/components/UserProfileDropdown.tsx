@@ -143,7 +143,7 @@ export function UserProfileDropdown({ className = "" }: { className?: string }) 
             <div className="flex flex-col text-left flex-1">
               <span className="font-extrabold text-white text-xs">Il mio profilo</span>
               <span className="text-[10px] text-amber-400/80 font-normal">
-                Scheda Cittadino & Tessera
+                Tessera & Profilo Giocatore
               </span>
             </div>
             <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />

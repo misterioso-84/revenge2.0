@@ -55,6 +55,7 @@ interface SubmitApplicationDialogProps {
   userCustomRoles?: string[];
   isAdmin?: boolean;
   isStaff?: boolean;
+  canManageForms?: boolean;
   onSubmitted?: () => void;
 }
 
@@ -69,6 +70,7 @@ export function SubmitApplicationDialog({
   userCustomRoles = [],
   isAdmin = false,
   isStaff = false,
+  canManageForms = false,
   onSubmitted,
 }: SubmitApplicationDialogProps) {
   const qc = useQueryClient();
@@ -84,10 +86,20 @@ export function SubmitApplicationDialog({
       profile: currentProfile,
       isAdmin,
       isStaff,
+      canManageForms,
       roles: userRoles,
       customRoleNames: userCustomRoles,
     });
-  }, [form, currentUser, currentProfile, isAdmin, isStaff, userRoles, userCustomRoles]);
+  }, [
+    form,
+    currentUser,
+    currentProfile,
+    isAdmin,
+    isStaff,
+    canManageForms,
+    userRoles,
+    userCustomRoles,
+  ]);
 
   // Query previous submissions for this form to check for retry permission and extra time granted by staff
   const { data: previousSubmissions = [] } = useQuery({

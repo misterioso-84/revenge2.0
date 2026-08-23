@@ -128,8 +128,12 @@ function CandidaturePage() {
 
   const [copiedNick, setCopiedNick] = useState<string | null>(null);
 
-  // Check if draft exists in localStorage on mount and when tab changes
+  // Check if draft exists in localStorage on mount and when tab changes (ONLY for users with canManageForms)
   useEffect(() => {
+    if (!canManageForms) {
+      setHasUnsavedDraft(false);
+      return;
+    }
     try {
       const saved = localStorage.getItem("casino_form_builder_persistent_draft");
       if (saved) {
@@ -145,7 +149,7 @@ function CandidaturePage() {
     } catch {
       setHasUnsavedDraft(false);
     }
-  }, [isBuildingForm, activeTab]);
+  }, [isBuildingForm, activeTab, canManageForms]);
 
   // Filters for Evaluations tab
   const [evalSearch, setEvalSearch] = useState("");
@@ -240,6 +244,10 @@ function CandidaturePage() {
   // Filter available forms based on user role and granular access control (whitelist / staff / public)
   const availableForms = useMemo(() => {
     return forms.filter((f) => {
+      // Draft forms are not available for submission or listing to clients
+      if (f.status === "draft" && !canManageForms && !isAdmin) {
+        return false;
+      }
       const { allowed } = checkFormAccess(f, {
         user,
         profile,
@@ -388,7 +396,7 @@ function CandidaturePage() {
     },
   });
 
-  if (isBuildingForm) {
+  if (isBuildingForm && canManageForms) {
     return (
       <div className="space-y-8 py-2">
         <FormBuilderView
@@ -518,8 +526,8 @@ function CandidaturePage() {
               </p>
             </div>
 
-            {/* Unsaved Draft Banner */}
-            {hasUnsavedDraft && (
+            {/* Unsaved Draft Banner - Only visible to managers who have canManageForms */}
+            {canManageForms && hasUnsavedDraft && (
               <div className="max-w-4xl mx-auto p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-300 text-xs shadow-xl">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
@@ -1463,6 +1471,7 @@ function CandidaturePage() {
                       (a) => a.status === "accepted",
                     ).length;
                     const isOpen = f.status === "open";
+                    const isDraft = f.status === "draft";
 
                     return (
                       <div
@@ -1491,16 +1500,25 @@ function CandidaturePage() {
                                 </Badge>
                               )}
 
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] font-bold uppercase ${
-                                  isOpen
-                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                                    : "bg-rose-500/10 text-rose-400 border-rose-500/30"
-                                }`}
-                              >
-                                {isOpen ? "Aperto" : "Chiuso"}
-                              </Badge>
+                              {isDraft ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase"
+                                >
+                                  🟡 Bozza (Solo Staff)
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-bold uppercase ${
+                                    isOpen
+                                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                                      : "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                                  }`}
+                                >
+                                  {isOpen ? "Aperto" : "Chiuso"}
+                                </Badge>
+                              )}
 
                               {f.reset_timestamp && (
                                 <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
@@ -1576,7 +1594,11 @@ function CandidaturePage() {
                                   : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                               }`}
                             >
-                              {isOpen ? "Chiudi Modulo" : "Riapri Modulo"}
+                              {isOpen
+                                ? "Chiudi Modulo"
+                                : isDraft
+                                  ? "Pubblica ed Apri"
+                                  : "Riapri Modulo"}
                             </Button>
 
                             <Button
@@ -1632,6 +1654,7 @@ function CandidaturePage() {
               userCustomRoles={customRoleNames}
               isAdmin={isAdmin}
               isStaff={isStaff}
+              canManageForms={canManageForms}
               onSubmitted={() => setActiveTab("my-submissions")}
             />
 

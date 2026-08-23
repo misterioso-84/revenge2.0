@@ -52,26 +52,16 @@ function AuthPage() {
       if (!active) return;
       if (data.session?.user?.id) {
         const uid = data.session.user.id;
-        const [{ data: prof }, { data: roles }, { data: customRoles }, { data: perms }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("has_employee_access, show_in_staff_list")
-              .eq("id", uid)
-              .maybeSingle(),
-            supabase.from("user_roles").select("role").eq("user_id", uid),
-            supabase.from("user_custom_roles").select("role_id").eq("user_id", uid),
-            supabase.from("user_permissions").select("permission").eq("user_id", uid),
-          ]);
+        const [{ data: prof }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("has_employee_access, is_fired")
+            .eq("id", uid)
+            .maybeSingle(),
+        ]);
         if (!active) return;
         const isEmployeeOrAdmin =
-          prof?.has_employee_access === true ||
-          prof?.show_in_staff_list === true ||
-          (roles || []).some((r: any) =>
-            ["admin", "gestore", "capitano", "direzione"].includes(r.role),
-          ) ||
-          (customRoles || []).length > 0 ||
-          (perms || []).length > 0;
+          prof?.has_employee_access !== false && (prof as any)?.is_fired !== true;
 
         if (isEmployeeOrAdmin) {
           navigate({ to: "/dashboard" });
@@ -106,25 +96,15 @@ function AuthPage() {
       // Check role
       const uid = data?.user?.id;
       if (uid) {
-        const [{ data: prof }, { data: roles }, { data: customRoles }, { data: perms }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("has_employee_access, show_in_staff_list")
-              .eq("id", uid)
-              .maybeSingle(),
-            supabase.from("user_roles").select("role").eq("user_id", uid),
-            supabase.from("user_custom_roles").select("role_id").eq("user_id", uid),
-            supabase.from("user_permissions").select("permission").eq("user_id", uid),
-          ]);
+        const [{ data: prof }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("has_employee_access, is_fired")
+            .eq("id", uid)
+            .maybeSingle(),
+        ]);
         const isEmployeeOrAdmin =
-          prof?.has_employee_access === true ||
-          prof?.show_in_staff_list === true ||
-          (roles || []).some((r: any) =>
-            ["admin", "gestore", "capitano", "direzione"].includes(r.role),
-          ) ||
-          (customRoles || []).length > 0 ||
-          (perms || []).length > 0;
+          prof?.has_employee_access !== false && (prof as any)?.is_fired !== true;
 
         if (isEmployeeOrAdmin) {
           navigate({ to: "/dashboard" });

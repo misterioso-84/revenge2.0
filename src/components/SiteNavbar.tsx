@@ -59,8 +59,8 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
       isActive: currentPath === "/",
     },
     {
-      label: "Scheda Cittadino",
-      shortLabel: "Scheda",
+      label: "Tessera Giocatore",
+      shortLabel: "Tessera",
       href: "/scheda-cittadino",
       icon: User,
       isActive: currentPath === "/scheda-cittadino",

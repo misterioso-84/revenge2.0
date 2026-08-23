@@ -1945,7 +1945,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         if (table === "user_custom_roles") {
           const customRoles = db.custom_roles || [];
           const customRole = customRoles.find((r: any) => r.id === item.custom_role_id);
-          newItem.custom_roles = customRole ? { name: customRole.name } : null;
+          newItem.custom_roles = customRole ? { ...customRole } : null;
         }
         if (table === "services") {
           const categories = db.service_categories || [];
