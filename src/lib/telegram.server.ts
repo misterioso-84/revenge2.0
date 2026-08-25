@@ -779,8 +779,16 @@ export async function kickTelegramChatMember(chatId: number | string, userId: nu
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json();
+    if (!data.ok) {
+      console.log(
+        `[Telegram banChatMember Notice] Chat ${chatId}, User ${userId}: ${data.description || "error"} (code: ${data.error_code})`,
+      );
+      return false;
+    } else {
+      console.log(`[Telegram banChatMember Success] Chat ${chatId}, User ${userId}`);
+    }
 
-    // After 1 second unban so they can rejoin in future if authorized later
+    // After 1.5 seconds unban so they can rejoin in future if authorized later
     setTimeout(async () => {
       try {
         await fetch(`${API_URL}/unbanChatMember`, {
@@ -796,7 +804,7 @@ export async function kickTelegramChatMember(chatId: number | string, userId: nu
       } catch (e) {
         // ignore
       }
-    }, 1200);
+    }, 1500);
 
     return data.ok;
   } catch (err) {
@@ -936,6 +944,13 @@ export function isUserOrHandleAuthorizedForGroup(
   telegramUserIdOverride?: string | number,
 ): boolean {
   if (!group) return false;
+
+  // 0. If user is fired or has employee access revoked, they are NEVER authorized in staff groups
+  if (profile && (profile.is_fired === true || profile.has_employee_access === false)) {
+    return false;
+  }
+
+  // 1. Admins are authorized
   if (isAdmin) return true;
 
   const allowedRoles = group.allowed_role_ids || [];
@@ -943,12 +958,12 @@ export function isUserOrHandleAuthorizedForGroup(
     if (isAdmin) return true;
   }
 
-  // 1. Check custom roles
+  // 2. Check custom roles
   const roleSet = Array.isArray(userRoleIds) ? new Set(userRoleIds) : new Set(userRoleIds || []);
   const hasRole = allowedRoles.some((rId: string) => roleSet.has(rId));
   if (hasRole) return true;
 
-  // 2. Check manual exceptions / allowed handles / allowed nicknames / manual user ids
+  // 3. Check manual exceptions / allowed handles / allowed nicknames / manual user ids
   const rawExceptions: string[] = [
     ...(group.allowed_exceptions || []),
     ...(group.allowed_handles || []),
@@ -960,7 +975,7 @@ export function isUserOrHandleAuthorizedForGroup(
       String(s || "")
         .trim()
         .toLowerCase()
-        .replace(/^@/, ""),
+        .replace(/^@+/, ""),
     )
     .filter(Boolean);
 
@@ -980,21 +995,21 @@ export function isUserOrHandleAuthorizedForGroup(
 
   // Check Telegram handle
   if (telegramHandleOverride) {
-    const cleanTg = telegramHandleOverride.trim().toLowerCase().replace(/^@/, "");
+    const cleanTg = telegramHandleOverride.trim().toLowerCase().replace(/^@+/, "");
     if (cleanTg && exceptions.includes(cleanTg)) return true;
   }
   if (profile?.telegram_handle) {
-    const cleanTg = profile.telegram_handle.trim().toLowerCase().replace(/^@/, "");
+    const cleanTg = profile.telegram_handle.trim().toLowerCase().replace(/^@+/, "");
     if (cleanTg && exceptions.includes(cleanTg)) return true;
   }
 
   // Check Minecraft nickname / site username / display name
   if (profile?.username) {
-    const cleanUsername = profile.username.trim().toLowerCase().replace(/^@/, "");
+    const cleanUsername = profile.username.trim().toLowerCase().replace(/^@+/, "");
     if (cleanUsername && exceptions.includes(cleanUsername)) return true;
   }
   if (profile?.display_name) {
-    const cleanDisplay = profile.display_name.trim().toLowerCase().replace(/^@/, "");
+    const cleanDisplay = profile.display_name.trim().toLowerCase().replace(/^@+/, "");
     if (cleanDisplay && exceptions.includes(cleanDisplay)) return true;
   }
 
@@ -1108,19 +1123,20 @@ export async function runDaily1700TelegramAudit() {
   try {
     const { supabaseAdmin } = await import("../integrations/supabase/client.server");
 
-    const [
-      { data: groups },
-      { data: profiles },
-      { data: userRoles },
-      { data: customRoles },
-      { data: members },
-    ] = await Promise.all([
-      supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
-      supabaseAdmin.from("profiles").select("*"),
-      supabaseAdmin.from("user_roles").select("*"),
-      supabaseAdmin.from("user_custom_roles").select("*"),
-      supabaseAdmin.from("telegram_group_members").select("*"),
-    ]);
+    // Fetch latest Telegram updates first
+    try {
+      await fetchTelegramUpdates();
+    } catch (e) {
+      console.error("[Telegram Audit 17:00] Error pre-fetching updates:", e);
+    }
+
+    const [{ data: groups }, { data: profiles }, { data: userRoles }, { data: customRoles }] =
+      await Promise.all([
+        supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
+        supabaseAdmin.from("profiles").select("*"),
+        supabaseAdmin.from("user_roles").select("*"),
+        supabaseAdmin.from("user_custom_roles").select("*"),
+      ]);
 
     const adminUserIds = new Set(
       (userRoles || []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id),
@@ -1135,20 +1151,31 @@ export async function runDaily1700TelegramAudit() {
     let unauthorizedKicked = 0;
 
     // 0. Sync group administrators from Telegram API for each active group
+    const groupTgAdminMaps = new Map<string, Map<string, any>>();
+
     for (const group of groups || []) {
       try {
         const tgAdmins = await getTelegramChatAdministrators(group.chat_id);
+        const adminMap = new Map<string, any>();
         if (tgAdmins && tgAdmins.length > 0) {
           for (const adminItem of tgAdmins) {
+            if (adminItem.user?.id) {
+              adminMap.set(String(adminItem.user.id), adminItem);
+            }
             if (adminItem.user && !adminItem.user.is_bot) {
               await syncTelegramUserWithGroupAndProfile(adminItem.user, group.chat_id);
             }
           }
         }
+        groupTgAdminMaps.set(String(group.id), adminMap);
+        groupTgAdminMaps.set(String(group.chat_id), adminMap);
       } catch (e) {
         console.error(`Error fetching Telegram admins for group ${group.id}:`, e);
       }
     }
+
+    // Re-fetch all group members after sync
+    const { data: allMembers } = await supabaseAdmin.from("telegram_group_members").select("*");
 
     for (const group of groups || []) {
       if (group.ignore_checks || group.disable_checks) {
@@ -1157,31 +1184,47 @@ export async function runDaily1700TelegramAudit() {
         );
         continue;
       }
-      const allowedRoles = group.allowed_role_ids || [];
+
+      const tgAdminMap =
+        groupTgAdminMaps.get(String(group.id)) ||
+        groupTgAdminMaps.get(String(group.chat_id)) ||
+        new Map<string, any>();
 
       // 1. Check all users who should have access: send reminder if not inside
       for (const prof of profiles || []) {
+        // Skip fired profiles or profiles without employee access
+        if (prof.is_fired === true || prof.has_employee_access === false) {
+          continue;
+        }
+
         const isAdmin = adminUserIds.has(prof.id);
         const roles = userRoleMap.get(prof.id) || new Set();
         const hasAccess = isUserOrHandleAuthorizedForGroup(group, prof, roles, isAdmin);
 
         const userHandle = prof.telegram_handle
-          ? prof.telegram_handle.toLowerCase().replace("@", "")
+          ? prof.telegram_handle.toLowerCase().replace(/^@+/, "")
           : "";
-        const memberRecord = (members || []).find((m: any) => {
+        const memberRecord = (allMembers || []).find((m: any) => {
           const matches = m.group_id === group.id || String(m.chat_id) === String(group.chat_id);
           if (!matches) return false;
           if (m.user_id === prof.id) return true;
+          if (
+            prof.telegram_user_id &&
+            String(m.telegram_user_id) === String(prof.telegram_user_id)
+          ) {
+            return true;
+          }
           if (userHandle && m.telegram_handle) {
-            return m.telegram_handle.toLowerCase().replace("@", "") === userHandle;
+            return m.telegram_handle.toLowerCase().replace(/^@+/, "") === userHandle;
           }
           return false;
         });
 
-        const isInside = memberRecord?.status === "member";
+        const isInside = memberRecord && memberRecord.status === "member";
 
         if (hasAccess && !isInside) {
-          const chatId = prof.telegram_chat_id || memberRecord?.telegram_user_id;
+          const chatId =
+            prof.telegram_chat_id || memberRecord?.telegram_user_id || prof.telegram_user_id;
           if (chatId) {
             await sendTelegramMessage(
               chatId,
@@ -1199,62 +1242,97 @@ export async function runDaily1700TelegramAudit() {
                   ],
                 ],
               },
-            );
+            ).catch(() => {});
             remindersSent++;
           }
         }
       }
 
       // 2. Check all recorded members of this group: expel if no longer authorized
-      const groupMembers = (members || []).filter(
+      const groupMembers = (allMembers || []).filter(
         (m: any) =>
           (m.group_id === group.id || String(m.chat_id) === String(group.chat_id)) &&
-          m.status === "member",
+          m.status !== "kicked" &&
+          m.status !== "left",
       );
 
       for (const m of groupMembers) {
-        let authorized = false;
+        // Skip bots from audit
+        const mHandle = (m.telegram_handle || "").toLowerCase().replace(/^@+/, "");
+        const isBot =
+          m.is_bot === true ||
+          mHandle.endsWith("bot") ||
+          (m.telegram_user_id && tgAdminMap.get(String(m.telegram_user_id))?.user?.is_bot);
+        if (isBot) {
+          continue;
+        }
+
         let matchedProfile: any = null;
 
         if (m.user_id) {
           matchedProfile = (profiles || []).find((p: any) => p.id === m.user_id);
         }
-        if (!matchedProfile && m.telegram_handle) {
-          const clean = m.telegram_handle.toLowerCase().replace("@", "");
+        if (!matchedProfile && m.telegram_user_id) {
+          matchedProfile = (profiles || []).find(
+            (p: any) => String(p.telegram_user_id) === String(m.telegram_user_id),
+          );
+        }
+        if (!matchedProfile && mHandle) {
           matchedProfile = (profiles || []).find((p: any) => {
             const pHandle = p.telegram_handle
-              ? p.telegram_handle.toLowerCase().replace("@", "")
+              ? p.telegram_handle.toLowerCase().replace(/^@+/, "")
               : "";
-            return pHandle === clean;
+            return pHandle === mHandle;
           });
         }
 
-        const isAuthorized = isUserOrHandleAuthorizedForGroup(
-          group,
-          matchedProfile,
-          matchedProfile ? userRoleMap.get(matchedProfile.id) || new Set() : new Set(),
-          matchedProfile ? adminUserIds.has(matchedProfile.id) : false,
-          m.telegram_handle,
-          m.telegram_user_id,
-        );
+        // Check if user is a Telegram Administrator or Creator in Telegram chat
+        const tgAdmin = m.telegram_user_id
+          ? tgAdminMap.get(String(m.telegram_user_id))
+          : matchedProfile?.telegram_user_id
+            ? tgAdminMap.get(String(matchedProfile.telegram_user_id))
+            : null;
+        const isTelegramAdmin =
+          tgAdmin && (tgAdmin.status === "creator" || tgAdmin.status === "administrator");
 
-        if (isAuthorized) {
-          authorized = true;
-        } else if (m.status === "member" && m.verified) {
-          authorized = true;
-        } else if (
+        const isFired =
           matchedProfile &&
-          !matchedProfile.is_fired &&
-          matchedProfile.has_employee_access !== false
-        ) {
-          authorized = isAuthorized;
+          (matchedProfile.is_fired === true || matchedProfile.has_employee_access === false);
+
+        let isAuthorized = false;
+
+        if (isFired) {
+          isAuthorized = false;
+        } else if (isTelegramAdmin) {
+          // Telegram Chat Creators / Administrators are inherently authorized in the chat
+          isAuthorized = true;
+        } else {
+          isAuthorized = isUserOrHandleAuthorizedForGroup(
+            group,
+            matchedProfile,
+            matchedProfile ? userRoleMap.get(matchedProfile.id) || new Set() : new Set(),
+            matchedProfile ? adminUserIds.has(matchedProfile.id) : false,
+            m.telegram_handle,
+            m.telegram_user_id,
+          );
         }
 
-        if (!authorized) {
-          // Expel from group
-          if (m.telegram_user_id) {
-            await kickTelegramChatMember(group.chat_id, m.telegram_user_id);
+        if (!isAuthorized) {
+          // Expel unauthorized user from group
+          const targetTelegramUserId = m.telegram_user_id || matchedProfile?.telegram_user_id;
+          const displayHandle = mHandle
+            ? `@${mHandle}`
+            : matchedProfile?.telegram_handle
+              ? `@${matchedProfile.telegram_handle.replace(/^@+/, "")}`
+              : "unknown";
+
+          if (targetTelegramUserId) {
+            const kickSuccess = await kickTelegramChatMember(group.chat_id, targetTelegramUserId);
+            console.log(
+              `[Telegram Audit 17:00] Expelling user ${targetTelegramUserId} (${displayHandle}) from group "${group.title}": ${kickSuccess ? "OK" : "FAILED / PROCESSED"}`,
+            );
           }
+
           await supabaseAdmin
             .from("telegram_group_members")
             .update({
@@ -1264,13 +1342,13 @@ export async function runDaily1700TelegramAudit() {
             })
             .eq("id", m.id);
 
-          if (m.telegram_user_id) {
+          if (targetTelegramUserId) {
             await sendTelegramMessage(
-              m.telegram_user_id,
+              targetTelegramUserId,
               `⚠️ <b>REVOCA ACCESSO GRUPPO TELEGRAM</b>\n\n` +
-                `Durante il controllo giornaliero delle 17:00, è emerso che non possiedi più i ruoli richiesti per il gruppo <b>${group.title}</b>.\n` +
-                `Sei stato rimosso automaticamente dal gruppo.`,
-            );
+                `Durante il controllo giornaliero di sicurezza (Ore 17:00), è emerso che non possiedi più i ruoli o i permessi autorizzati per il gruppo <b>${group.title}</b>.\n` +
+                `Sei stato rimosso automaticamente dal gruppo. Se ritieni si tratti di un errore, contatta un Amministratore.`,
+            ).catch(() => {});
           }
           unauthorizedKicked++;
         }
