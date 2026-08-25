@@ -38,6 +38,7 @@ import {
   CheckCircle2,
   RotateCcw,
   FileEdit,
+  FileText,
   CalendarDays,
   ShieldAlert,
   Send,
@@ -65,6 +66,7 @@ export function FormBuilderView({ form, onClose, currentUserId }: FormBuilderVie
   const [cooldownDays, setCooldownDays] = useState<number | "">("");
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | "">("");
   const [resetTimestamp, setResetTimestamp] = useState<string>("");
+  const [displayMode, setDisplayMode] = useState<"all" | "single_question">("all");
   const [fields, setFields] = useState<ApplicationFormField[]>([]);
   const [, setHasDraftRestored] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
@@ -101,6 +103,7 @@ export function FormBuilderView({ form, onClose, currentUserId }: FormBuilderVie
       setCooldownDays(form.cooldown_days || "");
       setTimeLimitMinutes(form.time_limit_minutes || "");
       setResetTimestamp(form.reset_timestamp || "");
+      setDisplayMode(form.display_mode === "single_question" ? "single_question" : "all");
       setAllowedRoles(form.allowed_roles || []);
       setAllowedNicks(form.allowed_minecraft_nicknames || []);
       setAllowedTelegrams(form.allowed_telegram_handles || []);
@@ -376,6 +379,7 @@ export function FormBuilderView({ form, onClose, currentUserId }: FormBuilderVie
         role_target: roleTarget.trim(),
         visibility: visibility,
         status: status,
+        display_mode: displayMode,
         fields: fields,
         cooldown_days: cooldownDays === "" ? null : Number(cooldownDays),
         time_limit_minutes: timeLimitMinutes === "" ? null : Number(timeLimitMinutes),
@@ -560,6 +564,79 @@ export function FormBuilderView({ form, onClose, currentUserId }: FormBuilderVie
                 <SelectItem value="draft">🟡 Bozza (Solo Staff)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* DISPLAY MODE: ALL AT ONCE VS ONE QUESTION AT A TIME */}
+          {/* ========================================================================= */}
+          <div className="space-y-2 sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                Modalità di Visualizzazione Domande per i Candidati
+              </Label>
+              <Badge variant="outline" className="text-[10px] border-slate-800 text-slate-400">
+                Opzione Modulo
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option 1: All at once */}
+              <div
+                onClick={() => setDisplayMode("all")}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  displayMode === "all"
+                    ? "bg-amber-500/10 border-amber-500/50 text-white shadow-lg shadow-amber-500/5"
+                    : "bg-[#0e1017] border-slate-800 text-slate-400 hover:border-slate-700"
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-lg ${displayMode === "all" ? "bg-amber-500/20 text-amber-400" : "bg-slate-800/50 text-slate-500"}`}
+                >
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs font-black text-white flex items-center gap-1.5">
+                    Tutte le Domande Insieme
+                    {displayMode === "all" && (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                    )}
+                  </p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Visualizzazione standard a scorrimento verticale con tutti i campi subito
+                    visibili.
+                  </p>
+                </div>
+              </div>
+
+              {/* Option 2: Single Question */}
+              <div
+                onClick={() => setDisplayMode("single_question")}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  displayMode === "single_question"
+                    ? "bg-amber-500/10 border-amber-500/50 text-white shadow-lg shadow-amber-500/5"
+                    : "bg-[#0e1017] border-slate-800 text-slate-400 hover:border-slate-700"
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-lg ${displayMode === "single_question" ? "bg-amber-500/20 text-amber-400" : "bg-slate-800/50 text-slate-500"}`}
+                >
+                  <Layers className="h-4 w-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs font-black text-white flex items-center gap-1.5">
+                    Una Domanda per Volta (Step-by-Step)
+                    {displayMode === "single_question" && (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                    )}
+                  </p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Wizard interattivo con barra di avanzamento e navigazione "Precedente /
+                    Successiva".
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ========================================================================= */}

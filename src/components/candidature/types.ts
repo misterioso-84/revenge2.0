@@ -28,6 +28,7 @@ export interface ApplicationForm {
   time_limit_minutes?: number | null;
   reset_timestamp?: string | null;
   external_url?: string | null;
+  display_mode?: "all" | "single_question" | null;
   fields: ApplicationFormField[];
   // Fine-grained private whitelist access restrictions:
   allowed_roles?: string[] | null;

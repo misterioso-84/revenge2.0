@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,11 @@ import {
   Globe,
   Timer,
   Send,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  LayoutList,
+  Check,
 } from "lucide-react";
 
 interface ViewAnswersDialogProps {
@@ -36,6 +42,9 @@ export function ViewAnswersDialog({
   open,
   onOpenChange,
 }: ViewAnswersDialogProps) {
+  const [viewMode, setViewMode] = useState<"all" | "single">("all");
+  const [currentIdx, setCurrentIdx] = useState(0);
+
   if (!application) return null;
 
   const matchedForm = form || application.application_forms;
@@ -55,6 +64,54 @@ export function ViewAnswersDialog({
       : null;
   const durationMin = durationSec !== null ? Math.floor(durationSec / 60) : null;
   const durationRemSec = durationSec !== null ? durationSec % 60 : null;
+
+  const renderSingleFieldAnswer = (field: any, idx: number) => {
+    const ans = answers[field.id];
+    return (
+      <div
+        key={field.id || idx}
+        className="p-5 rounded-xl bg-[#0e1017] border border-slate-800 space-y-3"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-bold text-white">
+            <span className="text-amber-400 font-mono mr-2">#{idx + 1}</span>
+            {field.label}
+          </p>
+          <Badge
+            variant="outline"
+            className="text-[10px] uppercase font-mono text-slate-400 border-slate-800"
+          >
+            {field.type}
+          </Badge>
+        </div>
+
+        {field.description && <p className="text-xs text-slate-400 italic">{field.description}</p>}
+
+        <div className="pt-2">
+          {ans === undefined || ans === null || ans === "" ? (
+            <span className="text-xs italic text-slate-600">Nessuna risposta fornita</span>
+          ) : Array.isArray(ans) ? (
+            <div className="flex flex-wrap gap-1.5">
+              {ans.map((item, i) => (
+                <Badge
+                  key={i}
+                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs"
+                >
+                  ✓ {item}
+                </Badge>
+              ))}
+            </div>
+          ) : typeof ans === "boolean" ? (
+            <span className="text-xs font-bold text-amber-400">{ans ? "Sì" : "No"}</span>
+          ) : (
+            <p className="text-xs text-slate-200 bg-[#141724] p-3.5 rounded-xl border border-slate-800 whitespace-pre-wrap leading-relaxed">
+              {String(ans)}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,10 +191,43 @@ export function ViewAnswersDialog({
               </span>
             </div>
 
-            <DialogTitle className="text-lg md:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <FileText className="h-5 w-5 text-amber-400" />
-              {matchedForm?.title || "La Tua Candidatura"}
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <DialogTitle className="text-lg md:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <FileText className="h-5 w-5 text-amber-400" />
+                {matchedForm?.title || "La Tua Candidatura"}
+              </DialogTitle>
+
+              {/* View Mode Toggle */}
+              {fields.length > 1 && (
+                <div className="flex items-center bg-[#141724] p-1 rounded-xl border border-slate-800 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("all")}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      viewMode === "all"
+                        ? "bg-amber-500 text-slate-950 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <LayoutList className="h-3.5 w-3.5" />
+                    <span>Tutte</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("single")}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      viewMode === "single"
+                        ? "bg-amber-500 text-slate-950 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Una per Volta</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <DialogDescription className="text-xs text-slate-400">
               Ruolo Target:{" "}
@@ -169,60 +259,83 @@ export function ViewAnswersDialog({
           )}
         </div>
 
-        {/* Scrollable Answers List */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            Riepilogo delle Risposte Fornite
-          </h3>
+        {/* Answers Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {viewMode === "single" && fields.length > 0 ? (
+            /* Single Question View */
+            <div className="space-y-5">
+              {/* Question Pills Selector */}
+              <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-800">
+                <span className="text-xs font-bold text-amber-400">
+                  Domanda {currentIdx + 1} di {fields.length}
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {fields.map((f, idx) => (
+                    <button
+                      key={f.id || idx}
+                      type="button"
+                      onClick={() => setCurrentIdx(idx)}
+                      className={`h-7 w-7 rounded-lg text-xs font-mono font-bold flex items-center justify-center transition-all border ${
+                        idx === currentIdx
+                          ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md"
+                          : "bg-[#141724] text-slate-400 border-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {fields.length > 0 ? (
-            fields.map((field, idx) => {
-              const ans = answers[field.id];
-              return (
-                <div
-                  key={field.id || idx}
-                  className="p-4 rounded-xl bg-[#0e1017]/80 border border-slate-800/80 space-y-1.5"
+              {renderSingleFieldAnswer(fields[currentIdx], currentIdx)}
+
+              {/* Navigation buttons */}
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentIdx((p) => Math.max(0, p - 1))}
+                  disabled={currentIdx === 0}
+                  className="border-slate-800 text-slate-300 hover:text-white bg-[#0e1017] rounded-xl text-xs gap-1"
                 >
-                  <p className="text-xs font-bold text-slate-300">
-                    {idx + 1}. {field.label}
-                  </p>
+                  <ChevronLeft className="h-4 w-4" />
+                  Precedente
+                </Button>
 
-                  <div className="pt-1">
-                    {ans === undefined || ans === null || ans === "" ? (
-                      <span className="text-xs italic text-slate-600">Nessuna risposta</span>
-                    ) : Array.isArray(ans) ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {ans.map((item, i) => (
-                          <Badge
-                            key={i}
-                            className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs"
-                          >
-                            ✓ {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : typeof ans === "boolean" ? (
-                      <span className="text-xs font-bold text-amber-400">{ans ? "Sì" : "No"}</span>
-                    ) : (
-                      <p className="text-xs text-slate-200 bg-[#12141c] p-3 rounded-lg border border-slate-800 whitespace-pre-wrap leading-relaxed">
-                        {String(ans)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentIdx((p) => Math.min(fields.length - 1, p + 1))}
+                  disabled={currentIdx === fields.length - 1}
+                  className="border-slate-800 text-slate-300 hover:text-white bg-[#0e1017] rounded-xl text-xs gap-1"
+                >
+                  Successiva
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {Object.entries(answers).map(([k, v], idx) => (
-                <div key={k} className="p-3 rounded-xl bg-[#0e1017] border border-slate-800">
-                  <p className="text-xs font-bold text-slate-400 mb-1">
-                    Campo #{idx + 1} ({k})
-                  </p>
-                  <p className="text-xs text-white whitespace-pre-wrap">{String(v)}</p>
+            /* All Questions List View */
+            <div className="space-y-4">
+              <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                <Sparkles className="h-3.5 w-3.5" />
+                Riepilogo delle Risposte Fornite ({fields.length} Domande)
+              </h3>
+
+              {fields.length > 0 ? (
+                fields.map((field, idx) => renderSingleFieldAnswer(field, idx))
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(answers).map(([k, v], idx) => (
+                    <div key={k} className="p-3 rounded-xl bg-[#0e1017] border border-slate-800">
+                      <p className="text-xs font-bold text-slate-400 mb-1">
+                        Campo #{idx + 1} ({k})
+                      </p>
+                      <p className="text-xs text-white whitespace-pre-wrap">{String(v)}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

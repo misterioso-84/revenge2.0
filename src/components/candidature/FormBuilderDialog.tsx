@@ -67,6 +67,7 @@ export function FormBuilderDialog({
   const [roleTarget, setRoleTarget] = useState("");
   const [visibility, setVisibility] = useState<FormVisibility>("public");
   const [status, setStatus] = useState<FormStatus>("open");
+  const [displayMode, setDisplayMode] = useState<"all" | "single_question">("all");
   const [fields, setFields] = useState<ApplicationFormField[]>([]);
 
   // Whitelist state
@@ -97,6 +98,7 @@ export function FormBuilderDialog({
         setRoleTarget(form.role_target || "");
         setVisibility(form.visibility || "public");
         setStatus(form.status || "open");
+        setDisplayMode(form.display_mode === "single_question" ? "single_question" : "all");
         setAllowedRoles(form.allowed_roles || []);
         setAllowedNicks(form.allowed_minecraft_nicknames || []);
         setAllowedTelegrams(form.allowed_telegram_handles || []);
@@ -271,6 +273,7 @@ export function FormBuilderDialog({
         role_target: roleTarget.trim(),
         visibility: visibility,
         status: status,
+        display_mode: displayMode,
         fields: fields,
         allowed_roles: visibility === "private" ? allowedRoles : null,
         allowed_minecraft_nicknames: visibility === "private" ? allowedNicks : null,
@@ -458,6 +461,46 @@ export function FormBuilderDialog({
                     <div className="space-y-0.5">
                       <p className="text-xs font-bold text-white">Privata / Whitelist</p>
                       <p className="text-[10px] text-slate-400">Ruoli, Nick o TG</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Display Mode Setting */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-bold text-slate-200">
+                  Modalità Visualizzazione Domande
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <label
+                    onClick={() => setDisplayMode("all")}
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      displayMode === "all"
+                        ? "bg-amber-500/10 border-amber-500/50 text-white"
+                        : "bg-[#12141c] border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-white">📋 Tutte le Domande</p>
+                      <p className="text-[10px] text-slate-400">
+                        Tutti i campi su una singola pagina
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setDisplayMode("single_question")}
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      displayMode === "single_question"
+                        ? "bg-amber-500/10 border-amber-500/50 text-white"
+                        : "bg-[#12141c] border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-white">🎯 Una Domanda per Volta</p>
+                      <p className="text-[10px] text-slate-400">
+                        Navigazione step-by-step con avanzamento
+                      </p>
                     </div>
                   </label>
                 </div>

@@ -20,6 +20,7 @@ import {
   getTelegramGroupMembersListFn,
   kickTelegramMemberFromGroupFn,
   promoteTelegramMemberInGroupFn,
+  reinstateGroupMember,
 } from "@/lib/telegram-groups.functions";
 import {
   Send,
@@ -593,6 +594,25 @@ function TelegramMessagesPage() {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Errore durante l'espulsione dell'utente.");
+    },
+  });
+
+  // Reinstate Member Mutation
+  const reinstateMemberMutation = useMutation({
+    mutationFn: async (payload: {
+      groupId?: string;
+      chatId?: string | number;
+      telegramUserId: number | string;
+    }) => {
+      return await reinstateGroupMember({ data: payload });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["telegram-group-members", selectedChat?.chat_id] });
+      qc.invalidateQueries({ queryKey: ["telegram-all-chats"] });
+      toast.success("🎉 Membro recuperato e reintegrato con successo! Invito generato e inviato.");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Errore durante il recupero del membro.");
     },
   });
 
@@ -2118,62 +2138,91 @@ function TelegramMessagesPage() {
                         </div>
                       </div>
 
-                      {/* Moderation & Role Actions (Promote / Demote / Kick) */}
+                      {/* Moderation & Role Actions (Promote / Demote / Kick / Reinstate) */}
                       {!isCreator && !m.is_bot && (
                         <div className="flex items-center gap-1 shrink-0">
-                          {/* Promote / Demote Button */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              promoteMemberMutation.mutate({
-                                chatId: selectedChat.chat_id,
-                                userId: m.telegram_user_id,
-                                isPromote: !isAdminMember,
-                              })
-                            }
-                            disabled={promoteMemberMutation.isPending}
-                            className={cn(
-                              "h-7 w-7 p-0 rounded-lg",
-                              isAdminMember
-                                ? "text-amber-400 hover:bg-amber-950/40 hover:text-amber-300"
-                                : "text-slate-400 hover:bg-slate-800 hover:text-sky-400",
-                            )}
-                            title={
-                              isAdminMember
-                                ? "Revoca privilegi di Amministratore"
-                                : "Promuovi ad Amministratore"
-                            }
-                          >
-                            {isAdminMember ? (
-                              <ShieldAlert className="h-3.5 w-3.5" />
-                            ) : (
-                              <Shield className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
+                          {isKicked ? (
+                            /* Reinstate / Recover Button */
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    `Vuoi recuperare e reintegrare ${m.display_name} nel gruppo "${selectedChat.name || "Gruppo"}"? L'utente verrà sbloccato e riceverà un invito per rientrare.`,
+                                  )
+                                ) {
+                                  reinstateMemberMutation.mutate({
+                                    groupId: selectedChat.id,
+                                    chatId: selectedChat.chat_id,
+                                    telegramUserId: m.telegram_user_id,
+                                  });
+                                }
+                              }}
+                              disabled={reinstateMemberMutation.isPending}
+                              className="h-7 px-2.5 text-[11px] font-semibold rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 flex items-center gap-1 transition-all"
+                              title="Recupera / Reintegra utente nel gruppo"
+                            >
+                              <UserCheck className="h-3.5 w-3.5" />
+                              <span>Recupera</span>
+                            </Button>
+                          ) : (
+                            <>
+                              {/* Promote / Demote Button */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  promoteMemberMutation.mutate({
+                                    chatId: selectedChat.chat_id,
+                                    userId: m.telegram_user_id,
+                                    isPromote: !isAdminMember,
+                                  })
+                                }
+                                disabled={promoteMemberMutation.isPending}
+                                className={cn(
+                                  "h-7 w-7 p-0 rounded-lg",
+                                  isAdminMember
+                                    ? "text-amber-400 hover:bg-amber-950/40 hover:text-amber-300"
+                                    : "text-slate-400 hover:bg-slate-800 hover:text-sky-400",
+                                )}
+                                title={
+                                  isAdminMember
+                                    ? "Revoca privilegi di Amministratore"
+                                    : "Promuovi ad Amministratore"
+                                }
+                              >
+                                {isAdminMember ? (
+                                  <ShieldAlert className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Shield className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
 
-                          {/* Kick Button */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Vuoi davvero espellere ${m.display_name} dal gruppo Telegram?`,
-                                )
-                              ) {
-                                kickMemberMutation.mutate({
-                                  chatId: selectedChat.chat_id,
-                                  userId: m.telegram_user_id,
-                                });
-                              }
-                            }}
-                            disabled={kickMemberMutation.isPending}
-                            className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:bg-rose-950/40 hover:text-rose-400"
-                            title="Espelli dal gruppo Telegram"
-                          >
-                            <UserMinus className="h-3.5 w-3.5" />
-                          </Button>
+                              {/* Kick Button */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      `Vuoi davvero espellere ${m.display_name} dal gruppo Telegram?`,
+                                    )
+                                  ) {
+                                    kickMemberMutation.mutate({
+                                      chatId: selectedChat.chat_id,
+                                      userId: m.telegram_user_id,
+                                    });
+                                  }
+                                }}
+                                disabled={kickMemberMutation.isPending}
+                                className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:bg-rose-950/40 hover:text-rose-400"
+                                title="Espelli dal gruppo Telegram"
+                              >
+                                <UserMinus className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

@@ -1,8 +1,27 @@
 import { supabaseAdmin } from "../integrations/supabase/client.server";
 
-const BOT_TOKEN =
-  process.env.TELEGRAM_BOT_TOKEN || "8914449193:AAF94fiCf0od_YjoK2e_Pw4Nsc6vVFA6mlk";
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+export function getBotToken(): string {
+  return (
+    process.env.TELEGRAM_BOT_TOKEN || "8914449193:AAHO7p6gZg044X8d839z2y-aXzsa613MubQ"
+  ).trim();
+}
+
+export function getApiUrl(): string {
+  return `https://api.telegram.org/bot${getBotToken()}`;
+}
+
+// Proxy object or getter for API_URL so it stays dynamic
+const API_URL = {
+  toString() {
+    return getApiUrl();
+  },
+  valueOf() {
+    return getApiUrl();
+  },
+  [Symbol.toPrimitive]() {
+    return getApiUrl();
+  },
+};
 
 // Cache verified codes and pending codes on globalThis to survive HMR/server reloads
 const g = globalThis as any;
@@ -121,13 +140,37 @@ export async function sendTelegramMessage(
     if (options?.disableNotification) {
       payload.disable_notification = true;
     }
-    const res = await fetch(`${API_URL}/sendMessage`, {
+    const res = await fetch(`${getApiUrl()}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(8000),
     });
-    return await res.json();
+    let data = await res.json();
+    // Auto fallback if Telegram fails due to unescaped HTML entities
+    if (
+      !data.ok &&
+      data.description &&
+      (data.description.includes("can't parse entities") || data.description.includes("entity"))
+    ) {
+      console.warn(
+        "[Telegram Bot] HTML parse error, retrying with plain text fallback:",
+        data.description,
+      );
+      const plainText = text.replace(/<[^>]*>/g, "");
+      const retryRes = await fetch(`${getApiUrl()}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          text: plainText,
+          parse_mode: undefined,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      data = await retryRes.json();
+    }
+    return data;
   } catch (err) {
     console.error("Error sending Telegram message:", err);
     return null;
@@ -1342,314 +1385,494 @@ export async function fetchTelegramUpdates() {
         if (first !== undefined) processedUpdatesSet.delete(first);
       }
 
-      // -------------------------------------------------------------
-      // 1. INLINE CALLBACK QUERY HANDLER
-      // -------------------------------------------------------------
-      if (update.callback_query) {
-        const cb = update.callback_query;
-        const cbFrom = cb.from;
-        const chatId = cb.message?.chat?.id || cbFrom.id;
-        const cbData = cb.data || "";
+      try {
+        // -------------------------------------------------------------
+        // 1. INLINE CALLBACK QUERY HANDLER
+        // -------------------------------------------------------------
+        if (update.callback_query) {
+          const cb = update.callback_query;
+          const cbFrom = cb.from;
+          const chatId = cb.message?.chat?.id || cbFrom.id;
+          const cbData = cb.data || "";
 
-        if (cbData === "sync_profile" && cbFrom && chatId) {
-          const rawCbHandle = cbFrom.username
-            ? `@${cbFrom.username}`
-            : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
+          if (cbData === "sync_profile" && cbFrom && chatId) {
+            const rawCbHandle = cbFrom.username
+              ? `@${cbFrom.username}`
+              : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
 
-          try {
-            const matchedProf = await syncTelegramUserWithGroupAndProfile(
-              cbFrom,
-              cb.message?.chat?.id || chatId,
-            );
-
-            if (matchedProf) {
-              await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  callback_query_id: cb.id,
-                  text: `✅ Profilo sincronizzato con successo (${rawCbHandle})!`,
-                  show_alert: true,
-                }),
-              });
-            } else {
-              await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  callback_query_id: cb.id,
-                  text: `✅ Sincronizzazione gruppo effettuata (${rawCbHandle})! Assicurati di registrarti anche sul sito per abbinare il tuo profilo.`,
-                  show_alert: true,
-                }),
-              });
-            }
-          } catch (e) {
-            console.error("Error passive syncing member", e);
-          }
-          continue;
-        }
-
-        if (cbData === "scollega" && cbFrom && chatId) {
-          const rawCbHandle = cbFrom.username
-            ? `@${cbFrom.username}`
-            : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
-
-          const handlesToUnlink = new Set<string>();
-          handlesToUnlink.add(rawCbHandle);
-          if (cbFrom.username) {
-            handlesToUnlink.add(`@${cbFrom.username}`);
-            handlesToUnlink.add(cbFrom.username);
-          }
-
-          for (const h of handlesToUnlink) {
             try {
-              await supabaseAdmin
-                .from("profiles")
-                .update({
-                  telegram_connected: false,
-                  telegram_handle: null,
-                  telegram_code: null,
-                  telegram_chat_id: null,
-                  telegram_user_id: null,
-                })
-                .ilike("telegram_handle", h.startsWith("@") ? h : `@${h}`);
-            } catch (err) {
-              console.error("Error disconnecting Telegram handle:", err);
+              const matchedProf = await syncTelegramUserWithGroupAndProfile(
+                cbFrom,
+                cb.message?.chat?.id || chatId,
+              );
+
+              if (matchedProf) {
+                await fetch(`https://api.telegram.org/bot${getBotToken()}/answerCallbackQuery`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    callback_query_id: cb.id,
+                    text: `✅ Profilo sincronizzato con successo (${rawCbHandle})!`,
+                    show_alert: true,
+                  }),
+                });
+              } else {
+                await fetch(`https://api.telegram.org/bot${getBotToken()}/answerCallbackQuery`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    callback_query_id: cb.id,
+                    text: `✅ Sincronizzazione gruppo effettuata (${rawCbHandle})! Assicurati di registrarti anche sul sito per abbinare il tuo profilo.`,
+                    show_alert: true,
+                  }),
+                });
+              }
+            } catch (e) {
+              console.error("Error passive syncing member", e);
             }
+            continue;
           }
 
-          await sendTelegramMessage(
-            chatId,
-            `❌ <b>Account Telegram scollegato con successo.</b>\n\n` +
-              `L'associazione con il tuo profilo Minecraft è stata rimossa.\n` +
-              `Per collegare un nuovo account, invia il comando /start.`,
-          );
-        } else if (cbData.startsWith("genera_invito_") && cbFrom && chatId) {
-          const groupId = cbData.replace("genera_invito_", "");
-          const rawCbHandle = cbFrom.username
-            ? `@${cbFrom.username}`
-            : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
+          if (cbData === "scollega" && cbFrom && chatId) {
+            const rawCbHandle = cbFrom.username
+              ? `@${cbFrom.username}`
+              : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
 
-          // Find group and user profile
-          const [{ data: group }, { data: profiles }] = await Promise.all([
-            supabaseAdmin.from("telegram_groups").select("*").eq("id", groupId).maybeSingle(),
-            supabaseAdmin.from("profiles").select("*"),
-          ]);
-
-          const cleanCbHandle = cbFrom.username ? cbFrom.username.toLowerCase() : "";
-          const prof = (profiles || []).find((p: any) => {
-            if (p.telegram_user_id && String(p.telegram_user_id) === String(cbFrom.id)) return true;
-            if (cleanCbHandle && p.telegram_handle) {
-              const pClean = p.telegram_handle.toLowerCase().replace("@", "");
-              if (pClean === cleanCbHandle) return true;
+            const handlesToUnlink = new Set<string>();
+            handlesToUnlink.add(rawCbHandle);
+            if (cbFrom.username) {
+              handlesToUnlink.add(`@${cbFrom.username}`);
+              handlesToUnlink.add(cbFrom.username);
             }
-            return false;
-          });
 
-          if (!group) {
-            await sendTelegramMessage(chatId, `❌ Gruppo non trovato o non più attivo.`);
-          } else if (!prof) {
+            for (const h of handlesToUnlink) {
+              try {
+                await supabaseAdmin
+                  .from("profiles")
+                  .update({
+                    telegram_connected: false,
+                    telegram_handle: null,
+                    telegram_code: null,
+                    telegram_chat_id: null,
+                    telegram_user_id: null,
+                  })
+                  .ilike("telegram_handle", h.startsWith("@") ? h : `@${h}`);
+              } catch (err) {
+                console.error("Error disconnecting Telegram handle:", err);
+              }
+            }
+
             await sendTelegramMessage(
               chatId,
-              `⚠️ <b>PROFILO NON COLLEGATO</b>\n\n` +
-                `Non risulti ancora associato a nessun account Minecraft sul sito del Casinò.\n` +
-                `Invia <code>/start</code> o visita la Dashboard per associare il tuo profilo.`,
+              `❌ <b>Account Telegram scollegato con successo.</b>\n\n` +
+                `L'associazione con il tuo profilo Minecraft è stata rimossa.\n` +
+                `Per collegare un nuovo account, invia il comando /start.`,
             );
-          } else {
-            // 🔒 RULE: If the user is ALREADY in the group, they CANNOT request a new invite link!
-            const { data: allMembers } = await supabaseAdmin
-              .from("telegram_group_members")
-              .select("*");
-            const existingMember = (allMembers || []).find((m: any) => {
-              const matchesGroup =
-                m.group_id === group.id || String(m.chat_id) === String(group.chat_id);
-              if (!matchesGroup) return false;
-              if (m.user_id === prof.id) return true;
-              if (m.telegram_user_id && String(m.telegram_user_id) === String(cbFrom.id))
+          } else if (cbData.startsWith("genera_invito_") && cbFrom && chatId) {
+            const groupId = cbData.replace("genera_invito_", "");
+            const rawCbHandle = cbFrom.username
+              ? `@${cbFrom.username}`
+              : `@${(cbFrom.first_name || "Utente").replace(/\s+/g, "")}_${cbFrom.id}`;
+
+            // Find group and user profile
+            const [{ data: group }, { data: profiles }] = await Promise.all([
+              supabaseAdmin.from("telegram_groups").select("*").eq("id", groupId).maybeSingle(),
+              supabaseAdmin.from("profiles").select("*"),
+            ]);
+
+            const cleanCbHandle = cbFrom.username ? cbFrom.username.toLowerCase() : "";
+            const prof = (profiles || []).find((p: any) => {
+              if (p.telegram_user_id && String(p.telegram_user_id) === String(cbFrom.id))
                 return true;
-              if (rawCbHandle && m.telegram_handle) {
-                return m.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+              if (cleanCbHandle && p.telegram_handle) {
+                const pClean = p.telegram_handle.toLowerCase().replace("@", "");
+                if (pClean === cleanCbHandle) return true;
               }
               return false;
             });
 
-            let isAlreadyInside = existingMember?.status === "member";
-            if (!isAlreadyInside && group.chat_id && cbFrom.id) {
-              const liveCheck = await checkTelegramChatMember(group.chat_id, cbFrom.id);
-              if (
-                liveCheck &&
-                (liveCheck.status === "member" ||
-                  liveCheck.status === "administrator" ||
-                  liveCheck.status === "creator")
-              ) {
-                isAlreadyInside = true;
-              }
-            }
-
-            if (isAlreadyInside) {
+            if (!group) {
+              await sendTelegramMessage(chatId, `❌ Gruppo non trovato o non più attivo.`);
+            } else if (!prof) {
               await sendTelegramMessage(
                 chatId,
-                `ℹ️ <b>SEI GIÀ MEMBRO DI QUESTO GRUPPO</b>\n\n` +
-                  `Fai già parte del gruppo <b>${group.title}</b> con il tuo account Telegram (<b>${rawCbHandle}</b>).\n\n` +
-                  `🔒 <i>Regola di sicurezza: Non è consentito richiedere nuovi link di invito se sei già membro attivo del gruppo.</i>`,
+                `⚠️ <b>PROFILO NON COLLEGATO</b>\n\n` +
+                  `Non risulti ancora associato a nessun account Minecraft sul sito del Casinò.\n` +
+                  `Invia <code>/start</code> o visita la Dashboard per associare il tuo profilo.`,
               );
-              continue;
-            }
-
-            // Check roles
-            const [{ data: uRoles }, { data: cRoles }] = await Promise.all([
-              supabaseAdmin.from("user_roles").select("role").eq("user_id", prof.id),
-              supabaseAdmin
-                .from("user_custom_roles")
-                .select("custom_role_id")
-                .eq("user_id", prof.id),
-            ]);
-
-            const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
-            const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
-            const allowed = group.allowed_role_ids || [];
-
-            const isAllowed = isUserOrHandleAuthorizedForGroup(
-              group,
-              prof,
-              userRoleIds,
-              isAdmin,
-              cbFrom?.username,
-              cbFrom?.id,
-            );
-
-            if (isAllowed) {
-              const inviteLink = await createTelegramInviteLink(
-                group.chat_id,
-                `Invito per ${prof.display_name || prof.username}`,
-                1,
-                48,
-              );
-
-              if (inviteLink) {
-                await sendTelegramMessage(
-                  chatId,
-                  `🔗 <b>LINK DI INVITO PERSONALE GENERATO!</b>\n\n` +
-                    `🏛️ <b>Gruppo:</b> <b>${group.title}</b>\n` +
-                    `👤 <b>Destinatario:</b> ${prof.display_name || prof.username} (${rawCbHandle})\n` +
-                    `⏳ <b>Validità:</b> 48 ore (Monouso)\n\n` +
-                    `👉 <a href="${inviteLink}"><b>CLICCA QUI PER UNIRTI AL GRUPPO</b></a>\n\n` +
-                    `<code>${inviteLink}</code>\n\n` +
-                    `<i>Nota: Appena entrerai nel gruppo, il bot convaliderà il tuo accesso. Una volta entrato, non potrai richiedere ulteriori link d'invito.</i>`,
-                );
-              } else {
-                await sendTelegramMessage(
-                  chatId,
-                  `❌ Impossibile generare il link di invito. Verifica che il bot sia amministratore del gruppo con permesso di invitare utenti.`,
-                );
-              }
             } else {
-              await sendTelegramMessage(
-                chatId,
-                `⛔ <b>ACCESSO NON AUTORIZZATO</b>\n\nNon disponi dei ruoli richiesti per entrare in <b>${group.title}</b>.`,
-              );
-            }
-          }
-        } else if (cbData === "miei_gruppi" && cbFrom && chatId) {
-          // List user groups
-          const rawCbHandle = cbFrom.username ? cbFrom.username.toLowerCase() : "";
-          const { data: profiles } = await supabaseAdmin.from("profiles").select("*");
-          const prof = (profiles || []).find((p: any) => {
-            if (p.telegram_user_id && String(p.telegram_user_id) === String(cbFrom.id)) return true;
-            if (rawCbHandle && p.telegram_handle) {
-              return p.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
-            }
-            return false;
-          });
+              // 🔒 RULE: If the user is ALREADY in the group, they CANNOT request a new invite link!
+              const { data: allMembers } = await supabaseAdmin
+                .from("telegram_group_members")
+                .select("*");
+              const existingMember = (allMembers || []).find((m: any) => {
+                const matchesGroup =
+                  m.group_id === group.id || String(m.chat_id) === String(group.chat_id);
+                if (!matchesGroup) return false;
+                if (m.user_id === prof.id) return true;
+                if (m.telegram_user_id && String(m.telegram_user_id) === String(cbFrom.id))
+                  return true;
+                if (rawCbHandle && m.telegram_handle) {
+                  return m.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+                }
+                return false;
+              });
 
-          if (!prof) {
-            await sendTelegramMessage(
-              chatId,
-              `⚠️ Il tuo account Telegram non è ancora collegato. Invia <code>/start</code>.`,
-            );
-          } else {
-            const [{ data: uRoles }, { data: cRoles }, { data: allGroups }, { data: members }] =
-              await Promise.all([
+              let isAlreadyInside = existingMember?.status === "member";
+              if (!isAlreadyInside && group.chat_id && cbFrom.id) {
+                const liveCheck = await checkTelegramChatMember(group.chat_id, cbFrom.id);
+                if (
+                  liveCheck &&
+                  (liveCheck.status === "member" ||
+                    liveCheck.status === "administrator" ||
+                    liveCheck.status === "creator")
+                ) {
+                  isAlreadyInside = true;
+                }
+              }
+
+              if (isAlreadyInside) {
+                await sendTelegramMessage(
+                  chatId,
+                  `ℹ️ <b>SEI GIÀ MEMBRO DI QUESTO GRUPPO</b>\n\n` +
+                    `Fai già parte del gruppo <b>${group.title}</b> con il tuo account Telegram (<b>${rawCbHandle}</b>).\n\n` +
+                    `🔒 <i>Regola di sicurezza: Non è consentito richiedere nuovi link di invito se sei già membro attivo del gruppo.</i>`,
+                );
+                continue;
+              }
+
+              // Check roles
+              const [{ data: uRoles }, { data: cRoles }] = await Promise.all([
                 supabaseAdmin.from("user_roles").select("role").eq("user_id", prof.id),
                 supabaseAdmin
                   .from("user_custom_roles")
                   .select("custom_role_id")
                   .eq("user_id", prof.id),
-                supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
-                supabaseAdmin.from("telegram_group_members").select("*"),
               ]);
 
-            const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
-            const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
+              const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
+              const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
+              const allowed = group.allowed_role_ids || [];
 
-            const userGroups = (allGroups || []).filter((g: any) =>
-              isUserOrHandleAuthorizedForGroup(
-                g,
+              const isAllowed = isUserOrHandleAuthorizedForGroup(
+                group,
                 prof,
                 userRoleIds,
                 isAdmin,
                 cbFrom?.username,
                 cbFrom?.id,
-              ),
-            );
+              );
 
-            if (userGroups.length === 0) {
+              if (isAllowed) {
+                const inviteLink = await createTelegramInviteLink(
+                  group.chat_id,
+                  `Invito per ${prof.display_name || prof.username}`,
+                  1,
+                  48,
+                );
+
+                if (inviteLink) {
+                  await sendTelegramMessage(
+                    chatId,
+                    `🔗 <b>LINK DI INVITO PERSONALE GENERATO!</b>\n\n` +
+                      `🏛️ <b>Gruppo:</b> <b>${group.title}</b>\n` +
+                      `👤 <b>Destinatario:</b> ${prof.display_name || prof.username} (${rawCbHandle})\n` +
+                      `⏳ <b>Validità:</b> 48 ore (Monouso)\n\n` +
+                      `👉 <a href="${inviteLink}"><b>CLICCA QUI PER UNIRTI AL GRUPPO</b></a>\n\n` +
+                      `<code>${inviteLink}</code>\n\n` +
+                      `<i>Nota: Appena entrerai nel gruppo, il bot convaliderà il tuo accesso. Una volta entrato, non potrai richiedere ulteriori link d'invito.</i>`,
+                  );
+                } else {
+                  await sendTelegramMessage(
+                    chatId,
+                    `❌ Impossibile generare il link di invito. Verifica che il bot sia amministratore del gruppo con permesso di invitare utenti.`,
+                  );
+                }
+              } else {
+                await sendTelegramMessage(
+                  chatId,
+                  `⛔ <b>ACCESSO NON AUTORIZZATO</b>\n\nNon disponi dei ruoli richiesti per entrare in <b>${group.title}</b>.`,
+                );
+              }
+            }
+          } else if (cbData === "miei_gruppi" && cbFrom && chatId) {
+            // List user groups
+            const rawCbHandle = cbFrom.username ? cbFrom.username.toLowerCase() : "";
+            const { data: profiles } = await supabaseAdmin.from("profiles").select("*");
+            const prof = (profiles || []).find((p: any) => {
+              if (p.telegram_user_id && String(p.telegram_user_id) === String(cbFrom.id))
+                return true;
+              if (rawCbHandle && p.telegram_handle) {
+                return p.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+              }
+              return false;
+            });
+
+            if (!prof) {
               await sendTelegramMessage(
                 chatId,
-                `ℹ️ Non hai attualmente gruppi Telegram associati ai tuoi ruoli.`,
+                `⚠️ Il tuo account Telegram non è ancora collegato. Invia <code>/start</code>.`,
               );
             } else {
-              const buttons = userGroups.map((g: any) => {
-                const isInside = (members || []).some((m: any) => {
-                  const matchesGroup =
-                    m.group_id === g.id || String(m.chat_id) === String(g.chat_id);
-                  if (!matchesGroup) return false;
-                  if (m.status !== "member") return false;
-                  if (m.user_id === prof.id) return true;
-                  if (m.telegram_user_id && String(m.telegram_user_id) === String(cbFrom.id))
+              const [{ data: uRoles }, { data: cRoles }, { data: allGroups }, { data: members }] =
+                await Promise.all([
+                  supabaseAdmin.from("user_roles").select("role").eq("user_id", prof.id),
+                  supabaseAdmin
+                    .from("user_custom_roles")
+                    .select("custom_role_id")
+                    .eq("user_id", prof.id),
+                  supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
+                  supabaseAdmin.from("telegram_group_members").select("*"),
+                ]);
+
+              const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
+              const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
+
+              const userGroups = (allGroups || []).filter((g: any) =>
+                isUserOrHandleAuthorizedForGroup(
+                  g,
+                  prof,
+                  userRoleIds,
+                  isAdmin,
+                  cbFrom?.username,
+                  cbFrom?.id,
+                ),
+              );
+
+              if (userGroups.length === 0) {
+                await sendTelegramMessage(
+                  chatId,
+                  `ℹ️ Non hai attualmente gruppi Telegram associati ai tuoi ruoli.`,
+                );
+              } else {
+                const buttons = userGroups.map((g: any) => {
+                  const isInside = (members || []).some((m: any) => {
+                    const matchesGroup =
+                      m.group_id === g.id || String(m.chat_id) === String(g.chat_id);
+                    if (!matchesGroup) return false;
+                    if (m.status !== "member") return false;
+                    if (m.user_id === prof.id) return true;
+                    if (m.telegram_user_id && String(m.telegram_user_id) === String(cbFrom.id))
+                      return true;
+                    if (rawCbHandle && m.telegram_handle) {
+                      return m.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+                    }
+                    return false;
+                  });
+
+                  if (isInside) {
+                    return [
+                      { text: `✅ Già Membro: ${g.title}`, callback_data: `genera_invito_${g.id}` },
+                    ];
+                  }
+                  return [
+                    {
+                      text: `🔗 Ricevi Invito: ${g.title}`,
+                      callback_data: `genera_invito_${g.id}`,
+                    },
+                  ];
+                });
+
+                await sendTelegramMessage(
+                  chatId,
+                  `📋 <b>I TUOI GRUPPI TELEGRAM ABILITATI:</b>\n\n` +
+                    userGroups
+                      .map((g: any, idx: number) => `🔹 <b>${idx + 1}. ${g.title}</b>`)
+                      .join("\n") +
+                    `\n\n<i>Seleziona un gruppo per unirti o visualizzare il tuo stato:</i>`,
+                  { inline_keyboard: buttons },
+                );
+              }
+            }
+          }
+          continue;
+        }
+
+        // -------------------------------------------------------------
+        // 2. USERBOT REAL-TIME MEMBER & STATUS UPDATES (chat_member / my_chat_member)
+        // -------------------------------------------------------------
+        if (update.chat_member) {
+          const cm = update.chat_member;
+          const groupChatId = cm.chat.id;
+          const groupTitle = cm.chat.title || "Gruppo Staff";
+          const newStatus = cm.new_chat_member?.status;
+          const targetUser = cm.new_chat_member?.user;
+
+          if (targetUser && !targetUser.is_bot) {
+            const { data: dbGroup } = await supabaseAdmin
+              .from("telegram_groups")
+              .select("*")
+              .eq("chat_id", groupChatId)
+              .maybeSingle();
+
+            if (dbGroup) {
+              const memberHandle = targetUser.username
+                ? `@${targetUser.username}`
+                : `@${targetUser.first_name}_${targetUser.id}`;
+              const cleanHandle = targetUser.username ? targetUser.username.toLowerCase() : "";
+
+              if (
+                newStatus === "member" ||
+                newStatus === "administrator" ||
+                newStatus === "creator" ||
+                newStatus === "restricted"
+              ) {
+                const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
+                  supabaseAdmin.from("profiles").select("*"),
+                  supabaseAdmin
+                    .from("telegram_group_members")
+                    .select("*")
+                    .eq("group_id", dbGroup.id),
+                ]);
+
+                let matchedProf = (profiles || []).find((p: any) => {
+                  if (p.telegram_user_id && String(p.telegram_user_id) === String(targetUser.id))
                     return true;
-                  if (rawCbHandle && m.telegram_handle) {
-                    return m.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+                  if (p.telegram_chat_id && String(p.telegram_chat_id) === String(targetUser.id))
+                    return true;
+                  if (cleanHandle && p.telegram_handle) {
+                    return p.telegram_handle.toLowerCase().replace("@", "") === cleanHandle;
                   }
                   return false;
                 });
 
-                if (isInside) {
-                  return [
-                    { text: `✅ Già Membro: ${g.title}`, callback_data: `genera_invito_${g.id}` },
-                  ];
-                }
-                return [
-                  { text: `🔗 Ricevi Invito: ${g.title}`, callback_data: `genera_invito_${g.id}` },
-                ];
-              });
+                const dbMemberMatch = (existingGroupMembers || []).find(
+                  (m: any) =>
+                    (m.telegram_user_id && String(m.telegram_user_id) === String(targetUser.id)) ||
+                    (matchedProf && m.user_id === matchedProf.id) ||
+                    (cleanHandle &&
+                      m.telegram_handle &&
+                      m.telegram_handle.toLowerCase().replace("@", "") === cleanHandle),
+                );
 
-              await sendTelegramMessage(
-                chatId,
-                `📋 <b>I TUOI GRUPPI TELEGRAM ABILITATI:</b>\n\n` +
-                  userGroups
-                    .map((g: any, idx: number) => `🔹 <b>${idx + 1}. ${g.title}</b>`)
-                    .join("\n") +
-                  `\n\n<i>Seleziona un gruppo per unirti o visualizzare il tuo stato:</i>`,
-                { inline_keyboard: buttons },
-              );
+                if (!matchedProf && dbMemberMatch?.user_id) {
+                  matchedProf = (profiles || []).find((p: any) => p.id === dbMemberMatch.user_id);
+                }
+
+                // Check if user is explicitly revoked by admin (status === 'kicked') or is a fired employee
+                const isExplicitlyRevoked = dbMemberMatch && dbMemberMatch.status === "kicked";
+                const isFiredEmployee =
+                  matchedProf &&
+                  (matchedProf.is_fired === true || matchedProf.has_employee_access === false);
+
+                const isChecksDisabled = !!dbGroup.ignore_checks || !!dbGroup.disable_checks;
+
+                if (!isChecksDisabled && (isExplicitlyRevoked || isFiredEmployee)) {
+                  // Unauthorized / revoked user: expel
+                  try {
+                    await kickTelegramChatMember(groupChatId, targetUser.id);
+                  } catch (e) {
+                    console.error("Error kicking revoked user in Telegram:", e);
+                  }
+                  await supabaseAdmin.from("telegram_group_members").upsert({
+                    id: `tgm-${dbGroup.id}-${targetUser.id}`,
+                    group_id: dbGroup.id,
+                    chat_id: groupChatId,
+                    telegram_user_id: targetUser.id,
+                    telegram_handle: memberHandle,
+                    user_id: matchedProf?.id || null,
+                    status: "kicked",
+                    verified: false,
+                    joined_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  });
+                } else {
+                  // Authorized or regular member
+                  await supabaseAdmin.from("telegram_group_members").upsert({
+                    id: `tgm-${dbGroup.id}-${targetUser.id}`,
+                    group_id: dbGroup.id,
+                    chat_id: groupChatId,
+                    telegram_user_id: targetUser.id,
+                    telegram_handle: memberHandle,
+                    user_id: matchedProf?.id || dbMemberMatch?.user_id || null,
+                    status: "member",
+                    verified: !!matchedProf || dbMemberMatch?.verified === true,
+                    joined_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  });
+
+                  if (matchedProf) {
+                    await supabaseAdmin
+                      .from("profiles")
+                      .update({
+                        telegram_connected: true,
+                        telegram_user_id: targetUser.id,
+                        telegram_handle: memberHandle,
+                        is_fired: false,
+                        has_employee_access: true,
+                      })
+                      .eq("id", matchedProf.id);
+                  }
+                }
+              } else if (newStatus === "left" || newStatus === "kicked" || newStatus === "banned") {
+                // Ensure expelled/left members are accurately recorded so they can be reviewed and reinstated
+                const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
+                  supabaseAdmin.from("profiles").select("id, telegram_user_id, telegram_handle"),
+                  supabaseAdmin
+                    .from("telegram_group_members")
+                    .select("*")
+                    .eq("group_id", dbGroup.id),
+                ]);
+
+                const cleanHandle = targetUser.username ? targetUser.username.toLowerCase() : "";
+                const matchedProf = (profiles || []).find(
+                  (p: any) =>
+                    (p.telegram_user_id && String(p.telegram_user_id) === String(targetUser.id)) ||
+                    (cleanHandle &&
+                      p.telegram_handle &&
+                      p.telegram_handle.toLowerCase().replace("@", "") === cleanHandle),
+                );
+
+                const existingMember = (existingGroupMembers || []).find(
+                  (m: any) =>
+                    String(m.telegram_user_id) === String(targetUser.id) ||
+                    (matchedProf && m.user_id === matchedProf.id),
+                );
+
+                await supabaseAdmin.from("telegram_group_members").upsert({
+                  id: existingMember?.id || `tgm-${dbGroup.id}-${targetUser.id}`,
+                  group_id: dbGroup.id,
+                  chat_id: groupChatId,
+                  telegram_user_id: targetUser.id,
+                  telegram_handle: memberHandle,
+                  user_id: existingMember?.user_id || matchedProf?.id || null,
+                  status: "kicked",
+                  verified: false,
+                  updated_at: new Date().toISOString(),
+                });
+              }
             }
           }
         }
-        continue;
-      }
 
-      // -------------------------------------------------------------
-      // 2. USERBOT REAL-TIME MEMBER & STATUS UPDATES (chat_member / my_chat_member)
-      // -------------------------------------------------------------
-      if (update.chat_member) {
-        const cm = update.chat_member;
-        const groupChatId = cm.chat.id;
-        const groupTitle = cm.chat.title || "Gruppo Staff";
-        const newStatus = cm.new_chat_member?.status;
-        const targetUser = cm.new_chat_member?.user;
+        if (update.my_chat_member) {
+          const mcm = update.my_chat_member;
+          const groupChatId = mcm.chat.id;
+          const groupTitle = mcm.chat.title || "Gruppo Staff";
+          const newBotStatus = mcm.new_chat_member?.status;
 
-        if (targetUser && !targetUser.is_bot) {
+          if (newBotStatus === "administrator" || newBotStatus === "member") {
+            console.log(
+              `[Telegram Userbot] Bot added/promoted in chat ${groupTitle} (${groupChatId})`,
+            );
+          }
+        }
+
+        // -------------------------------------------------------------
+        // 3. CHAT MEMBER JOIN VIA MESSAGE EVENT
+        // -------------------------------------------------------------
+        const msg = update.message || update.edited_message;
+
+        // Handle new members joining via update.message.new_chat_members
+        if (
+          msg &&
+          msg.new_chat_members &&
+          Array.isArray(msg.new_chat_members) &&
+          msg.new_chat_members.length > 0
+        ) {
+          const groupChatId = msg.chat.id;
+          const groupTitle = msg.chat.title || "Gruppo Staff";
+
           const { data: dbGroup } = await supabaseAdmin
             .from("telegram_groups")
             .select("*")
@@ -1657,26 +1880,23 @@ export async function fetchTelegramUpdates() {
             .maybeSingle();
 
           if (dbGroup) {
-            const memberHandle = targetUser.username
-              ? `@${targetUser.username}`
-              : `@${targetUser.first_name}_${targetUser.id}`;
-            const cleanHandle = targetUser.username ? targetUser.username.toLowerCase() : "";
+            const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
+              supabaseAdmin.from("profiles").select("*"),
+              supabaseAdmin.from("telegram_group_members").select("*").eq("group_id", dbGroup.id),
+            ]);
 
-            if (
-              newStatus === "member" ||
-              newStatus === "administrator" ||
-              newStatus === "creator" ||
-              newStatus === "restricted"
-            ) {
-              const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
-                supabaseAdmin.from("profiles").select("*"),
-                supabaseAdmin.from("telegram_group_members").select("*").eq("group_id", dbGroup.id),
-              ]);
+            for (const newMember of msg.new_chat_members) {
+              if (newMember.is_bot) continue;
+
+              const memberHandle = newMember.username
+                ? `@${newMember.username}`
+                : `@${newMember.first_name}_${newMember.id}`;
+              const cleanHandle = newMember.username ? newMember.username.toLowerCase() : "";
 
               let matchedProf = (profiles || []).find((p: any) => {
-                if (p.telegram_user_id && String(p.telegram_user_id) === String(targetUser.id))
+                if (p.telegram_user_id && String(p.telegram_user_id) === String(newMember.id))
                   return true;
-                if (p.telegram_chat_id && String(p.telegram_chat_id) === String(targetUser.id))
+                if (p.telegram_chat_id && String(p.telegram_chat_id) === String(newMember.id))
                   return true;
                 if (cleanHandle && p.telegram_handle) {
                   return p.telegram_handle.toLowerCase().replace("@", "") === cleanHandle;
@@ -1686,7 +1906,7 @@ export async function fetchTelegramUpdates() {
 
               const dbMemberMatch = (existingGroupMembers || []).find(
                 (m: any) =>
-                  (m.telegram_user_id && String(m.telegram_user_id) === String(targetUser.id)) ||
+                  (m.telegram_user_id && String(m.telegram_user_id) === String(newMember.id)) ||
                   (matchedProf && m.user_id === matchedProf.id) ||
                   (cleanHandle &&
                     m.telegram_handle &&
@@ -1706,17 +1926,17 @@ export async function fetchTelegramUpdates() {
               const isChecksDisabled = !!dbGroup.ignore_checks || !!dbGroup.disable_checks;
 
               if (!isChecksDisabled && (isExplicitlyRevoked || isFiredEmployee)) {
-                // Unauthorized / revoked user: expel
                 try {
-                  await kickTelegramChatMember(groupChatId, targetUser.id);
+                  await kickTelegramChatMember(groupChatId, newMember.id);
                 } catch (e) {
                   console.error("Error kicking revoked user in Telegram:", e);
                 }
+
                 await supabaseAdmin.from("telegram_group_members").upsert({
-                  id: `tgm-${dbGroup.id}-${targetUser.id}`,
+                  id: `tgm-${dbGroup.id}-${newMember.id}`,
                   group_id: dbGroup.id,
                   chat_id: groupChatId,
-                  telegram_user_id: targetUser.id,
+                  telegram_user_id: newMember.id,
                   telegram_handle: memberHandle,
                   user_id: matchedProf?.id || null,
                   status: "kicked",
@@ -1727,10 +1947,10 @@ export async function fetchTelegramUpdates() {
               } else {
                 // Authorized or regular member
                 await supabaseAdmin.from("telegram_group_members").upsert({
-                  id: `tgm-${dbGroup.id}-${targetUser.id}`,
+                  id: `tgm-${dbGroup.id}-${newMember.id}`,
                   group_id: dbGroup.id,
                   chat_id: groupChatId,
-                  telegram_user_id: targetUser.id,
+                  telegram_user_id: newMember.id,
                   telegram_handle: memberHandle,
                   user_id: matchedProf?.id || dbMemberMatch?.user_id || null,
                   status: "member",
@@ -1744,7 +1964,7 @@ export async function fetchTelegramUpdates() {
                     .from("profiles")
                     .update({
                       telegram_connected: true,
-                      telegram_user_id: targetUser.id,
+                      telegram_user_id: newMember.id,
                       telegram_handle: memberHandle,
                       is_fired: false,
                       has_employee_access: true,
@@ -1752,407 +1972,544 @@ export async function fetchTelegramUpdates() {
                     .eq("id", matchedProf.id);
                 }
               }
-            } else if (newStatus === "left" || newStatus === "kicked") {
-              await supabaseAdmin
-                .from("telegram_group_members")
-                .update({
-                  status: newStatus,
-                  verified: false,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("chat_id", groupChatId)
-                .eq("telegram_user_id", targetUser.id);
             }
           }
         }
-      }
 
-      if (update.my_chat_member) {
-        const mcm = update.my_chat_member;
-        const groupChatId = mcm.chat.id;
-        const groupTitle = mcm.chat.title || "Gruppo Staff";
-        const newBotStatus = mcm.new_chat_member?.status;
+        // Handle members leaving or being kicked via message event (left_chat_member)
+        if (msg && (msg.left_chat_member || (msg as any).left_chat_participant)) {
+          const leftUser = msg.left_chat_member || (msg as any).left_chat_participant;
+          if (leftUser && !leftUser.is_bot) {
+            const groupChatId = msg.chat.id;
+            const { data: dbGroup } = await supabaseAdmin
+              .from("telegram_groups")
+              .select("*")
+              .eq("chat_id", groupChatId)
+              .maybeSingle();
 
-        if (newBotStatus === "administrator" || newBotStatus === "member") {
-          console.log(
-            `[Telegram Userbot] Bot added/promoted in chat ${groupTitle} (${groupChatId})`,
-          );
+            if (dbGroup) {
+              const memberHandle = leftUser.username
+                ? `@${leftUser.username}`
+                : `@${leftUser.first_name}_${leftUser.id}`;
+              const cleanHandle = leftUser.username ? leftUser.username.toLowerCase() : "";
+
+              const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
+                supabaseAdmin.from("profiles").select("id, telegram_user_id, telegram_handle"),
+                supabaseAdmin.from("telegram_group_members").select("*").eq("group_id", dbGroup.id),
+              ]);
+
+              const matchedProf = (profiles || []).find(
+                (p: any) =>
+                  (p.telegram_user_id && String(p.telegram_user_id) === String(leftUser.id)) ||
+                  (cleanHandle &&
+                    p.telegram_handle &&
+                    p.telegram_handle.toLowerCase().replace("@", "") === cleanHandle),
+              );
+
+              const existingMember = (existingGroupMembers || []).find(
+                (m: any) =>
+                  String(m.telegram_user_id) === String(leftUser.id) ||
+                  (matchedProf && m.user_id === matchedProf.id),
+              );
+
+              await supabaseAdmin.from("telegram_group_members").upsert({
+                id: existingMember?.id || `tgm-${dbGroup.id}-${leftUser.id}`,
+                group_id: dbGroup.id,
+                chat_id: groupChatId,
+                telegram_user_id: leftUser.id,
+                telegram_handle: memberHandle,
+                user_id: existingMember?.user_id || matchedProf?.id || null,
+                status: "kicked",
+                verified: false,
+                updated_at: new Date().toISOString(),
+              });
+            }
+          }
         }
-      }
 
-      // -------------------------------------------------------------
-      // 3. CHAT MEMBER JOIN VIA MESSAGE EVENT
-      // -------------------------------------------------------------
-      const msg = update.message || update.edited_message;
+        // -------------------------------------------------------------
+        // 4. TEXT MESSAGE PROCESSING
+        // -------------------------------------------------------------
+        if (!msg || !msg.text) continue;
 
-      // Handle new members joining via update.message.new_chat_members
-      if (
-        msg &&
-        msg.new_chat_members &&
-        Array.isArray(msg.new_chat_members) &&
-        msg.new_chat_members.length > 0
-      ) {
-        const groupChatId = msg.chat.id;
-        const groupTitle = msg.chat.title || "Gruppo Staff";
+        const text = msg.text.trim();
+        const from = msg.from;
+        if (!from) continue;
 
-        const { data: dbGroup } = await supabaseAdmin
-          .from("telegram_groups")
-          .select("*")
-          .eq("chat_id", groupChatId)
-          .maybeSingle();
+        // Auto-store incoming message in chat message history
+        let replyInfo: any = undefined;
+        if (msg.reply_to_message && msg.reply_to_message.text) {
+          replyInfo = {
+            id: `tg-${msg.chat.id}-${msg.reply_to_message.message_id}`,
+            message_id: msg.reply_to_message.message_id,
+            sender_name:
+              msg.reply_to_message.from?.first_name ||
+              msg.reply_to_message.from?.username ||
+              "Utente",
+            text: msg.reply_to_message.text,
+          };
+        }
 
-        if (dbGroup) {
-          const [{ data: profiles }, { data: existingGroupMembers }] = await Promise.all([
-            supabaseAdmin.from("profiles").select("*"),
-            supabaseAdmin.from("telegram_group_members").select("*").eq("group_id", dbGroup.id),
-          ]);
+        storeChatMessage({
+          id: `tg-${msg.chat.id}-${msg.message_id}`,
+          chat_id: msg.chat.id,
+          message_id: msg.message_id,
+          sender_type: from.is_bot ? "bot" : "user",
+          sender_name:
+            [from.first_name, from.last_name].filter(Boolean).join(" ") ||
+            from.username ||
+            "Utente",
+          sender_username: from.username,
+          sender_id: from.id,
+          text: msg.text,
+          created_at: new Date((msg.date || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+          date: msg.date || Math.floor(Date.now() / 1000),
+          reply_to_message_id: msg.reply_to_message?.message_id,
+          reply_to_message: replyInfo,
+          delivery_status: "read",
+        });
 
-          for (const newMember of msg.new_chat_members) {
-            if (newMember.is_bot) continue;
+        const rawHandle = from.username
+          ? `@${from.username}`
+          : `@${(from.first_name || "Utente").replace(/\s+/g, "")}_${from.id}`;
 
-            const memberHandle = newMember.username
-              ? `@${newMember.username}`
-              : `@${newMember.first_name}_${newMember.id}`;
-            const cleanHandle = newMember.username ? newMember.username.toLowerCase() : "";
+        const isGroup =
+          msg.chat.type === "group" ||
+          msg.chat.type === "supergroup" ||
+          msg.chat.type === "channel" ||
+          Number(msg.chat.id) < 0;
+        const cleanCmd = text.toLowerCase().split(/\s+/)[0];
 
-            let matchedProf = (profiles || []).find((p: any) => {
-              if (p.telegram_user_id && String(p.telegram_user_id) === String(newMember.id))
-                return true;
-              if (p.telegram_chat_id && String(p.telegram_chat_id) === String(newMember.id))
-                return true;
-              if (cleanHandle && p.telegram_handle) {
-                return p.telegram_handle.toLowerCase().replace("@", "") === cleanHandle;
+        // =============================================================
+        // A. GROUP CHAT HANDLING (Strictly limited commands & no spam)
+        // =============================================================
+        if (isGroup) {
+          // 1. Group Registration Command (/registragruppo, /collegagruppo, etc.)
+          if (
+            cleanCmd === "/registragruppo" ||
+            cleanCmd === "/registra_gruppo" ||
+            cleanCmd === "/registra" ||
+            cleanCmd === "/collegagruppo" ||
+            cleanCmd === "/collega_gruppo" ||
+            cleanCmd === "/associa_gruppo" ||
+            cleanCmd === "/associagruppo" ||
+            cleanCmd === "/collega" ||
+            cleanCmd.startsWith("/registragruppo@") ||
+            cleanCmd.startsWith("/registra_gruppo@") ||
+            cleanCmd.startsWith("/registra@") ||
+            cleanCmd.startsWith("/collegagruppo@") ||
+            cleanCmd.startsWith("/collega_gruppo@") ||
+            cleanCmd.startsWith("/associa_gruppo@") ||
+            cleanCmd.startsWith("/associagruppo@") ||
+            cleanCmd.startsWith("/collega@")
+          ) {
+            const [{ data: allProfiles }, { data: allUserRoles }, { data: allCustomRoles }] =
+              await Promise.all([
+                supabaseAdmin.from("profiles").select("*"),
+                supabaseAdmin.from("user_roles").select("*"),
+                supabaseAdmin.from("user_custom_roles").select("*"),
+              ]);
+
+            const cleanFromHandle = from.username ? from.username.toLowerCase() : "";
+
+            const senderProfile = (allProfiles || []).find((p: any) => {
+              if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) return true;
+              if (p.telegram_chat_id && String(p.telegram_chat_id) === String(from.id)) return true;
+              if (cleanFromHandle && p.telegram_handle) {
+                const cleanP = p.telegram_handle.toLowerCase().replace("@", "");
+                if (cleanP === cleanFromHandle) return true;
               }
               return false;
             });
 
-            const dbMemberMatch = (existingGroupMembers || []).find(
-              (m: any) =>
-                (m.telegram_user_id && String(m.telegram_user_id) === String(newMember.id)) ||
-                (matchedProf && m.user_id === matchedProf.id) ||
-                (cleanHandle &&
-                  m.telegram_handle &&
-                  m.telegram_handle.toLowerCase().replace("@", "") === cleanHandle),
-            );
-
-            if (!matchedProf && dbMemberMatch?.user_id) {
-              matchedProf = (profiles || []).find((p: any) => p.id === dbMemberMatch.user_id);
+            // Check if user is an admin on the site
+            let isUserAdmin = false;
+            if (senderProfile) {
+              const uId = senderProfile.id;
+              const userRoles = (allUserRoles || []).filter((r: any) => r.user_id === uId);
+              const customRoles = (allCustomRoles || []).filter((r: any) => r.user_id === uId);
+              isUserAdmin =
+                userRoles.some(
+                  (r: any) => r.role === "admin" || r.role === "gestore" || r.role === "capitano",
+                ) ||
+                customRoles.some(
+                  (cr: any) =>
+                    cr.custom_role_id === "crole-admin" ||
+                    cr.custom_role_id === "crole-gestore" ||
+                    cr.custom_role_id === "crole-1",
+                ) ||
+                senderProfile.role === "admin" ||
+                senderProfile.role === "gestore" ||
+                senderProfile.username?.toLowerCase() === "admin" ||
+                senderProfile.username?.toLowerCase() === "giuse84pro";
             }
 
-            // Check if user is explicitly revoked by admin (status === 'kicked') or is a fired employee
-            const isExplicitlyRevoked = dbMemberMatch && dbMemberMatch.status === "kicked";
-            const isFiredEmployee =
-              matchedProf &&
-              (matchedProf.is_fired === true || matchedProf.has_employee_access === false);
-
-            const isChecksDisabled = !!dbGroup.ignore_checks || !!dbGroup.disable_checks;
-
-            if (!isChecksDisabled && (isExplicitlyRevoked || isFiredEmployee)) {
-              try {
-                await kickTelegramChatMember(groupChatId, newMember.id);
-              } catch (e) {
-                console.error("Error kicking revoked user in Telegram:", e);
-              }
-
-              await supabaseAdmin.from("telegram_group_members").upsert({
-                id: `tgm-${dbGroup.id}-${newMember.id}`,
-                group_id: dbGroup.id,
-                chat_id: groupChatId,
-                telegram_user_id: newMember.id,
-                telegram_handle: memberHandle,
-                user_id: matchedProf?.id || null,
-                status: "kicked",
-                verified: false,
-                joined_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
-            } else {
-              // Authorized or regular member
-              await supabaseAdmin.from("telegram_group_members").upsert({
-                id: `tgm-${dbGroup.id}-${newMember.id}`,
-                group_id: dbGroup.id,
-                chat_id: groupChatId,
-                telegram_user_id: newMember.id,
-                telegram_handle: memberHandle,
-                user_id: matchedProf?.id || dbMemberMatch?.user_id || null,
-                status: "member",
-                verified: !!matchedProf || dbMemberMatch?.verified === true,
-                joined_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
-
-              if (matchedProf) {
-                await supabaseAdmin
-                  .from("profiles")
-                  .update({
-                    telegram_connected: true,
-                    telegram_user_id: newMember.id,
-                    telegram_handle: memberHandle,
-                    is_fired: false,
-                    has_employee_access: true,
-                  })
-                  .eq("id", matchedProf.id);
-              }
-            }
-          }
-        }
-      }
-
-      // -------------------------------------------------------------
-      // 4. TEXT MESSAGE PROCESSING
-      // -------------------------------------------------------------
-      if (!msg || !msg.text) continue;
-
-      const text = msg.text.trim();
-      const from = msg.from;
-      if (!from) continue;
-
-      // Auto-store incoming message in chat message history
-      let replyInfo: any = undefined;
-      if (msg.reply_to_message && msg.reply_to_message.text) {
-        replyInfo = {
-          id: `tg-${msg.chat.id}-${msg.reply_to_message.message_id}`,
-          message_id: msg.reply_to_message.message_id,
-          sender_name:
-            msg.reply_to_message.from?.first_name ||
-            msg.reply_to_message.from?.username ||
-            "Utente",
-          text: msg.reply_to_message.text,
-        };
-      }
-
-      storeChatMessage({
-        id: `tg-${msg.chat.id}-${msg.message_id}`,
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        sender_type: from.is_bot ? "bot" : "user",
-        sender_name:
-          [from.first_name, from.last_name].filter(Boolean).join(" ") || from.username || "Utente",
-        sender_username: from.username,
-        sender_id: from.id,
-        text: msg.text,
-        created_at: new Date((msg.date || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
-        date: msg.date || Math.floor(Date.now() / 1000),
-        reply_to_message_id: msg.reply_to_message?.message_id,
-        reply_to_message: replyInfo,
-        delivery_status: "read",
-      });
-
-      const rawHandle = from.username
-        ? `@${from.username}`
-        : `@${(from.first_name || "Utente").replace(/\s+/g, "")}_${from.id}`;
-
-      const isGroup =
-        msg.chat.type === "group" ||
-        msg.chat.type === "supergroup" ||
-        msg.chat.type === "channel" ||
-        Number(msg.chat.id) < 0;
-      const cleanCmd = text.toLowerCase().split(/\s+/)[0];
-
-      // =============================================================
-      // A. GROUP CHAT HANDLING (Strictly limited commands & no spam)
-      // =============================================================
-      if (isGroup) {
-        // 1. Group Registration Command (/registragruppo, /collegagruppo, etc.)
-        if (
-          cleanCmd === "/registragruppo" ||
-          cleanCmd === "/registra_gruppo" ||
-          cleanCmd === "/registra" ||
-          cleanCmd === "/collegagruppo" ||
-          cleanCmd === "/collega_gruppo" ||
-          cleanCmd === "/associa_gruppo" ||
-          cleanCmd === "/associagruppo" ||
-          cleanCmd === "/collega" ||
-          cleanCmd.startsWith("/registragruppo@") ||
-          cleanCmd.startsWith("/registra_gruppo@") ||
-          cleanCmd.startsWith("/registra@") ||
-          cleanCmd.startsWith("/collegagruppo@") ||
-          cleanCmd.startsWith("/collega_gruppo@") ||
-          cleanCmd.startsWith("/associa_gruppo@") ||
-          cleanCmd.startsWith("/associagruppo@") ||
-          cleanCmd.startsWith("/collega@")
-        ) {
-          const [{ data: allProfiles }, { data: allUserRoles }, { data: allCustomRoles }] =
-            await Promise.all([
-              supabaseAdmin.from("profiles").select("*"),
-              supabaseAdmin.from("user_roles").select("*"),
-              supabaseAdmin.from("user_custom_roles").select("*"),
-            ]);
-
-          const cleanFromHandle = from.username ? from.username.toLowerCase() : "";
-
-          const senderProfile = (allProfiles || []).find((p: any) => {
-            if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) return true;
-            if (p.telegram_chat_id && String(p.telegram_chat_id) === String(from.id)) return true;
-            if (cleanFromHandle && p.telegram_handle) {
-              const cleanP = p.telegram_handle.toLowerCase().replace("@", "");
-              if (cleanP === cleanFromHandle) return true;
-            }
-            return false;
-          });
-
-          // Check if user is an admin on the site
-          let isUserAdmin = false;
-          if (senderProfile) {
-            const uId = senderProfile.id;
-            const userRoles = (allUserRoles || []).filter((r: any) => r.user_id === uId);
-            const customRoles = (allCustomRoles || []).filter((r: any) => r.user_id === uId);
-            isUserAdmin =
-              userRoles.some(
-                (r: any) => r.role === "admin" || r.role === "gestore" || r.role === "capitano",
-              ) ||
-              customRoles.some(
-                (cr: any) =>
-                  cr.custom_role_id === "crole-admin" ||
-                  cr.custom_role_id === "crole-gestore" ||
-                  cr.custom_role_id === "crole-1",
-              ) ||
-              senderProfile.role === "admin" ||
-              senderProfile.role === "gestore" ||
-              senderProfile.username?.toLowerCase() === "admin" ||
-              senderProfile.username?.toLowerCase() === "giuse84pro";
-          }
-
-          // Check if user is a Telegram chat admin/creator
-          let isTgGroupAdmin = false;
-          try {
-            const chatMember = await checkTelegramChatMember(msg.chat.id, from.id);
-            if (
-              chatMember &&
-              (chatMember.status === "creator" || chatMember.status === "administrator")
-            ) {
-              isTgGroupAdmin = true;
-            }
-          } catch (e) {
-            // ignore
-          }
-
-          if (!isTgGroupAdmin && !isUserAdmin) {
+            // Check if user is a Telegram chat admin/creator
+            let isTgGroupAdmin = false;
             try {
-              const admins = await getTelegramChatAdministrators(msg.chat.id);
-              if (admins && admins.some((a: any) => String(a.user?.id) === String(from.id))) {
+              const chatMember = await checkTelegramChatMember(msg.chat.id, from.id);
+              if (
+                chatMember &&
+                (chatMember.status === "creator" || chatMember.status === "administrator")
+              ) {
                 isTgGroupAdmin = true;
               }
             } catch (e) {
               // ignore
             }
+
+            if (!isTgGroupAdmin && !isUserAdmin) {
+              try {
+                const admins = await getTelegramChatAdministrators(msg.chat.id);
+                if (admins && admins.some((a: any) => String(a.user?.id) === String(from.id))) {
+                  isTgGroupAdmin = true;
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+
+            const groupId = `tgroup-${Math.abs(Number(msg.chat.id))}`;
+            const groupTitle = msg.chat.title || `Gruppo Staff (${msg.chat.id})`;
+
+            const { data: existingGroup } = await supabaseAdmin
+              .from("telegram_groups")
+              .select("*")
+              .eq("chat_id", msg.chat.id)
+              .maybeSingle();
+
+            const allowedRoleIds =
+              existingGroup?.allowed_role_ids && existingGroup.allowed_role_ids.length > 0
+                ? existingGroup.allowed_role_ids
+                : ["crole-admin"];
+
+            await supabaseAdmin.from("telegram_groups").upsert({
+              id: existingGroup?.id || groupId,
+              chat_id: msg.chat.id,
+              title: groupTitle,
+              type: msg.chat.type || "supergroup",
+              allowed_role_ids: allowedRoleIds,
+              is_active: true,
+              registered_at: existingGroup?.registered_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+            await supabaseAdmin.from("telegram_group_members").upsert({
+              id: `tgm-${existingGroup?.id || groupId}-${from.id}`,
+              group_id: existingGroup?.id || groupId,
+              chat_id: msg.chat.id,
+              telegram_user_id: from.id,
+              telegram_handle: rawHandle,
+              user_id: senderProfile?.id || null,
+              status: "member",
+              verified: true,
+              joined_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+            let botPermsText = "";
+            try {
+              const botPerms = await getGroupBotPermissions(msg.chat.id);
+              if (botPerms.allRequiredGranted) {
+                botPermsText = `🛡️ <b>Permessi Bot Telegram:</b> ✅ <b>PERMESSI COMPLETI</b>\n   • Invito Utenti: Concesso ✅\n   • Espulsione Membri: Concesso ✅\n   • Gestione Chat: Concesso ✅\n\n`;
+              } else if (!botPerms.isAdmin) {
+                botPermsText = `⚠️ <b>ATTENZIONE: IL BOT NON È ANCORA AMMINISTRATORE!</b>\nPromuovi <b>@${botPerms.botUsername || "Bot"}</b> ad <b>Amministratore</b> in questo gruppo e abilita i permessi di invito ed espulsione per permettere la gestione automatica.\n\n`;
+              } else {
+                botPermsText = `⚠️ <b>ATTENZIONE: PERMESSI BOT PARZIALI!</b>\n${botPerms.errorMessage}\n\n`;
+              }
+            } catch (e) {
+              // ignore
+            }
+
+            const adminDisplayName = senderProfile
+              ? `${senderProfile.display_name || senderProfile.username} (${rawHandle})`
+              : `${from.first_name || from.username || "Utente"} (${rawHandle})`;
+
+            await sendTelegramMessage(
+              msg.chat.id,
+              `🏛️ <b>GRUPPO REGISTRATO CON SUCCESSO!</b>\n\n` +
+                `📌 <b>Nome Gruppo:</b> <b>${groupTitle}</b>\n` +
+                `🆔 <b>ID Gruppo:</b> <code>${msg.chat.id}</code>\n` +
+                `👑 <b>Registrato da:</b> <b>${adminDisplayName}</b>\n` +
+                `🤖 <b>Monitoraggio & Userbot:</b> ATTIVO\n\n` +
+                botPermsText +
+                `✅ <b>Sincronizzazione completata!</b> Il gruppo è visibile sul gestionale del <b>Casinò Revenge</b>.\n` +
+                `Puoi configurare i ruoli abilitati dal <b>Pannello Amministratore → Ruoli & Permessi → Gruppi Telegram</b>.`,
+            );
+            continue;
           }
 
-          const groupId = `tgroup-${Math.abs(Number(msg.chat.id))}`;
-          const groupTitle = msg.chat.title || `Gruppo Staff (${msg.chat.id})`;
+          // 2. Handle /id command in group chat
+          if (cleanCmd === "/id" || cleanCmd.startsWith("/id@")) {
+            await sendTelegramMessage(
+              msg.chat.id,
+              `👥 <b>INFORMAZIONI CHAT DI GRUPPO</b>\n\n` +
+                `🆔 <b>ID Gruppo:</b> <code>${msg.chat.id}</code>\n` +
+                `🏷️ <b>Nome Gruppo:</b> <b>${msg.chat.title || "Gruppo"}</b>\n\n` +
+                `👤 <b>Il tuo ID Utente:</b> <code>${from.id}</code>\n` +
+                `🏷️ <b>Il tuo Username:</b> ${from.username ? `@${from.username}` : "Nessuno"}`,
+            );
+            continue;
+          }
 
-          const { data: existingGroup } = await supabaseAdmin
-            .from("telegram_groups")
-            .select("*")
-            .eq("chat_id", msg.chat.id)
-            .maybeSingle();
-
-          const allowedRoleIds =
-            existingGroup?.allowed_role_ids && existingGroup.allowed_role_ids.length > 0
-              ? existingGroup.allowed_role_ids
-              : ["crole-admin"];
-
-          await supabaseAdmin.from("telegram_groups").upsert({
-            id: existingGroup?.id || groupId,
-            chat_id: msg.chat.id,
-            title: groupTitle,
-            type: msg.chat.type || "supergroup",
-            allowed_role_ids: allowedRoleIds,
-            is_active: true,
-            registered_at: existingGroup?.registered_at || new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-          await supabaseAdmin.from("telegram_group_members").upsert({
-            id: `tgm-${existingGroup?.id || groupId}-${from.id}`,
-            group_id: existingGroup?.id || groupId,
-            chat_id: msg.chat.id,
-            telegram_user_id: from.id,
-            telegram_handle: rawHandle,
-            user_id: senderProfile?.id || null,
-            status: "member",
-            verified: true,
-            joined_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-          let botPermsText = "";
-          try {
-            const botPerms = await getGroupBotPermissions(msg.chat.id);
-            if (botPerms.allRequiredGranted) {
-              botPermsText = `🛡️ <b>Permessi Bot Telegram:</b> ✅ <b>PERMESSI COMPLETI</b>\n   • Invito Utenti: Concesso ✅\n   • Espulsione Membri: Concesso ✅\n   • Gestione Chat: Concesso ✅\n\n`;
-            } else if (!botPerms.isAdmin) {
-              botPermsText = `⚠️ <b>ATTENZIONE: IL BOT NON È ANCORA AMMINISTRATORE!</b>\nPromuovi <b>@${botPerms.botUsername || "Bot"}</b> ad <b>Amministratore</b> in questo gruppo e abilita i permessi di invito ed espulsione per permettere la gestione automatica.\n\n`;
-            } else {
-              botPermsText = `⚠️ <b>ATTENZIONE: PERMESSI BOT PARZIALI!</b>\n${botPerms.errorMessage}\n\n`;
+          // 3. Handle /sincronizzamembri in group chat
+          if (
+            cleanCmd === "/sincronizzamembri" ||
+            cleanCmd === "/sincronizza" ||
+            cleanCmd.startsWith("/sincronizzamembri@") ||
+            cleanCmd.startsWith("/sincronizza@")
+          ) {
+            await syncTelegramUserWithGroupAndProfile(from, msg.chat.id);
+            let syncedCount = 0;
+            try {
+              const tgAdmins = await getTelegramChatAdministrators(msg.chat.id);
+              if (tgAdmins && tgAdmins.length > 0) {
+                for (const adminItem of tgAdmins) {
+                  if (adminItem.user && !adminItem.user.is_bot) {
+                    await syncTelegramUserWithGroupAndProfile(adminItem.user, msg.chat.id);
+                    syncedCount++;
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("Error syncing Telegram group admins:", e);
             }
+
+            await sendTelegramMessage(
+              msg.chat.id,
+              `🔄 <b>SINCRONIZZAZIONE DI MASSA COMPLETATA</b>\n\n` +
+                `✅ Sincronizzati con successo <b>${syncedCount}</b> membri del gruppo Telegram.`,
+            );
+            continue;
+          }
+
+          // 4. Handle /info or /aiuto in group chat
+          if (
+            cleanCmd === "/info" ||
+            cleanCmd === "/aiuto" ||
+            cleanCmd === "/help" ||
+            cleanCmd.startsWith("/info@") ||
+            cleanCmd.startsWith("/aiuto@") ||
+            cleanCmd.startsWith("/help@")
+          ) {
+            await sendTelegramMessage(
+              msg.chat.id,
+              `ℹ️ <b>BOT CASINÒ REVENGE — CHAT DI GRUPPO</b>\n\n` +
+                `📌 <b>Comandi disponibili nel gruppo:</b>\n` +
+                `🔹 <code>/id</code> - Mostra l'ID di questo gruppo e il tuo ID\n` +
+                `🔹 <code>/registragruppo</code> - Registra questo gruppo nel gestionale Staff\n` +
+                `🔹 <code>/sincronizzamembri</code> - Sincronizza i membri del gruppo\n\n` +
+                `💡 <i>Per associare il tuo account Minecraft o visualizzare i tuoi gruppi, usa la chat privata con il bot!</i>`,
+            );
+            continue;
+          }
+
+          // 5. Commands restricted to PRIVATE chat (ignore silently in group to prevent spam)
+          if (
+            cleanCmd === "/start" ||
+            cleanCmd.startsWith("/start@") ||
+            cleanCmd === "/associa" ||
+            cleanCmd.startsWith("/associa@") ||
+            cleanCmd === "/scollega" ||
+            cleanCmd.startsWith("/scollega@") ||
+            cleanCmd === "/gruppi" ||
+            cleanCmd.startsWith("/gruppi@") ||
+            text.match(/^\d{6}$/)
+          ) {
+            // Do not process personal association or codes in group chats
+            continue;
+          }
+
+          // 6. Regular message in group: passive tracking & notify unregistered users
+          try {
+            await syncTelegramUserWithGroupAndProfile(from, msg.chat.id);
           } catch (e) {
             // ignore
           }
 
-          const adminDisplayName = senderProfile
-            ? `${senderProfile.display_name || senderProfile.username} (${rawHandle})`
-            : `${from.first_name || from.username || "Utente"} (${rawHandle})`;
+          // Check if user is associated with any Minecraft nickname in profiles
+          const { data: allProfs } = await supabaseAdmin
+            .from("profiles")
+            .select(
+              "id, username, display_name, telegram_user_id, telegram_chat_id, telegram_handle, telegram_connected",
+            );
 
-          await sendTelegramMessage(
-            msg.chat.id,
-            `🏛️ <b>GRUPPO REGISTRATO CON SUCCESSO!</b>\n\n` +
-              `📌 <b>Nome Gruppo:</b> <b>${groupTitle}</b>\n` +
-              `🆔 <b>ID Gruppo:</b> <code>${msg.chat.id}</code>\n` +
-              `👑 <b>Registrato da:</b> <b>${adminDisplayName}</b>\n` +
-              `🤖 <b>Monitoraggio & Userbot:</b> ATTIVO\n\n` +
-              botPermsText +
-              `✅ <b>Sincronizzazione completata!</b> Il gruppo è visibile sul gestionale del <b>Casinò Revenge</b>.\n` +
-              `Puoi configurare i ruoli abilitati dal <b>Pannello Amministratore → Ruoli & Permessi → Gruppi Telegram</b>.`,
-          );
+          const cleanFromHandle = from.username ? from.username.toLowerCase().replace("@", "") : "";
+          const tgIdStr = String(from.id);
+
+          const matchedProf = (allProfs || []).find((p: any) => {
+            if (
+              p.telegram_user_id &&
+              String(p.telegram_user_id) === tgIdStr &&
+              p.telegram_connected
+            )
+              return true;
+            if (
+              p.telegram_chat_id &&
+              String(p.telegram_chat_id) === tgIdStr &&
+              p.telegram_connected
+            )
+              return true;
+            if (cleanFromHandle && p.telegram_handle && p.telegram_connected) {
+              return p.telegram_handle.toLowerCase().replace("@", "") === cleanFromHandle;
+            }
+            return false;
+          });
+
+          if (!matchedProf) {
+            // User is NOT associated with any Minecraft nickname!
+            // Apply 6-hour anti-spam cooldown per user per group
+            const cooldownKey = `unreg_${msg.chat.id}_${from.id}`;
+            const lastSent = unregisteredNoticeCooldown.get(cooldownKey) || 0;
+            const now = Date.now();
+
+            if (now - lastSent > 6 * 3600 * 1000) {
+              unregisteredNoticeCooldown.set(cooldownKey, now);
+              await sendTelegramMessage(
+                msg.chat.id,
+                `👋 Ciao <b>${from.first_name || from.username || "Utente"}</b> (<code>${rawHandle}</code>)!\n\n` +
+                  `Non risulti ancora associato ad alcun nickname <b>Minecraft</b> sul gestionale del <b>Casinò Revenge</b>.\n\n` +
+                  `🌐 <b>Come registrarsi o collegare il tuo account:</b>\n` +
+                  `1️⃣ Registrati o accedi sul sito ufficiale del Casinò\n` +
+                  `2️⃣ Apri la <b>chat privata</b> con questo bot ed invia il comando <code>/associa CODICE</code> per collegare il tuo profilo!`,
+              );
+            }
+          }
+
+          // Associated users chat normally: bot is completely silent (no spam!)
           continue;
         }
 
-        // 2. Handle /id command in group chat
+        // =============================================================
+        // B. PRIVATE CHAT HANDLING (Personal association, groups, /start)
+        // =============================================================
+
+        // 1. Handle /id in private chat
         if (cleanCmd === "/id" || cleanCmd.startsWith("/id@")) {
           await sendTelegramMessage(
             msg.chat.id,
-            `👥 <b>INFORMAZIONI CHAT DI GRUPPO</b>\n\n` +
-              `🆔 <b>ID Gruppo:</b> <code>${msg.chat.id}</code>\n` +
-              `🏷️ <b>Nome Gruppo:</b> <b>${msg.chat.title || "Gruppo"}</b>\n\n` +
-              `👤 <b>Il tuo ID Utente:</b> <code>${from.id}</code>\n` +
-              `🏷️ <b>Il tuo Username:</b> ${from.username ? `@${from.username}` : "Nessuno"}`,
+            `👤 <b>INFORMAZIONI CHAT PRIVATA</b>\n\n` +
+              `🆔 <b>Il tuo ID Utente:</b> <code>${from.id}</code>\n` +
+              `🏷️ <b>Username:</b> ${from.username ? `@${from.username}` : "Nessuno"}\n` +
+              `👤 <b>Nome:</b> ${from.first_name || "Utente"}\n` +
+              `💬 <b>ID Chat:</b> <code>${msg.chat.id}</code>`,
           );
           continue;
         }
 
-        // 3. Handle /sincronizzamembri in group chat
-        if (
-          cleanCmd === "/sincronizzamembri" ||
-          cleanCmd === "/sincronizza" ||
-          cleanCmd.startsWith("/sincronizzamembri@") ||
-          cleanCmd.startsWith("/sincronizza@")
-        ) {
-          await syncTelegramUserWithGroupAndProfile(from, msg.chat.id);
-          let syncedCount = 0;
+        // 2. Handle /gruppi command in private chat
+        if (cleanCmd === "/gruppi" || cleanCmd.startsWith("/gruppi@")) {
+          const rawCbHandle = from.username ? from.username.toLowerCase() : "";
+          const { data: profiles } = await supabaseAdmin.from("profiles").select("*");
+          const prof = (profiles || []).find((p: any) => {
+            if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) return true;
+            if (rawCbHandle && p.telegram_handle) {
+              return p.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
+            }
+            return false;
+          });
+
+          if (!prof) {
+            await sendTelegramMessage(
+              msg.chat.id,
+              `⚠️ Il tuo account Telegram non è ancora collegato a nessun profilo del Casinò. Invia <code>/start</code>.`,
+            );
+          } else {
+            const [{ data: uRoles }, { data: cRoles }, { data: allGroups }] = await Promise.all([
+              supabaseAdmin.from("user_roles").select("role").eq("user_id", prof.id),
+              supabaseAdmin
+                .from("user_custom_roles")
+                .select("custom_role_id")
+                .eq("user_id", prof.id),
+              supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
+            ]);
+
+            const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
+            const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
+
+            const userGroups = (allGroups || []).filter((g: any) => {
+              if (isAdmin) return true;
+              const allowed = g.allowed_role_ids || [];
+              if (allowed.includes("admin") && isAdmin) return true;
+              return userRoleIds.some((rId: string) => allowed.includes(rId));
+            });
+
+            if (userGroups.length === 0) {
+              await sendTelegramMessage(
+                msg.chat.id,
+                `ℹ️ Non hai attualmente gruppi Telegram associati ai tuoi ruoli nel Casinò Revenge.`,
+              );
+            } else {
+              const buttons = userGroups.map((g: any) => [
+                { text: `🔗 Ricevi Invito: ${g.title}`, callback_data: `genera_invito_${g.id}` },
+              ]);
+
+              await sendTelegramMessage(
+                msg.chat.id,
+                `📋 <b>I TUOI GRUPPI TELEGRAM ABILITATI:</b>\n\n` +
+                  userGroups
+                    .map((g: any, idx: number) => `🔹 <b>${idx + 1}. ${g.title}</b>`)
+                    .join("\n") +
+                  `\n\n<i>Clicca su un gruppo per generare il tuo link di invito personale:</i>`,
+                { inline_keyboard: buttons },
+              );
+            }
+          }
+          continue;
+        }
+
+        // 3. Handle /scollega command in private chat
+        if (cleanCmd === "/scollega" || cleanCmd.startsWith("/scollega@")) {
           try {
-            const tgAdmins = await getTelegramChatAdministrators(msg.chat.id);
-            if (tgAdmins && tgAdmins.length > 0) {
-              for (const adminItem of tgAdmins) {
-                if (adminItem.user && !adminItem.user.is_bot) {
-                  await syncTelegramUserWithGroupAndProfile(adminItem.user, msg.chat.id);
-                  syncedCount++;
+            const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
+            for (const p of allProfiles || []) {
+              let matches = false;
+              if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
+                matches = true;
+              }
+              if (p.telegram_chat_id && String(p.telegram_chat_id) === String(from.id)) {
+                matches = true;
+              }
+              if (p.telegram_handle) {
+                const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
+                const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
+                const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
+                if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
+                  matches = true;
                 }
               }
+              if (matches) {
+                await supabaseAdmin
+                  .from("profiles")
+                  .update({
+                    telegram_connected: false,
+                    telegram_handle: null,
+                    telegram_code: null,
+                    telegram_chat_id: null,
+                    telegram_user_id: null,
+                  })
+                  .eq("id", p.id);
+              }
             }
-          } catch (e) {
-            console.error("Error syncing Telegram group admins:", e);
+            // Clean pending/verified codes associated with this user
+            await supabaseAdmin
+              .from("telegram_pending_codes")
+              .delete()
+              .or(`telegram_user_id.eq.${from.id},handle.ilike.%${from.username || from.id}%`);
+          } catch (err) {
+            console.error("Error unlinking handle via /scollega:", err);
           }
 
           await sendTelegramMessage(
             msg.chat.id,
-            `🔄 <b>SINCRONIZZAZIONE DI MASSA COMPLETATA</b>\n\n` +
-              `✅ Sincronizzati con successo <b>${syncedCount}</b> membri del gruppo Telegram.`,
+            `❌ <b>Account Telegram scollegato con successo.</b>\n\n` +
+              `L'associazione con il tuo profilo Minecraft è stata rimossa.\n` +
+              `Per associare un nuovo account Minecraft, genera un nuovo codice dal sito ed invia <code>/associa CODICE</code>.`,
           );
           continue;
         }
 
-        // 4. Handle /info or /aiuto in group chat
+        // 4. Handle /info or /aiuto in private chat
         if (
           cleanCmd === "/info" ||
           cleanCmd === "/aiuto" ||
@@ -2163,313 +2520,81 @@ export async function fetchTelegramUpdates() {
         ) {
           await sendTelegramMessage(
             msg.chat.id,
-            `ℹ️ <b>BOT CASINÒ REVENGE — CHAT DI GRUPPO</b>\n\n` +
-              `📌 <b>Comandi disponibili nel gruppo:</b>\n` +
-              `🔹 <code>/id</code> - Mostra l'ID di questo gruppo e il tuo ID\n` +
-              `🔹 <code>/registragruppo</code> - Registra questo gruppo nel gestionale Staff\n` +
-              `🔹 <code>/sincronizzamembri</code> - Sincronizza i membri del gruppo\n\n` +
-              `💡 <i>Per associare il tuo account Minecraft o visualizzare i tuoi gruppi, usa la chat privata con il bot!</i>`,
+            `ℹ️ <b>BOT UFFICIALE CASINÒ REVENGE — LIBERTY BAY</b>\n\n` +
+              `📌 <b>Comandi Disponibili in Chat Privata:</b>\n` +
+              `🔹 <code>/start</code> - Verifica lo stato di associazione del tuo account\n` +
+              `🔹 <code>/associa CODICE</code> - Invia il codice a 6 cifre generato sul sito\n` +
+              `🔹 <code>/gruppi</code> - Visualizza i gruppi riservati dello Staff a cui hai accesso\n` +
+              `🔹 <code>/scollega</code> - Scollega il tuo account Telegram dal profilo Minecraft\n` +
+              `🔹 <code>/id</code> - Mostra il tuo ID utente e ID chat\n` +
+              `🔹 <code>/info</code> - Mostra questo messaggio di aiuto\n\n` +
+              `💡 <i>Il bot è attivo H24 per la verifica istantanea dei profili e dei gruppi.</i>`,
           );
           continue;
         }
 
-        // 5. Commands restricted to PRIVATE chat (ignore silently in group to prevent spam)
+        // 5. Handle /associa command without a 6-digit code in private chat
         if (
-          cleanCmd === "/start" ||
-          cleanCmd.startsWith("/start@") ||
-          cleanCmd === "/associa" ||
-          cleanCmd.startsWith("/associa@") ||
-          cleanCmd === "/scollega" ||
-          cleanCmd.startsWith("/scollega@") ||
-          cleanCmd === "/gruppi" ||
-          cleanCmd.startsWith("/gruppi@") ||
-          text.match(/^\d{6}$/)
+          (cleanCmd === "/associa" || cleanCmd.startsWith("/associa@")) &&
+          !text.match(/\b\d{6}\b/)
         ) {
-          // Do not process personal association or codes in group chats
-          continue;
-        }
-
-        // 6. Regular message in group: passive tracking & notify unregistered users
-        try {
-          await syncTelegramUserWithGroupAndProfile(from, msg.chat.id);
-        } catch (e) {
-          // ignore
-        }
-
-        // Check if user is associated with any Minecraft nickname in profiles
-        const { data: allProfs } = await supabaseAdmin
-          .from("profiles")
-          .select(
-            "id, username, display_name, telegram_user_id, telegram_chat_id, telegram_handle, telegram_connected",
-          );
-
-        const cleanFromHandle = from.username ? from.username.toLowerCase().replace("@", "") : "";
-        const tgIdStr = String(from.id);
-
-        const matchedProf = (allProfs || []).find((p: any) => {
-          if (p.telegram_user_id && String(p.telegram_user_id) === tgIdStr && p.telegram_connected)
-            return true;
-          if (p.telegram_chat_id && String(p.telegram_chat_id) === tgIdStr && p.telegram_connected)
-            return true;
-          if (cleanFromHandle && p.telegram_handle && p.telegram_connected) {
-            return p.telegram_handle.toLowerCase().replace("@", "") === cleanFromHandle;
-          }
-          return false;
-        });
-
-        if (!matchedProf) {
-          // User is NOT associated with any Minecraft nickname!
-          // Apply 6-hour anti-spam cooldown per user per group
-          const cooldownKey = `unreg_${msg.chat.id}_${from.id}`;
-          const lastSent = unregisteredNoticeCooldown.get(cooldownKey) || 0;
-          const now = Date.now();
-
-          if (now - lastSent > 6 * 3600 * 1000) {
-            unregisteredNoticeCooldown.set(cooldownKey, now);
-            await sendTelegramMessage(
-              msg.chat.id,
-              `👋 Ciao <b>${from.first_name || from.username || "Utente"}</b> (<code>${rawHandle}</code>)!\n\n` +
-                `Non risulti ancora associato ad alcun nickname <b>Minecraft</b> sul gestionale del <b>Casinò Revenge</b>.\n\n` +
-                `🌐 <b>Come registrarsi o collegare il tuo account:</b>\n` +
-                `1️⃣ Registrati o accedi sul sito ufficiale del Casinò\n` +
-                `2️⃣ Apri la <b>chat privata</b> con questo bot ed invia il comando <code>/associa CODICE</code> per collegare il tuo profilo!`,
-            );
-          }
-        }
-
-        // Associated users chat normally: bot is completely silent (no spam!)
-        continue;
-      }
-
-      // =============================================================
-      // B. PRIVATE CHAT HANDLING (Personal association, groups, /start)
-      // =============================================================
-
-      // 1. Handle /id in private chat
-      if (cleanCmd === "/id" || cleanCmd.startsWith("/id@")) {
-        await sendTelegramMessage(
-          msg.chat.id,
-          `👤 <b>INFORMAZIONI CHAT PRIVATA</b>\n\n` +
-            `🆔 <b>Il tuo ID Utente:</b> <code>${from.id}</code>\n` +
-            `🏷️ <b>Username:</b> ${from.username ? `@${from.username}` : "Nessuno"}\n` +
-            `👤 <b>Nome:</b> ${from.first_name || "Utente"}\n` +
-            `💬 <b>ID Chat:</b> <code>${msg.chat.id}</code>`,
-        );
-        continue;
-      }
-
-      // 2. Handle /gruppi command in private chat
-      if (cleanCmd === "/gruppi" || cleanCmd.startsWith("/gruppi@")) {
-        const rawCbHandle = from.username ? from.username.toLowerCase() : "";
-        const { data: profiles } = await supabaseAdmin.from("profiles").select("*");
-        const prof = (profiles || []).find((p: any) => {
-          if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) return true;
-          if (rawCbHandle && p.telegram_handle) {
-            return p.telegram_handle.toLowerCase().replace("@", "") === rawCbHandle;
-          }
-          return false;
-        });
-
-        if (!prof) {
           await sendTelegramMessage(
             msg.chat.id,
-            `⚠️ Il tuo account Telegram non è ancora collegato a nessun profilo del Casinò. Invia <code>/start</code>.`,
-          );
-        } else {
-          const [{ data: uRoles }, { data: cRoles }, { data: allGroups }] = await Promise.all([
-            supabaseAdmin.from("user_roles").select("role").eq("user_id", prof.id),
-            supabaseAdmin.from("user_custom_roles").select("custom_role_id").eq("user_id", prof.id),
-            supabaseAdmin.from("telegram_groups").select("*").eq("is_active", true),
-          ]);
-
-          const isAdmin = (uRoles || []).some((r: any) => r.role === "admin");
-          const userRoleIds = (cRoles || []).map((cr: any) => cr.custom_role_id);
-
-          const userGroups = (allGroups || []).filter((g: any) => {
-            if (isAdmin) return true;
-            const allowed = g.allowed_role_ids || [];
-            if (allowed.includes("admin") && isAdmin) return true;
-            return userRoleIds.some((rId: string) => allowed.includes(rId));
-          });
-
-          if (userGroups.length === 0) {
-            await sendTelegramMessage(
-              msg.chat.id,
-              `ℹ️ Non hai attualmente gruppi Telegram associati ai tuoi ruoli nel Casinò Revenge.`,
-            );
-          } else {
-            const buttons = userGroups.map((g: any) => [
-              { text: `🔗 Ricevi Invito: ${g.title}`, callback_data: `genera_invito_${g.id}` },
-            ]);
-
-            await sendTelegramMessage(
-              msg.chat.id,
-              `📋 <b>I TUOI GRUPPI TELEGRAM ABILITATI:</b>\n\n` +
-                userGroups
-                  .map((g: any, idx: number) => `🔹 <b>${idx + 1}. ${g.title}</b>`)
-                  .join("\n") +
-                `\n\n<i>Clicca su un gruppo per generare il tuo link di invito personale:</i>`,
-              { inline_keyboard: buttons },
-            );
-          }
-        }
-        continue;
-      }
-
-      // 3. Handle /scollega command in private chat
-      if (cleanCmd === "/scollega" || cleanCmd.startsWith("/scollega@")) {
-        try {
-          const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
-          for (const p of allProfiles || []) {
-            let matches = false;
-            if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
-              matches = true;
-            }
-            if (p.telegram_chat_id && String(p.telegram_chat_id) === String(from.id)) {
-              matches = true;
-            }
-            if (p.telegram_handle) {
-              const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
-              const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
-              const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
-              if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
-                matches = true;
-              }
-            }
-            if (matches) {
-              await supabaseAdmin
-                .from("profiles")
-                .update({
-                  telegram_connected: false,
-                  telegram_handle: null,
-                  telegram_code: null,
-                  telegram_chat_id: null,
-                  telegram_user_id: null,
-                })
-                .eq("id", p.id);
-            }
-          }
-          // Clean pending/verified codes associated with this user
-          await supabaseAdmin
-            .from("telegram_pending_codes")
-            .delete()
-            .or(`telegram_user_id.eq.${from.id},handle.ilike.%${from.username || from.id}%`);
-        } catch (err) {
-          console.error("Error unlinking handle via /scollega:", err);
-        }
-
-        await sendTelegramMessage(
-          msg.chat.id,
-          `❌ <b>Account Telegram scollegato con successo.</b>\n\n` +
-            `L'associazione con il tuo profilo Minecraft è stata rimossa.\n` +
-            `Per associare un nuovo account Minecraft, genera un nuovo codice dal sito ed invia <code>/associa CODICE</code>.`,
-        );
-        continue;
-      }
-
-      // 4. Handle /info or /aiuto in private chat
-      if (
-        cleanCmd === "/info" ||
-        cleanCmd === "/aiuto" ||
-        cleanCmd === "/help" ||
-        cleanCmd.startsWith("/info@") ||
-        cleanCmd.startsWith("/aiuto@") ||
-        cleanCmd.startsWith("/help@")
-      ) {
-        await sendTelegramMessage(
-          msg.chat.id,
-          `ℹ️ <b>BOT UFFICIALE CASINÒ REVENGE — LIBERTY BAY</b>\n\n` +
-            `📌 <b>Comandi Disponibili in Chat Privata:</b>\n` +
-            `🔹 <code>/start</code> - Verifica lo stato di associazione del tuo account\n` +
-            `🔹 <code>/associa CODICE</code> - Invia il codice a 6 cifre generato sul sito\n` +
-            `🔹 <code>/gruppi</code> - Visualizza i gruppi riservati dello Staff a cui hai accesso\n` +
-            `🔹 <code>/scollega</code> - Scollega il tuo account Telegram dal profilo Minecraft\n` +
-            `🔹 <code>/id</code> - Mostra il tuo ID utente e ID chat\n` +
-            `🔹 <code>/info</code> - Mostra questo messaggio di aiuto\n\n` +
-            `💡 <i>Il bot è attivo H24 per la verifica istantanea dei profili e dei gruppi.</i>`,
-        );
-        continue;
-      }
-
-      // 5. Handle /associa command without a 6-digit code in private chat
-      if (
-        (cleanCmd === "/associa" || cleanCmd.startsWith("/associa@")) &&
-        !text.match(/\b\d{6}\b/)
-      ) {
-        await sendTelegramMessage(
-          msg.chat.id,
-          `⚠️ <b>CODICE DI VERIFICA MANCANTE</b>\n\n` +
-            `Per collegare il tuo account Telegram, devi specificare il codice a 6 cifre generato dal sito del <b>Casinò Revenge</b>.\n\n` +
-            `👉 <b>Esempio corretto:</b> <code>/associa 849201</code>\n\n` +
-            `1️⃣ Torna sul sito di Casinò Revenge.\n` +
-            `2️⃣ Clicca su <b>'Genera Comando /associa'</b> o copia il codice visibile.\n` +
-            `3️⃣ Incolla il comando completo qui in chat.`,
-        );
-        continue;
-      }
-
-      // 6. Match code from commands like "/associa 849201", "/start 849201", "849201", "/start associa_849201"
-      const codeMatch = text.match(/\b\d{6}\b/) || text.match(/\d{6}/);
-      if (codeMatch) {
-        const code = codeMatch[0];
-
-        // A. Check if this code was ALREADY verified recently
-        const alreadyVerified = verifiedCodesStore.get(code);
-        let dbVerifiedEntry: any = null;
-        try {
-          const { data: dbV } = await supabaseAdmin
-            .from("telegram_pending_codes")
-            .select("*")
-            .eq("code", code)
-            .maybeSingle();
-          if (dbV?.verified) {
-            dbVerifiedEntry = dbV;
-          }
-        } catch {
-          // ignore
-        }
-
-        if (alreadyVerified || dbVerifiedEntry) {
-          const verifiedHandle = alreadyVerified?.handle || dbVerifiedEntry?.handle || rawHandle;
-          await sendTelegramMessage(
-            msg.chat.id,
-            `✅ <b>CODICE GIÀ VERIFICATO CON SUCCESSO!</b>\n\n` +
-              `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
-              `Il tuo account Telegram (<b>${verifiedHandle}</b>) è già stato verificato con questo codice ed è pronto.\n\n` +
-              `📌 <b>Torna sul sito web</b> del Casinò Revenge: la schermata avanzerà automaticamente entro pochi secondi!\n\n` +
-              `💡 <i>Invia <code>/gruppi</code> per visualizzare i gruppi a cui sei abilitato.</i>`,
-            {
-              inline_keyboard: [
-                [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
-              ],
-            },
+            `⚠️ <b>CODICE DI VERIFICA MANCANTE</b>\n\n` +
+              `Per collegare il tuo account Telegram, devi specificare il codice a 6 cifre generato dal sito del <b>Casinò Revenge</b>.\n\n` +
+              `👉 <b>Esempio corretto:</b> <code>/associa 849201</code>\n\n` +
+              `1️⃣ Torna sul sito di Casinò Revenge.\n` +
+              `2️⃣ Clicca su <b>'Genera Comando /associa'</b> o copia il codice visibile.\n` +
+              `3️⃣ Incolla il comando completo qui in chat.`,
           );
           continue;
         }
 
-        // B. Check if code is pending in memory, DB pending table, or user profile
-        const pendingMemoryObj = pendingCodesStore.get(code);
-        let pendingDbObj: any = null;
-        let profileDbObj: any = null;
+        // 6. Match code from commands like "/associa 849201", "/start 849201", "849201", "/start associa_849201"
+        const codeMatch = text.match(/\b\d{6}\b/) || text.match(/\d{6}/);
+        if (codeMatch) {
+          const code = codeMatch[0];
 
-        try {
-          const [{ data: pendD }, { data: profD }] = await Promise.all([
-            supabaseAdmin.from("telegram_pending_codes").select("*").eq("code", code).maybeSingle(),
-            supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
-          ]);
-          pendingDbObj = pendD;
-          profileDbObj = profD;
-        } catch (e) {
-          // ignore
-        }
-
-        let isValidCode = !!pendingMemoryObj || !!pendingDbObj || !!profileDbObj;
-
-        // If code is not found, force a DB reload from Neon and try one more time
-        // This is crucial for Cloudflare Pages serverless where cache might be slightly stale!
-        if (!isValidCode) {
+          // A. Check if this code was ALREADY verified recently
+          const alreadyVerified = verifiedCodesStore.get(code);
+          let dbVerifiedEntry: any = null;
           try {
-            await supabaseAdmin.rpc("force_db_reload", {});
+            const { data: dbV } = await supabaseAdmin
+              .from("telegram_pending_codes")
+              .select("*")
+              .eq("code", code)
+              .maybeSingle();
+            if (dbV?.verified) {
+              dbVerifiedEntry = dbV;
+            }
+          } catch {
+            // ignore
+          }
+
+          if (alreadyVerified || dbVerifiedEntry) {
+            const verifiedHandle = alreadyVerified?.handle || dbVerifiedEntry?.handle || rawHandle;
+            await sendTelegramMessage(
+              msg.chat.id,
+              `✅ <b>CODICE GIÀ VERIFICATO CON SUCCESSO!</b>\n\n` +
+                `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
+                `Il tuo account Telegram (<b>${verifiedHandle}</b>) è già stato verificato con questo codice ed è pronto.\n\n` +
+                `📌 <b>Torna sul sito web</b> del Casinò Revenge: la schermata avanzerà automaticamente entro pochi secondi!\n\n` +
+                `💡 <i>Invia <code>/gruppi</code> per visualizzare i gruppi a cui sei abilitato.</i>`,
+              {
+                inline_keyboard: [
+                  [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
+                ],
+              },
+            );
+            continue;
+          }
+
+          // B. Check if code is pending in memory, DB pending table, or user profile
+          const pendingMemoryObj = pendingCodesStore.get(code);
+          let pendingDbObj: any = null;
+          let profileDbObj: any = null;
+
+          try {
             const [{ data: pendD }, { data: profD }] = await Promise.all([
               supabaseAdmin
                 .from("telegram_pending_codes")
@@ -2480,81 +2605,114 @@ export async function fetchTelegramUpdates() {
             ]);
             pendingDbObj = pendD;
             profileDbObj = profD;
-            isValidCode = !!pendingDbObj || !!profileDbObj;
           } catch (e) {
             // ignore
           }
-        }
 
-        if (isValidCode) {
-          const targetUserId =
-            pendingMemoryObj?.userId || pendingDbObj?.user_id || profileDbObj?.id;
+          let isValidCode = !!pendingMemoryObj || !!pendingDbObj || !!profileDbObj;
 
-          // C. Strict 1 Telegram Account Per User Check:
-          // Check if this Telegram account is already linked to ANOTHER user
-          let existingLinkedProfile: any = null;
-          try {
-            const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
-            for (const p of allProfiles || []) {
-              if (!p.telegram_connected) continue;
-              if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
-                existingLinkedProfile = p;
-                break;
-              }
-              if (p.telegram_handle) {
-                const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
-                const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
-                const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
-                if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
+          // If code is not found, force a DB reload from Neon and try one more time
+          // This is crucial for Cloudflare Pages serverless where cache might be slightly stale!
+          if (!isValidCode) {
+            try {
+              await supabaseAdmin.rpc("force_db_reload", {});
+              const [{ data: pendD }, { data: profD }] = await Promise.all([
+                supabaseAdmin
+                  .from("telegram_pending_codes")
+                  .select("*")
+                  .eq("code", code)
+                  .maybeSingle(),
+                supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
+              ]);
+              pendingDbObj = pendD;
+              profileDbObj = profD;
+              isValidCode = !!pendingDbObj || !!profileDbObj;
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          if (isValidCode) {
+            const targetUserId =
+              pendingMemoryObj?.userId || pendingDbObj?.user_id || profileDbObj?.id;
+
+            // C. Strict 1 Telegram Account Per User Check:
+            // Check if this Telegram account is already linked to ANOTHER user
+            let existingLinkedProfile: any = null;
+            try {
+              const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
+              for (const p of allProfiles || []) {
+                if (!p.telegram_connected) continue;
+                if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
                   existingLinkedProfile = p;
                   break;
                 }
+                if (p.telegram_handle) {
+                  const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
+                  const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
+                  const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
+                  if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
+                    existingLinkedProfile = p;
+                    break;
+                  }
+                }
               }
+            } catch (err) {
+              console.error("Error checking duplicate telegram profile:", err);
             }
-          } catch (err) {
-            console.error("Error checking duplicate telegram profile:", err);
-          }
 
-          // If already linked to ANOTHER profile (different user ID or registering a new account with an already-used Telegram), block duplicate account
-          if (
-            existingLinkedProfile &&
-            (!targetUserId || existingLinkedProfile.id !== targetUserId)
-          ) {
-            await sendTelegramMessage(
-              msg.chat.id,
-              `⚠️ <b>ACCOUNT TELEGRAM GIÀ COLLEGATO</b>\n\n` +
-                `Questo account Telegram (<b>${rawHandle}</b>) è già stato collegato all'account Minecraft: <b>${existingLinkedProfile.display_name || existingLinkedProfile.username}</b>.\n\n` +
-                `📌 <b>Regola:</b> Un utente può avere al massimo <b>1 solo account</b> collegato a Telegram.\n\n` +
-                `Se desideri cambiare account o associare questo Telegram a un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.`,
-            );
-            continue;
-          }
+            // If already linked to ANOTHER profile (different user ID or registering a new account with an already-used Telegram), block duplicate account
+            if (
+              existingLinkedProfile &&
+              (!targetUserId || existingLinkedProfile.id !== targetUserId)
+            ) {
+              await sendTelegramMessage(
+                msg.chat.id,
+                `⚠️ <b>ACCOUNT TELEGRAM GIÀ COLLEGATO</b>\n\n` +
+                  `Questo account Telegram (<b>${rawHandle}</b>) è già stato collegato all'account Minecraft: <b>${existingLinkedProfile.display_name || existingLinkedProfile.username}</b>.\n\n` +
+                  `📌 <b>Regola:</b> Un utente può avere al massimo <b>1 solo account</b> collegato a Telegram.\n\n` +
+                  `Se desideri cambiare account o associare questo Telegram a un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.`,
+              );
+              continue;
+            }
 
-          // Store verification in memory
-          const verificationRecord = {
-            handle: rawHandle,
-            chatId: msg.chat.id,
-            firstName: from.first_name || "Cliente",
-            date: Date.now(),
-            userId: targetUserId,
-          };
-          verifiedCodesStore.set(code, verificationRecord);
-
-          // Update database persistent tables
-          try {
-            await supabaseAdmin.from("telegram_pending_codes").upsert({
-              id: code,
-              code,
-              user_id: targetUserId || null,
+            // Store verification in memory
+            const verificationRecord = {
               handle: rawHandle,
-              telegram_user_id: from.id,
-              telegram_chat_id: msg.chat.id,
-              first_name: from.first_name || "Cliente",
-              verified: true,
-              verified_at: new Date().toISOString(),
-            });
+              chatId: msg.chat.id,
+              firstName: from.first_name || "Cliente",
+              date: Date.now(),
+              userId: targetUserId,
+            };
+            verifiedCodesStore.set(code, verificationRecord);
 
-            if (targetUserId) {
+            // Update database persistent tables
+            try {
+              await supabaseAdmin.from("telegram_pending_codes").upsert({
+                id: code,
+                code,
+                user_id: targetUserId || null,
+                handle: rawHandle,
+                telegram_user_id: from.id,
+                telegram_chat_id: msg.chat.id,
+                first_name: from.first_name || "Cliente",
+                verified: true,
+                verified_at: new Date().toISOString(),
+              });
+
+              if (targetUserId) {
+                await supabaseAdmin
+                  .from("profiles")
+                  .update({
+                    telegram_handle: rawHandle,
+                    telegram_connected: true,
+                    telegram_code: null,
+                    telegram_chat_id: from.id,
+                    telegram_user_id: from.id,
+                  })
+                  .eq("id", targetUserId);
+              }
+
               await supabaseAdmin
                 .from("profiles")
                 .update({
@@ -2564,71 +2722,21 @@ export async function fetchTelegramUpdates() {
                   telegram_chat_id: from.id,
                   telegram_user_id: from.id,
                 })
-                .eq("id", targetUserId);
+                .eq("telegram_code", code);
+            } catch (dbErr) {
+              console.error("Error auto-updating database profile for code:", dbErr);
             }
 
-            await supabaseAdmin
-              .from("profiles")
-              .update({
-                telegram_handle: rawHandle,
-                telegram_connected: true,
-                telegram_code: null,
-                telegram_chat_id: from.id,
-                telegram_user_id: from.id,
-              })
-              .eq("telegram_code", code);
-          } catch (dbErr) {
-            console.error("Error auto-updating database profile for code:", dbErr);
-          }
-
-          await sendTelegramMessage(
-            msg.chat.id,
-            `🎉 <b>COLLEGAMENTO TELEGRAM COMPLETATO CON SUCCESSO!</b>\n\n` +
-              `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
-              `Il tuo profilo Telegram (<b>${rawHandle}</b>) è stato collegato ed autorizzato per la piattaforma <b>Casinò Revenge</b>.\n\n` +
-              `📌 <b>Prossimi Passaggi:</b>\n` +
-              `1️⃣ Torna alla pagina del browser dove stavi effettuando la verifica o registrazione.\n` +
-              `2️⃣ La pagina riconoscerà il collegamento ed <b>avanzerà automaticamente</b> entro pochissimi secondi!\n` +
-              `3️⃣ Ora puoi accedere a tutte le funzionalità riservate del pannello e della Ciurma dello Staff.\n\n` +
-              `💡 <i>Invia <code>/gruppi</code> in qualsiasi momento per visualizzare e accedere ai gruppi Staff a cui hai diritto!</i>`,
-            {
-              inline_keyboard: [
-                [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
-              ],
-            },
-          );
-        } else {
-          // Check if sender is ALREADY connected in profiles
-          let alreadyConnectedProf: any = null;
-          try {
-            const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
-            for (const p of allProfiles || []) {
-              if (!p.telegram_connected) continue;
-              if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
-                alreadyConnectedProf = p;
-                break;
-              }
-              if (p.telegram_handle) {
-                const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
-                const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
-                const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
-                if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
-                  alreadyConnectedProf = p;
-                  break;
-                }
-              }
-            }
-          } catch {
-            // ignore
-          }
-
-          if (alreadyConnectedProf) {
             await sendTelegramMessage(
               msg.chat.id,
-              `ℹ️ <b>ACCOUNT GIÀ COLLEGATO</b>\n\n` +
-                `Ciao ${from.first_name || "Utente"}, il tuo account Telegram (<b>${rawHandle}</b>) risulta già collegato al profilo Minecraft <b>${alreadyConnectedProf.display_name || alreadyConnectedProf.username}</b>.\n\n` +
-                `Se desideri cambiare account o associare un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.\n` +
-                `💡 <i>Invia <code>/gruppi</code> per gestire i tuoi gruppi abilitati.</i>`,
+              `🎉 <b>COLLEGAMENTO TELEGRAM COMPLETATO CON SUCCESSO!</b>\n\n` +
+                `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
+                `Il tuo profilo Telegram (<b>${rawHandle}</b>) è stato collegato ed autorizzato per la piattaforma <b>Casinò Revenge</b>.\n\n` +
+                `📌 <b>Prossimi Passaggi:</b>\n` +
+                `1️⃣ Torna alla pagina del browser dove stavi effettuando la verifica o registrazione.\n` +
+                `2️⃣ La pagina riconoscerà il collegamento ed <b>avanzerà automaticamente</b> entro pochissimi secondi!\n` +
+                `3️⃣ Ora puoi accedere a tutte le funzionalità riservate del pannello e della Ciurma dello Staff.\n\n` +
+                `💡 <i>Invia <code>/gruppi</code> in qualsiasi momento per visualizzare e accedere ai gruppi Staff a cui hai diritto!</i>`,
               {
                 inline_keyboard: [
                   [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
@@ -2636,93 +2744,137 @@ export async function fetchTelegramUpdates() {
               },
             );
           } else {
-            await sendTelegramMessage(
-              msg.chat.id,
-              `❌ <b>CODICE NON VALIDO O SCADUTO</b>\n\n` +
-                `Ciao ${from.first_name || "Utente"}, il codice <code>${code}</code> non corrisponde a nessuna richiesta attiva sul sito del <b>Casinò Revenge</b>.\n\n` +
-                `👉 <b>Come risolvere:</b>\n` +
-                `1️⃣ Torna sul sito del Casinò Revenge.\n` +
-                `2️⃣ Clicca su <b>'Genera Comando /associa'</b> (oppure sul pulsante <b>'Apri Bot Telegram'</b>) per ottenere un codice valido.\n` +
-                `3️⃣ Invia il nuovo comando qui in chat (es. <code>/associa 849201</code>).\n\n` +
-                `💡 <i>Assicurati di generare il codice dal sito prima di inviarlo!</i>`,
-            );
+            // Check if sender is ALREADY connected in profiles
+            let alreadyConnectedProf: any = null;
+            try {
+              const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
+              for (const p of allProfiles || []) {
+                if (!p.telegram_connected) continue;
+                if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
+                  alreadyConnectedProf = p;
+                  break;
+                }
+                if (p.telegram_handle) {
+                  const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
+                  const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
+                  const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
+                  if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
+                    alreadyConnectedProf = p;
+                    break;
+                  }
+                }
+              }
+            } catch {
+              // ignore
+            }
+
+            if (alreadyConnectedProf) {
+              await sendTelegramMessage(
+                msg.chat.id,
+                `ℹ️ <b>ACCOUNT GIÀ COLLEGATO</b>\n\n` +
+                  `Ciao ${from.first_name || "Utente"}, il tuo account Telegram (<b>${rawHandle}</b>) risulta già collegato al profilo Minecraft <b>${alreadyConnectedProf.display_name || alreadyConnectedProf.username}</b>.\n\n` +
+                  `Se desideri cambiare account o associare un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.\n` +
+                  `💡 <i>Invia <code>/gruppi</code> per gestire i tuoi gruppi abilitati.</i>`,
+                {
+                  inline_keyboard: [
+                    [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
+                  ],
+                },
+              );
+            } else {
+              await sendTelegramMessage(
+                msg.chat.id,
+                `❌ <b>CODICE NON VALIDO O SCADUTO</b>\n\n` +
+                  `Ciao ${from.first_name || "Utente"}, il codice <code>${code}</code> non corrisponde a nessuna richiesta attiva sul sito del <b>Casinò Revenge</b>.\n\n` +
+                  `👉 <b>Come risolvere:</b>\n` +
+                  `1️⃣ Torna sul sito del Casinò Revenge.\n` +
+                  `2️⃣ Clicca su <b>'Genera Comando /associa'</b> (oppure sul pulsante <b>'Apri Bot Telegram'</b>) per ottenere un codice valido.\n` +
+                  `3️⃣ Invia il nuovo comando qui in chat (es. <code>/associa 849201</code>).\n\n` +
+                  `💡 <i>Assicurati di generare il codice dal sito prima di inviarlo!</i>`,
+              );
+            }
+          }
+          continue;
+        }
+
+        // 7. General messages / commands in private chat (e.g. /start)
+        const isExplicitCommand =
+          cleanCmd === "/start" ||
+          cleanCmd === "/help" ||
+          cleanCmd === "/info" ||
+          cleanCmd === "/associa";
+
+        if (!isExplicitCommand) {
+          continue;
+        }
+
+        let connectedProf: any = null;
+        const handlesToSearch = new Set<string>();
+        if (rawHandle) handlesToSearch.add(rawHandle);
+        if (from.username) {
+          handlesToSearch.add(`@${from.username}`);
+          handlesToSearch.add(from.username);
+        }
+
+        for (const h of handlesToSearch) {
+          if (connectedProf) break;
+          try {
+            const { data: dbProfs } = await supabaseAdmin
+              .from("profiles")
+              .select("id, username, display_name, telegram_connected, telegram_handle")
+              .ilike("telegram_handle", h.startsWith("@") ? h : `@${h}`)
+              .eq("telegram_connected", true)
+              .limit(1);
+            if (dbProfs && dbProfs.length > 0) {
+              connectedProf = dbProfs[0];
+            }
+          } catch (e) {
+            console.error("Error finding connected Telegram profile:", e);
           }
         }
-        continue;
-      }
 
-      // 7. General messages / commands in private chat (e.g. /start)
-      const isExplicitCommand =
-        cleanCmd === "/start" ||
-        cleanCmd === "/help" ||
-        cleanCmd === "/info" ||
-        cleanCmd === "/associa";
-
-      if (!isExplicitCommand) {
-        continue;
-      }
-
-      let connectedProf: any = null;
-      const handlesToSearch = new Set<string>();
-      if (rawHandle) handlesToSearch.add(rawHandle);
-      if (from.username) {
-        handlesToSearch.add(`@${from.username}`);
-        handlesToSearch.add(from.username);
-      }
-
-      for (const h of handlesToSearch) {
-        if (connectedProf) break;
-        try {
-          const { data: dbProfs } = await supabaseAdmin
-            .from("profiles")
-            .select("id, username, display_name, telegram_connected, telegram_handle")
-            .ilike("telegram_handle", h.startsWith("@") ? h : `@${h}`)
-            .eq("telegram_connected", true)
-            .limit(1);
-          if (dbProfs && dbProfs.length > 0) {
-            connectedProf = dbProfs[0];
+        if (connectedProf) {
+          try {
+            await supabaseAdmin
+              .from("profiles")
+              .update({
+                telegram_chat_id: from.id,
+                telegram_user_id: from.id,
+              })
+              .eq("id", connectedProf.id);
+          } catch (e) {
+            // ignore
           }
-        } catch (e) {
-          console.error("Error finding connected Telegram profile:", e);
-        }
-      }
 
-      if (connectedProf) {
-        try {
-          await supabaseAdmin
-            .from("profiles")
-            .update({
-              telegram_chat_id: from.id,
-              telegram_user_id: from.id,
-            })
-            .eq("id", connectedProf.id);
-        } catch (e) {
-          // ignore
+          await sendTelegramMessage(
+            msg.chat.id,
+            `✅ <b>ACCOUNT TELEGRAM COLLEGATO</b>\n\n` +
+              `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
+              `Il tuo profilo Telegram (<b>${rawHandle}</b>) è attualmente collegato all'account Minecraft: <b>${connectedProf.display_name || connectedProf.username}</b>.\n\n` +
+              `Puoi visualizzare i tuoi gruppi abilitati o scollegare il tuo account con i pulsanti qui sotto:`,
+            {
+              inline_keyboard: [
+                [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
+                [{ text: "🔌 Scollega Account", callback_data: "scollega" }],
+              ],
+            },
+          );
+        } else {
+          await sendTelegramMessage(
+            msg.chat.id,
+            `👋 <b>Benvenuto nel Bot Ufficiale del Casinò Revenge!</b>\n\n` +
+              `Il tuo account Telegram non è ancora collegato a nessun profilo Minecraft.\n\n` +
+              `📌 <b>Procedura di Collegamento:</b>\n` +
+              `1️⃣ Vai sul sito web del <b>Casinò Revenge</b> ed avvia la Registrazione o l'Accesso.\n` +
+              `2️⃣ Nel Passo 2, clicca su <b>'Genera Comando /associa'</b> per ottenere il tuo codice unico.\n` +
+              `3️⃣ Invia qui in chat il comando generato (es: <code>/associa 849201</code>).\n\n` +
+              `💡 <i>Invia /start in qualsiasi momento per verificare lo stato del tuo collegamento.</i>`,
+          );
         }
-
-        await sendTelegramMessage(
-          msg.chat.id,
-          `✅ <b>ACCOUNT TELEGRAM COLLEGATO</b>\n\n` +
-            `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
-            `Il tuo profilo Telegram (<b>${rawHandle}</b>) è attualmente collegato all'account Minecraft: <b>${connectedProf.display_name || connectedProf.username}</b>.\n\n` +
-            `Puoi visualizzare i tuoi gruppi abilitati o scollegare il tuo account con i pulsanti qui sotto:`,
-          {
-            inline_keyboard: [
-              [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
-              [{ text: "🔌 Scollega Account", callback_data: "scollega" }],
-            ],
-          },
-        );
-      } else {
-        await sendTelegramMessage(
-          msg.chat.id,
-          `👋 <b>Benvenuto nel Bot Ufficiale del Casinò Revenge!</b>\n\n` +
-            `Il tuo account Telegram non è ancora collegato a nessun profilo Minecraft.\n\n` +
-            `📌 <b>Procedura di Collegamento:</b>\n` +
-            `1️⃣ Vai sul sito web del <b>Casinò Revenge</b> ed avvia la Registrazione o l'Accesso.\n` +
-            `2️⃣ Nel Passo 2, clicca su <b>'Genera Comando /associa'</b> per ottenere il tuo codice unico.\n` +
-            `3️⃣ Invia qui in chat il comando generato (es: <code>/associa 849201</code>).\n\n` +
-            `💡 <i>Invia /start in qualsiasi momento per verificare lo stato del tuo collegamento.</i>`,
+      } catch (singleUpdateErr) {
+        console.error(
+          `[Telegram Bot] Error processing update #${update.update_id}:`,
+          singleUpdateErr,
         );
       }
     }
@@ -2763,9 +2915,7 @@ export async function getCachedCodeVerification(code: string) {
   return null;
 }
 
-export function startBackgroundPolling() {
-  if (g._telegramPollingStarted) return;
-
+export function startBackgroundPolling(forceRestart: boolean = false) {
   // Only start long-running setInterval on dedicated Node.js processes (not Edge/Cloudflare Workers)
   const isDedicatedNodeProcess =
     typeof process !== "undefined" &&
@@ -2776,20 +2926,35 @@ export function startBackgroundPolling() {
 
   if (!isDedicatedNodeProcess) return;
 
+  if (g._telegramPollingInterval && !forceRestart) {
+    // Already running
+    return;
+  }
+
+  if (g._telegramPollingInterval) {
+    try {
+      clearInterval(g._telegramPollingInterval);
+    } catch (e) {
+      // ignore
+    }
+    g._telegramPollingInterval = null;
+  }
+
   g._telegramPollingStarted = true;
+  console.log("[Telegram Bot] Initializing background polling service (every 2.5s)...");
 
   try {
     // Immediate initial run
     fetchTelegramUpdates().catch(() => {});
 
-    // Continuous background loop running every 2 seconds
-    setInterval(() => {
+    // Continuous background loop running every 2.5 seconds
+    g._telegramPollingInterval = setInterval(() => {
       fetchTelegramUpdates().catch((err) => {
         console.error("Background polling loop error:", err);
       });
-    }, 2000);
+    }, 2500);
   } catch (e) {
-    // Silently fail if runtime does not support timers
+    console.error("[Telegram Bot] Failed to set background polling timer:", e);
   }
 }
 
@@ -2843,7 +3008,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica istantanea quando un utente invia una candidatura per un bando staff aperto.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "FileText",
     },
@@ -2855,7 +3020,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Esito Valutazione Candidatura",
       description: "Notifica quando un esaminatore approva o respinge formalmente una candidatura.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "Award",
     },
@@ -2868,7 +3033,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando viene concesso un nuovo tentativo a un candidato precedentemente respinto.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "RotateCcw",
     },
@@ -2881,7 +3046,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando viene pubblicato un nuovo bando di selezione per ruoli o mansioni.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "PlusCircle",
     },
@@ -2896,7 +3061,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando un nuovo cliente/cittadino viene aggiunto all'anagrafica del casinò.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "UserPlus",
     },
@@ -2909,7 +3074,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica immediata di richiami, allontanamenti temporanei o sanzioni pecuniarie.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "AlertTriangle",
     },
@@ -2922,7 +3087,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando un cittadino acquista o rinnova un piano di tesseramento VIP o Standard.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "Crown",
     },
@@ -2934,7 +3099,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Avviso Scadenza Tessera VIP",
       description: "Notifica di avviso quando un abbonamento VIP raggiunge la data di scadenza.",
       enabled: false,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: true,
       icon: "Clock",
     },
@@ -2948,7 +3113,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Conversione Valuta (Dobloni ⇄ Euro)",
       description: "Notifica per ogni cambio fiches/valuta completato dai cassieri abilitati.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       min_amount_threshold: 0,
       silent: false,
       icon: "ArrowLeftRight",
@@ -2962,7 +3127,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando il responsabile apre ufficialmente i tavoli da gioco e la cassa.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "Play",
     },
@@ -2975,7 +3140,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica con il report consuntivo di chiusura: incasso totale, payout e bilancio fiches.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "CheckCircle2",
     },
@@ -2990,7 +3155,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando viene annunciato un nuovo torneo di poker, corsa o evento speciale.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1004480446106",
       silent: false,
       icon: "Calendar",
     },
@@ -3003,7 +3168,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando un partecipante acquista una schedina o si iscrive a un torneo.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1004480446106",
       silent: true,
       icon: "Ticket",
     },
@@ -3016,7 +3181,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica con il podio finale, i vincitori e il montepremi erogato per l'evento.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1004480446106",
       silent: false,
       icon: "Trophy",
     },
@@ -3031,7 +3196,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando viene creato un nuovo dipendente o abilitato un profilo per lo staff.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "UserCheck",
     },
@@ -3044,7 +3209,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando un membro viene licenziato dall'organico con revoca credenziali.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "UserX",
     },
@@ -3056,7 +3221,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Provvedimento Disciplinare a Staff",
       description: "Notifica per sanzioni, multe o note di biasimo emesse contro un collaboratore.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "ShieldAlert",
     },
@@ -3068,7 +3233,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Promozione Ruolo o Permessi Staff",
       description: "Notifica quando un dipendente riceve una promozione di grado o ruoli speciali.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "ShieldCheck",
     },
@@ -3083,7 +3248,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica immediata alla direzione quando un dipendente richiede un periodo di assenza.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "CalendarDays",
     },
@@ -3095,7 +3260,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       title: "Esito Richiesta Ferie (Approvata / Respinta)",
       description: "Notifica quando la direzione approva o respinge una richiesta di congedo.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "CheckSquare",
     },
@@ -3110,7 +3275,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando viene saldato il compenso mensile o straordinari a un collaboratore.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "Banknote",
     },
@@ -3125,7 +3290,7 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica quando la guardia automatica espelle dai gruppi Telegram un account non in regola.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "UserMinus",
     },
@@ -3138,11 +3303,208 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       description:
         "Notifica periodica di riepilogo con lo stato di sincronizzazione gruppi e tesseramenti.",
       enabled: true,
-      chat_id: "",
+      chat_id: "-1003625594442",
       silent: false,
       icon: "Activity",
     },
   ];
+}
+
+export function normalizeSmallCaps(str: string): string {
+  if (!str) return "";
+  const smallCapsMap: Record<string, string> = {
+    ᴀ: "a",
+    ʙ: "b",
+    ᴄ: "c",
+    ᴅ: "d",
+    ᴇ: "e",
+    ꜰ: "f",
+    ɢ: "g",
+    ʜ: "h",
+    ɪ: "i",
+    ᴊ: "j",
+    ᴋ: "k",
+    ʟ: "l",
+    ᴍ: "m",
+    ɴ: "n",
+    ᴏ: "o",
+    ᴘ: "p",
+    ǫ: "q",
+    ʀ: "r",
+    ꜱ: "s",
+    ᴛ: "t",
+    ᴜ: "u",
+    ᴠ: "v",
+    ᴡ: "w",
+    x: "x",
+    ʏ: "y",
+    ᴢ: "z",
+    "𝐀": "a",
+    "𝐁": "b",
+    "𝐂": "c",
+    "𝐃": "d",
+    "𝐄": "e",
+    "𝐅": "f",
+    "𝐆": "g",
+    "𝐇": "h",
+    "𝐈": "i",
+    "𝐉": "j",
+    "𝐊": "k",
+    "𝐋": "l",
+    "𝐌": "m",
+    "𝐍": "n",
+    "𝐎": "o",
+    "𝐏": "p",
+    "𝐐": "q",
+    "𝐑": "r",
+    "𝐒": "s",
+    "𝐓": "t",
+    "𝐔": "u",
+    "𝐕": "v",
+    "𝐖": "w",
+    "𝐗": "x",
+    "𝐘": "y",
+    "𝐙": "z",
+    "𝐚": "a",
+    "𝐛": "b",
+    "𝐜": "c",
+    "𝐝": "d",
+    "𝐞": "e",
+    "𝐟": "f",
+    "𝐠": "g",
+    "𝐡": "h",
+    "𝐢": "i",
+    "𝐣": "j",
+    "𝐤": "k",
+    "𝐥": "l",
+    "𝐦": "m",
+    "𝐧": "n",
+    "𝐨": "o",
+    "𝐩": "p",
+    "𝐪": "q",
+    "𝐫": "r",
+    "𝐬": "s",
+    "𝐭": "t",
+    "𝐮": "u",
+    "𝐯": "v",
+    "𝐰": "w",
+    "𝐱": "x",
+    "𝐲": "y",
+    "𝐳": "z",
+  };
+  return str
+    .split("")
+    .map((c) => smallCapsMap[c] || c)
+    .join("")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+export async function resolveFallbackChatIdForSection(
+  section: string,
+  ruleTitle?: string,
+): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+    const { data: groups } = await supabaseAdmin.from("telegram_groups").select("*");
+    if (groups && groups.length > 0) {
+      const activeGroups = groups.filter((g: any) => g.is_active !== false && g.chat_id);
+      if (activeGroups.length > 0) {
+        const sec = (section || "").toLowerCase();
+        const match = activeGroups.find((g: any) => {
+          const title = normalizeSmallCaps(g.title || "");
+          if (
+            sec === "candidature" &&
+            (title.includes("candidat") ||
+              title.includes("direzione") ||
+              title.includes("staff") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "cassa" &&
+            (title.includes("cassa") ||
+              title.includes("direzione") ||
+              title.includes("master") ||
+              title.includes("econom"))
+          )
+            return true;
+          if (
+            sec === "sicurezza" &&
+            (title.includes("gorilla") ||
+              title.includes("sicurezza") ||
+              title.includes("direzione") ||
+              title.includes("guard") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "congedi" &&
+            (title.includes("direzione") ||
+              title.includes("conged") ||
+              title.includes("ferie") ||
+              title.includes("staff") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "stipendi" &&
+            (title.includes("direzione") ||
+              title.includes("stipend") ||
+              title.includes("cassa") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "cittadini" &&
+            (title.includes("direzione") ||
+              title.includes("cittadin") ||
+              title.includes("vip") ||
+              title.includes("client") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "eventi" &&
+            (title.includes("event") ||
+              title.includes("tornei") ||
+              title.includes("annunc") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "staff" &&
+            (title.includes("direzione") ||
+              title.includes("dipendenti") ||
+              title.includes("staff") ||
+              title.includes("master"))
+          )
+            return true;
+          return false;
+        });
+
+        if (match) return String(match.chat_id);
+
+        // Look for Direzione group
+        const direzioneGrp = activeGroups.find((g: any) =>
+          normalizeSmallCaps(g.title || "").includes("direzione"),
+        );
+        if (direzioneGrp) return String(direzioneGrp.chat_id);
+
+        // Fallback to Master or first active group
+        const masterGrp = activeGroups.find((g: any) =>
+          normalizeSmallCaps(g.title || "").includes("master"),
+        );
+        if (masterGrp) return String(masterGrp.chat_id);
+
+        return String(activeGroups[0].chat_id);
+      }
+    }
+  } catch (err) {
+    console.error("[Telegram Notifications] Error in resolveFallbackChatIdForSection:", err);
+  }
+  return process.env.TELEGRAM_CHAT_ID || "-1003625594442";
 }
 
 export async function getTelegramNotificationRules(): Promise<TelegramNotificationRule[]> {
@@ -3171,6 +3533,7 @@ export async function getTelegramNotificationRules(): Promise<TelegramNotificati
       ruleMap.set(r.id, {
         ...(existing || {}),
         ...r,
+        chat_id: r.chat_id || existing?.chat_id || "",
       });
     }
 
@@ -3601,10 +3964,14 @@ export async function dispatchTelegramNotification(
     const rule = rules.find((r) => r.event_type === eventType || r.id === eventType);
 
     if (!rule) {
+      console.warn(`[Telegram Notifications] No rule found for event '${eventType}'`);
       return { success: false, sentTo: [], error: `Nessuna regola configurata per '${eventType}'` };
     }
 
     if (!rule.enabled && !options?.customChatId) {
+      console.log(
+        `[Telegram Notifications] Rule '${rule.title}' (${eventType}) is disabled in settings`,
+      );
       return {
         success: false,
         sentTo: [],
@@ -3627,9 +3994,17 @@ export async function dispatchTelegramNotification(
     }
 
     // Determine target chat ID
-    const targetChatId = options?.customChatId || rule.custom_chat_id || rule.chat_id;
+    let targetChatId = options?.customChatId || rule.custom_chat_id || rule.chat_id;
+
+    // Intelligent fallback if no specific chat ID assigned to the rule
+    if (!targetChatId) {
+      targetChatId = (await resolveFallbackChatIdForSection(rule.section, rule.title)) || undefined;
+    }
 
     if (!targetChatId) {
+      console.warn(
+        `[Telegram Notifications] No Telegram chat ID resolved for rule '${rule.title}' (${eventType})`,
+      );
       return {
         success: false,
         sentTo: [],
@@ -3640,13 +4015,18 @@ export async function dispatchTelegramNotification(
     const { html, defaultSilent } = formatTelegramNotificationPayload(eventType, payload);
     const silent = rule.silent !== undefined ? rule.silent : defaultSilent;
 
+    console.log(
+      `[Telegram Notifications] Dispatching '${eventType}' -> Target Chat ID: ${targetChatId}`,
+    );
     const res = await sendTelegramMessage(targetChatId, html, undefined, {
       disableNotification: silent,
     });
 
     if (res && res.ok) {
+      console.log(`[Telegram Notifications] Successfully sent '${eventType}' to ${targetChatId}`);
       return { success: true, sentTo: [String(targetChatId)] };
     } else {
+      console.error(`[Telegram Notifications] Send failed for '${eventType}':`, res);
       return {
         success: false,
         sentTo: [],
@@ -3654,7 +4034,7 @@ export async function dispatchTelegramNotification(
       };
     }
   } catch (err: any) {
-    console.error("Error dispatching telegram notification:", err);
+    console.error("[Telegram Notifications] Error in dispatchTelegramNotification:", err);
     return { success: false, sentTo: [], error: err.message || String(err) };
   }
 }
@@ -3673,7 +4053,10 @@ export async function testTelegramNotificationRule(
       throw new Error(`Regola '${ruleIdOrEventType}' non trovata.`);
     }
 
-    const chatIdToSend = targetChatId || rule.custom_chat_id || rule.chat_id;
+    let chatIdToSend = targetChatId || rule.custom_chat_id || rule.chat_id;
+    if (!chatIdToSend) {
+      chatIdToSend = (await resolveFallbackChatIdForSection(rule.section, rule.title)) || undefined;
+    }
     if (!chatIdToSend) {
       throw new Error("Seleziona prima un gruppo Telegram per testare l'invio della notifica.");
     }
@@ -3859,7 +4242,7 @@ export async function dispatchDbEventNotifications(
   operation: "insert" | "update" | "upsert" | "delete",
   table: string,
   rows: any[] | any,
-  _db: any,
+  db: any,
 ) {
   try {
     const list = Array.isArray(rows) ? rows : [rows];
@@ -3869,20 +4252,63 @@ export async function dispatchDbEventNotifications(
       if (!item) continue;
 
       if (table === "applications" && operation === "insert") {
+        // Resolve form title from database if possible
+        const forms = db?.application_forms || db?.candidature_forms || [];
+        const formObj = forms.find((f: any) => f.id === item.form_id);
+        const formTitle = formObj?.title || item.form_title || "Bando Staff";
+
+        let answersSummary = "";
+        if (item.answers && typeof item.answers === "object") {
+          const ansKeys = Object.keys(item.answers);
+          const parts: string[] = [];
+          for (const k of ansKeys.slice(0, 4)) {
+            const val = item.answers[k];
+            if (val !== undefined && val !== null && String(val).trim()) {
+              parts.push(String(val).slice(0, 40));
+            }
+          }
+          answersSummary = parts.join(" • ");
+        }
+
         await dispatchTelegramNotification("candidature_new", {
-          applicant_name: item.applicant_name || item.name || "Nuovo Candidato",
-          form_title: item.form_title || "Bando Staff",
-          telegram_handle: item.telegram_handle,
+          applicant_name:
+            item.applicant_name || item.applicant_nickname || item.name || "Nuovo Candidato",
+          form_title: formTitle,
+          telegram_handle: item.applicant_telegram || item.telegram_handle,
           citizen_code: item.citizen_id || item.citizen_code,
-          answers_preview: item.answers ? JSON.stringify(item.answers).slice(0, 150) : undefined,
+          answers_preview: answersSummary || undefined,
         });
-      } else if (table === "applications" && operation === "update" && item.status) {
-        await dispatchTelegramNotification("candidature_evaluated", {
-          applicant_name: item.applicant_name || item.name || "Candidato",
-          form_title: item.form_title || "Bando Staff",
-          status: item.status,
-          reviewer_name: item.reviewer_name || "Esaminatore",
-          reviewer_notes: item.reviewer_notes || item.notes,
+      } else if (table === "applications" && operation === "update") {
+        const forms = db?.application_forms || db?.candidature_forms || [];
+        const formObj = forms.find((f: any) => f.id === item.form_id);
+        const formTitle = formObj?.title || item.form_title || "Bando Staff";
+
+        if (item.status && item.status !== "pending" && item.status !== "draft") {
+          await dispatchTelegramNotification("candidature_evaluated", {
+            applicant_name:
+              item.applicant_name || item.applicant_nickname || item.name || "Candidato",
+            form_title: formTitle,
+            status: item.status,
+            reviewer_name: item.reviewer_name || "Direzione / Staff",
+            reviewer_notes: item.reviewer_notes || item.notes,
+          });
+        }
+        if (item.allow_retry === true) {
+          await dispatchTelegramNotification("candidature_second_chance", {
+            applicant_name: item.applicant_name || "Candidato",
+            form_title: formTitle,
+            authorized_by: item.retry_granted_by || "Staff Esaminatore",
+          });
+        }
+      } else if (
+        (table === "application_forms" || table === "candidature_forms") &&
+        (operation === "insert" || operation === "update") &&
+        item.status === "open"
+      ) {
+        await dispatchTelegramNotification("candidature_form_published", {
+          title: item.title || "Nuovo Bando Staff",
+          target_role: item.role_target || "Collaboratore",
+          description: item.description,
         });
       } else if (table === "citizens" && operation === "insert") {
         await dispatchTelegramNotification("citizen_created", {
@@ -3892,32 +4318,100 @@ export async function dispatchDbEventNotifications(
           phone: item.phone,
           notes: item.notes,
         });
-      } else if (table === "sanctions" && operation === "insert") {
-        await dispatchTelegramNotification("citizen_sanctioned", {
-          citizen_name: item.citizen_name || item.user_name || "Cittadino",
-          sanction_type: item.sanction_type || item.type,
-          reason: item.reason,
-          issued_by: item.issued_by || item.created_by,
+      } else if (table === "citizens" && operation === "update") {
+        if (item.membership && item.membership !== "standard" && item.membership_since) {
+          await dispatchTelegramNotification("membership_activated", {
+            citizen_name: item.full_name || item.nickname || "Cittadino VIP",
+            plan_name: item.membership_plan_name || item.membership || "Tessera VIP",
+            expires_at: item.membership_expires_at,
+          });
+        }
+      } else if (table === "membership_sales" && operation === "insert") {
+        await dispatchTelegramNotification("membership_activated", {
+          citizen_name: item.citizen_name || "Cittadino VIP",
+          plan_name: item.plan_name || "Tessera VIP",
+          price: item.amount_eur
+            ? `€ ${item.amount_eur}`
+            : item.amount_dobloni
+              ? `⛃ ${item.amount_dobloni}`
+              : "Gratuito",
           expires_at: item.expires_at,
         });
+      } else if (
+        table === "memberships" &&
+        (operation === "insert" || operation === "update") &&
+        item.is_active !== false
+      ) {
+        await dispatchTelegramNotification("membership_activated", {
+          citizen_name: item.citizen_name || item.full_name || "Cittadino VIP",
+          plan_name: item.tier_name || item.tier || "Tessera VIP",
+          expires_at: item.expires_at,
+        });
+      } else if (table === "sanctions" && operation === "insert") {
+        // Look up user name if missing
+        let targetName = item.citizen_name || item.user_name || item.employee_name;
+        let isStaff = false;
+        if (!targetName && item.user_id && db?.profiles) {
+          const prof = (db.profiles || []).find((p: any) => p.id === item.user_id);
+          if (prof) {
+            targetName = prof.display_name || prof.username;
+            isStaff = true;
+          }
+        }
+        if (!targetName && item.user_id && db?.citizens) {
+          const cit = (db.citizens || []).find((c: any) => c.id === item.user_id);
+          if (cit) {
+            targetName = cit.full_name || cit.nickname;
+          }
+        }
+        targetName = targetName || "Utente";
+
+        const sanctionType = item.sanction_type || item.type || "Provvedimento";
+        if (isStaff) {
+          await dispatchTelegramNotification("staff_sanction", {
+            employee_name: targetName,
+            sanction_type: sanctionType,
+            reason: item.reason || "Violazione del regolamento staff",
+            issued_by: item.issued_by || item.created_by || item.created_by_name || "Direzione",
+          });
+        } else {
+          await dispatchTelegramNotification("citizen_sanctioned", {
+            citizen_name: targetName,
+            sanction_type: sanctionType,
+            reason: item.reason || "Violazione del regolamento interno",
+            issued_by:
+              item.issued_by || item.created_by || item.created_by_name || "Capo Sicurezza",
+            expires_at: item.expires_at,
+          });
+        }
       } else if (table === "conversions" && operation === "insert") {
         await dispatchTelegramNotification("conversion_completed", {
-          direction: item.direction || "eur_to_dobloni",
-          eur_amount: item.eur_amount || item.eur,
-          dobloni_amount: item.dobloni_amount || item.dobloni,
-          citizen_name: item.citizen_name,
-          operator_name: item.operator_name || item.created_by,
+          direction: item.direction || (item.eur_amount ? "eur_to_dobloni" : "dobloni_to_eur"),
+          eur_amount: item.eur_amount || item.eur || item.amount || 0,
+          dobloni_amount: item.dobloni_amount || item.dobloni || 0,
+          citizen_name: item.citizen_name || "Cittadino",
+          operator_name: item.operator_name || item.created_by || "Cassiere",
         });
       } else if (table === "leave_requests" && operation === "insert") {
+        let empName = item.employee_name || item.user_name;
+        if (!empName && item.user_id && db?.profiles) {
+          const p = (db.profiles || []).find((prof: any) => prof.id === item.user_id);
+          if (p) empName = p.display_name || p.username;
+        }
         await dispatchTelegramNotification("leave_request_new", {
-          employee_name: item.employee_name || item.user_name || "Dipendente",
+          employee_name: empName || "Dipendente",
           start_date: item.start_date,
           end_date: item.end_date,
           reason: item.reason,
         });
       } else if (table === "leave_requests" && operation === "update" && item.status) {
+        let empName = item.employee_name || item.user_name;
+        if (!empName && item.user_id && db?.profiles) {
+          const p = (db.profiles || []).find((prof: any) => prof.id === item.user_id);
+          if (p) empName = p.display_name || p.username;
+        }
         await dispatchTelegramNotification("leave_request_evaluated", {
-          employee_name: item.employee_name || item.user_name || "Dipendente",
+          employee_name: empName || "Dipendente",
           start_date: item.start_date,
           end_date: item.end_date,
           status: item.status,
@@ -3928,30 +4422,74 @@ export async function dispatchDbEventNotifications(
         await dispatchTelegramNotification("cassa_night_opened", {
           night_label: item.label || item.name || "Nuova Serata",
           responsible_name: item.created_by || "Responsabile Cassa",
-          starting_float: item.initial_cash,
+          starting_float: item.initial_cash || item.starting_float || 0,
         });
       } else if (
         table === "nights" &&
         operation === "update" &&
-        (item.closed || item.status === "closed")
+        (item.closed || item.status === "closed" || item.is_closed)
       ) {
         await dispatchTelegramNotification("cassa_night_closed", {
           night_label: item.label || item.name || "Serata",
-          total_revenue: item.total_revenue || item.total_eur,
-          chips_remaining: item.chips_remaining,
+          total_revenue: item.total_revenue || item.total_eur || item.profit || 0,
+          chips_remaining: item.chips_remaining || 0,
           closed_by: item.closed_by || "Responsabile Cassa",
         });
-      } else if (table === "events" && operation === "insert") {
+      } else if ((table === "events" || table === "eventi") && operation === "insert") {
         await dispatchTelegramNotification("event_created", {
-          title: item.title || item.name,
-          scheduled_date: item.event_date || item.date,
+          title: item.title || item.name || "Nuovo Evento Speciale",
+          scheduled_date: item.event_date || item.date || item.start_time,
           prize_pool: item.prize_pool,
           ticket_price: item.ticket_price || item.entry_fee,
           description: item.description,
         });
+      } else if (
+        (table === "event_registrations" ||
+          table === "eventi_tickets" ||
+          table === "event_tickets" ||
+          table === "eventi_scommesse") &&
+        operation === "insert"
+      ) {
+        await dispatchTelegramNotification("event_ticket_bought", {
+          event_title: item.event_title || item.title || "Evento Speciale",
+          participant_name:
+            item.participant_name || item.user_name || item.player_name || "Partecipante",
+          ticket_price: item.ticket_price || item.price || item.amount || 0,
+        });
+      } else if (table === "eventi_finalisti" && operation === "insert") {
+        await dispatchTelegramNotification("event_winner_announced", {
+          event_title: item.event_title || "Torneo Casinò Revenge",
+          first_place: item.first_place || item.winner || "1° Classificato",
+          second_place: item.second_place || "2° Classificato",
+          third_place: item.third_place || "3° Classificato",
+          prize_awarded: item.prize_awarded || item.prize_pool || "Montepremi",
+        });
+      } else if ((table === "salaries" || table === "salary_payments") && operation === "insert") {
+        await dispatchTelegramNotification("salary_paid", {
+          employee_name: item.employee_name || item.user_name || "Dipendente",
+          amount: item.amount || item.net_amount || 0,
+          period: item.period || item.month || "Mese Corrente",
+          paid_by: item.paid_by || "Amministrazione",
+        });
+      } else if (
+        (table === "user_custom_roles" || table === "user_roles") &&
+        (operation === "insert" || operation === "update")
+      ) {
+        let staffName = item.user_name || item.username;
+        if (!staffName && item.user_id && db?.profiles) {
+          const p = (db.profiles || []).find((prof: any) => prof.id === item.user_id);
+          if (p) staffName = p.display_name || p.username;
+        }
+        if (staffName) {
+          await dispatchTelegramNotification("staff_role_promoted", {
+            employee_name: staffName,
+            new_role: item.role_name || item.role || "Nuovo Ruolo Staff",
+            promoted_by: item.promoted_by || "Direzione Generale",
+          });
+        }
       }
     }
   } catch (e) {
-    // Non-blocking notification hook
+    console.error("[Telegram Notifications] Error in dispatchDbEventNotifications:", e);
   }
 }

@@ -1092,7 +1092,7 @@ function logOperation(
 
   db.audit_logs = db.audit_logs || [];
 
-  const session = getActiveSessionSync(db);
+  const session = getActiveSessionSync(db, query?.clientUserId);
   const userId = session?.user?.id || "system";
   const username = session?.user?.user_metadata?.username || "sistema";
   const userDisplayName = session?.user?.user_metadata?.display_name || "Sistema";
@@ -1809,8 +1809,16 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
         };
       }
 
-      const session = await getActiveSession(db);
-      const creatorId = session?.user?.id || "mock-user-id-1234";
+      const operatorId =
+        args._operator_id ||
+        args._user_id ||
+        query.clientUserId ||
+        (await getActiveSession(db, query.clientUserId))?.user?.id ||
+        null;
+      const creatorId =
+        operatorId && (db.profiles || []).some((p: any) => p.id === operatorId)
+          ? operatorId
+          : (await getActiveSession(db))?.user?.id || db.profiles?.[0]?.id || "mock-user-id-1234";
 
       const newConversion = {
         id: "conv-" + Math.random().toString(36).substring(2, 15),
@@ -1827,6 +1835,27 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       db.conversions = [...conversions, newConversion];
       logOperation(db, "rpc", undefined, query, { data: newConversion });
       await saveDb(db);
+
+      const citizenObj = (db.citizens || []).find((c: any) => c.id === citizenId);
+      const operatorObj = (db.profiles || []).find((p: any) => p.id === creatorId);
+      import("../../lib/telegram.server")
+        .then(({ dispatchDbEventNotifications }) => {
+          dispatchDbEventNotifications(
+            "insert",
+            "conversions",
+            [
+              {
+                ...newConversion,
+                citizen_name: citizenObj?.full_name || "Cittadino",
+                operator_name: operatorObj?.display_name || operatorObj?.username || "Cassiere",
+              },
+            ],
+            db,
+          ).catch((err) => {
+            console.error("[Telegram] Error dispatching conversion notification:", err);
+          });
+        })
+        .catch(() => {});
 
       return { data: newConversion, error: null };
     }
@@ -2048,9 +2077,13 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (typeof window === "undefined") {
       import("../../lib/telegram.server")
         .then(({ dispatchDbEventNotifications }) => {
-          dispatchDbEventNotifications(operation, table, insertedRows, db).catch(() => {});
+          dispatchDbEventNotifications(operation, table, insertedRows, db).catch((err) => {
+            console.error("[Telegram] Error in dispatchDbEventNotifications on insert:", err);
+          });
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("[Telegram] Could not import telegram.server on insert:", err);
+        });
     }
 
     return { data: Array.isArray(insertData) ? insertedRows : insertedRows[0], error: null };
@@ -2155,9 +2188,13 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (typeof window === "undefined") {
       import("../../lib/telegram.server")
         .then(({ dispatchDbEventNotifications }) => {
-          dispatchDbEventNotifications(operation, table, results, db).catch(() => {});
+          dispatchDbEventNotifications(operation, table, results, db).catch((err) => {
+            console.error("[Telegram] Error in dispatchDbEventNotifications on upsert:", err);
+          });
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("[Telegram] Could not import telegram.server on upsert:", err);
+        });
     }
 
     return { data: Array.isArray(insertData) ? results : results[0], error: null };
@@ -2226,9 +2263,13 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (typeof window === "undefined") {
       import("../../lib/telegram.server")
         .then(({ dispatchDbEventNotifications }) => {
-          dispatchDbEventNotifications(operation, table, updatedRows, db).catch(() => {});
+          dispatchDbEventNotifications(operation, table, updatedRows, db).catch((err) => {
+            console.error("[Telegram] Error in dispatchDbEventNotifications on update:", err);
+          });
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("[Telegram] Could not import telegram.server on update:", err);
+        });
     }
 
     return { data: updatedRows, error: null };
@@ -2535,7 +2576,7 @@ export async function handleMockAuth(query: any): Promise<any> {
   return { data: null, error: { message: `Auth action ${action} not implemented` } };
 }
 
-function getActiveSessionSync(db: any) {
+function getActiveSessionSync(db: any, queryClientUserId?: string) {
   try {
     let cookieHeader = "";
     if (typeof window !== "undefined") {
@@ -2556,7 +2597,7 @@ function getActiveSessionSync(db: any) {
         return [parts[0], parts.slice(1).join("=")];
       }),
     );
-    let userId = cookies["casino_userId"];
+    let userId = queryClientUserId || cookies["casino_userId"];
     if (!userId && typeof window !== "undefined") {
       const storedStr = localStorage.getItem("casinorevenge_session");
       if (storedStr) {
@@ -2619,12 +2660,12 @@ function getActiveSessionSync(db: any) {
   return null;
 }
 
-async function getActiveSession(db: any) {
+async function getActiveSession(db: any, queryClientUserId?: string) {
   if (typeof window !== "undefined") {
-    return getActiveSessionSync(db);
+    return getActiveSessionSync(db, queryClientUserId);
   }
   await getGetRequest();
-  return getActiveSessionSync(db);
+  return getActiveSessionSync(db, queryClientUserId);
 }
 
 function checkAndTerminateActiveSessionsForUser(db: any, userId: string) {

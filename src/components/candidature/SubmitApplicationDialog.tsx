@@ -42,6 +42,11 @@ import {
   RotateCcw,
   Check,
   User,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  LayoutList,
+  Layers,
 } from "lucide-react";
 
 interface SubmitApplicationDialogProps {
@@ -134,6 +139,8 @@ export function SubmitApplicationDialog({
   const [startedAtIso, setStartedAtIso] = useState<string | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(totalSeconds);
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
+  const [displayMode, setDisplayMode] = useState<"all" | "single_question">("all");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const answersRef = useRef(answers);
@@ -187,6 +194,8 @@ export function SubmitApplicationDialog({
       setAnswers(initial);
       setErrors({});
       setIsAutoSubmitting(false);
+      setDisplayMode(form.display_mode === "single_question" ? "single_question" : "all");
+      setCurrentQuestionIndex(0);
 
       if (!isTimedForm) {
         setHasStarted(true);
@@ -429,28 +438,51 @@ export function SubmitApplicationDialog({
     };
   }, [open, hasStarted, isTimedForm, startedAtIso, totalSeconds, handleTimeoutSubmit]);
 
+  const isFieldFilled = (field: ApplicationFormField) => {
+    const val = answers[field.id];
+    if (field.type === "checkbox") {
+      return Array.isArray(val) && val.length > 0;
+    }
+    return val !== undefined && val !== null && String(val).trim() !== "";
+  };
+
+  const answeredCount = useMemo(() => {
+    if (!form?.fields) return 0;
+    return form.fields.filter(isFieldFilled).length;
+  }, [form, answers]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form) return;
 
     const newErrors: Record<string, string> = {};
+    let firstErrorIdx = -1;
 
-    form.fields.forEach((field) => {
+    form.fields.forEach((field, idx) => {
       if (field.required) {
         const val = answers[field.id];
         if (field.type === "checkbox") {
           if (!Array.isArray(val) || val.length === 0) {
             newErrors[field.id] = "Seleziona almeno un'opzione obbligatoria";
+            if (firstErrorIdx === -1) firstErrorIdx = idx;
           }
         } else if (val === undefined || val === null || String(val).trim() === "") {
           newErrors[field.id] = "Questo campo è obbligatorio";
+          if (firstErrorIdx === -1) firstErrorIdx = idx;
         }
       }
     });
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error("Compila tutti i campi obbligatori contrassegnati da *");
+      if (firstErrorIdx !== -1 && displayMode === "single_question") {
+        setCurrentQuestionIndex(firstErrorIdx);
+        toast.error(
+          `Compila la domanda obbligatoria #${firstErrorIdx + 1}: ${form.fields[firstErrorIdx].label}`,
+        );
+      } else {
+        toast.error("Compila tutti i campi obbligatori contrassegnati da *");
+      }
       return;
     }
 
@@ -838,13 +870,11 @@ export function SubmitApplicationDialog({
           </div>
         ) : (
           <>
-            {/* ========================================================================= */}
-            {/* ACTIVE QUESTIONS FORM & STICKY TIMER BAR */}
-            {/* ========================================================================= */}
-            <div className="bg-[#0e1017] border-b border-slate-800 px-6 py-3">
+            {/* Top Toolbar: User Info & Display Mode Toggle */}
+            <div className="bg-[#0e1017] border-b border-slate-800 px-6 py-3 space-y-3">
               {/* Sticky Timer Display if timed */}
               {isTimedForm && (
-                <div className="mb-3 p-3 rounded-xl bg-[#141724] border border-amber-500/30 flex flex-col gap-2">
+                <div className="p-3 rounded-xl bg-[#141724] border border-amber-500/30 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Timer
@@ -888,7 +918,7 @@ export function SubmitApplicationDialog({
                 </div>
               )}
 
-              {/* User Identity Info with Verified Telegram */}
+              {/* User Identity Info & Display Mode Selector */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   {userNick ? (
@@ -921,42 +951,262 @@ export function SubmitApplicationDialog({
                   </div>
                 </div>
 
+                {/* Enforced Mode Indicator & Progress Badge (Non-switchable) */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    {form.fields.length} domande previste
-                  </span>
+                  <Badge
+                    variant="outline"
+                    className="bg-[#141724] border-slate-800 text-slate-300 text-xs font-medium py-1 px-3 gap-2 rounded-xl shadow-inner"
+                  >
+                    {displayMode === "single_question" ? (
+                      <>
+                        <Layers className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Modalità Step-by-Step</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-mono font-bold border border-amber-500/20">
+                          {answeredCount}/{form.fields.length} risposte
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <LayoutList className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Modulo Completo</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono font-bold">
+                          {answeredCount}/{form.fields.length} risposte
+                        </span>
+                      </>
+                    )}
+                  </Badge>
                 </div>
               </div>
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div className="space-y-4">
-                <div className="border-b border-slate-800/80 pb-2">
-                  <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Domande del Questionario di Selezione
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Rispondi con sincerità e completezza. I campi contrassegnati con (*) sono
-                    obbligatori.
-                  </p>
+            {/* Form Body */}
+            {displayMode === "single_question" ? (
+              /* ========================================================================= */
+              /* SINGLE QUESTION STEP WIZARD MODE                                          */
+              /* ========================================================================= */
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
+                <div className="space-y-6">
+                  {/* Step Progress & Navigation Pills */}
+                  <div className="space-y-3 bg-[#0e1017] p-4 rounded-xl border border-slate-800">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-amber-400">
+                          Domanda {currentQuestionIndex + 1} di {form.fields.length}
+                        </span>
+                        {form.fields[currentQuestionIndex]?.required && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-amber-500/40 text-amber-300 bg-amber-500/10"
+                          >
+                            Obbligatoria *
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-slate-400 font-mono text-[11px]">
+                        Completate: <strong className="text-emerald-400">{answeredCount}</strong> /{" "}
+                        {form.fields.length}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-300"
+                        style={{
+                          width: `${Math.round(((currentQuestionIndex + 1) / form.fields.length) * 100)}%`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Quick Step Jump Pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      {form.fields.map((f, idx) => {
+                        const isFilled = isFieldFilled(f);
+                        const isCurrent = idx === currentQuestionIndex;
+                        const hasErr = Boolean(errors[f.id]);
+
+                        // Check if this step is accessible (all prior required fields 0..idx-1 must be filled)
+                        let isLocked = false;
+                        if (idx > currentQuestionIndex) {
+                          for (let prevIdx = 0; prevIdx < idx; prevIdx++) {
+                            const prevField = form.fields[prevIdx];
+                            if (prevField?.required && !isFieldFilled(prevField)) {
+                              isLocked = true;
+                              break;
+                            }
+                          }
+                        }
+
+                        const handlePillClick = () => {
+                          if (idx === currentQuestionIndex) return;
+
+                          if (idx < currentQuestionIndex) {
+                            // Always allow going back
+                            setCurrentQuestionIndex(idx);
+                            return;
+                          }
+
+                          // Check if any previous required field is missing
+                          for (let prevIdx = 0; prevIdx < idx; prevIdx++) {
+                            const prevField = form.fields[prevIdx];
+                            if (prevField?.required && !isFieldFilled(prevField)) {
+                              setErrors((prev) => ({
+                                ...prev,
+                                [prevField.id]: "Compila questo campo obbligatorio per procedere.",
+                              }));
+                              setCurrentQuestionIndex(prevIdx);
+                              toast.error(
+                                `Devi prima rispondere alla domanda #${prevIdx + 1} (${prevField.label}) per poter avanzare.`,
+                              );
+                              return;
+                            }
+                          }
+
+                          setCurrentQuestionIndex(idx);
+                        };
+
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={handlePillClick}
+                            disabled={isLocked}
+                            className={`h-7 min-w-[28px] px-2 rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1 transition-all border ${
+                              isCurrent
+                                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-2 ring-amber-500/30 cursor-default"
+                                : hasErr
+                                  ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                                  : isLocked
+                                    ? "bg-[#0b0c12] text-slate-600 border-slate-800/50 cursor-not-allowed opacity-50"
+                                    : isFilled
+                                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25"
+                                      : "bg-[#141724] text-slate-400 border-slate-800 hover:text-white"
+                            }`}
+                            title={
+                              isLocked
+                                ? `Bloccata: rispondi prima alle domande precedenti`
+                                : `Domanda ${idx + 1}: ${f.label}`
+                            }
+                          >
+                            <span>{idx + 1}</span>
+                            {isFilled && !isCurrent && (
+                              <Check className="h-3 w-3 text-emerald-400" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Active Question Render */}
+                  <div className="transition-all animate-in fade-in-50 duration-200">
+                    {renderField(form.fields[currentQuestionIndex])}
+                  </div>
                 </div>
 
-                {form.fields.map((field) => renderField(field))}
-              </div>
+                {/* Step Controls Bar */}
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+                    disabled={currentQuestionIndex === 0}
+                    className="border-slate-800 text-slate-300 hover:text-white bg-[#0e1017] rounded-xl text-xs gap-1.5"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Precedente
+                  </Button>
 
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs text-slate-300 space-y-1">
-                <p className="font-bold text-amber-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  Verifica prima dell'invio
-                </p>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Una volta inviata la candidatura, potrai consultare lo stato e il riepilogo delle
-                  tue risposte nella scheda "Le Mie Candidature".
-                </p>
+                  <div className="flex items-center gap-2">
+                    {currentQuestionIndex < form.fields.length - 1 ? (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const currentField = form.fields[currentQuestionIndex];
+                          if (currentField?.required && !isFieldFilled(currentField)) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              [currentField.id]:
+                                "Devi rispondere a questa domanda obbligatoria per poter avanzare.",
+                            }));
+                            toast.error(
+                              `Devi completare la domanda #${currentQuestionIndex + 1} prima di poter passare alla successiva.`,
+                            );
+                            return;
+                          }
+
+                          // Clear error on this field if filled
+                          if (currentField && errors[currentField.id]) {
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next[currentField.id];
+                              return next;
+                            });
+                          }
+
+                          setCurrentQuestionIndex((prev) =>
+                            Math.min(form.fields.length - 1, prev + 1),
+                          );
+                        }}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 px-5 gap-1.5"
+                      >
+                        Successiva
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={submitMutation.isPending || isAutoSubmitting}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-500/20 px-6 gap-2"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        {submitMutation.isPending || isAutoSubmitting
+                          ? "Invio in corso..."
+                          : "Invia Candidatura"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </form>
+            ) : (
+              /* ========================================================================= */
+              /* ALL QUESTIONS VERTICAL LIST MODE                                          */
+              /* ========================================================================= */
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+                <div className="space-y-4">
+                  <div className="border-b border-slate-800/80 pb-2 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Domande del Questionario di Selezione
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Rispondi con sincerità e completezza. I campi contrassegnati con (*) sono
+                        obbligatori.
+                      </p>
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      Completate: <strong className="text-emerald-400">{answeredCount}</strong> /{" "}
+                      {form.fields.length}
+                    </div>
+                  </div>
+
+                  {form.fields.map((field) => renderField(field))}
+                </div>
+
+                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs text-slate-300 space-y-1">
+                  <p className="font-bold text-amber-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    Verifica prima dell'invio
+                  </p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Una volta inviata la candidatura, potrai consultare lo stato e il riepilogo
+                    delle tue risposte nella scheda "Le Mie Candidature".
+                  </p>
+                </div>
+              </form>
+            )}
 
             {/* Footer with Action Buttons */}
             <DialogFooter className="p-4 border-t border-slate-800 bg-[#0e1017] flex items-center justify-between sm:justify-between gap-3">
@@ -969,17 +1219,19 @@ export function SubmitApplicationDialog({
                 Annulla
               </Button>
 
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitMutation.isPending || isAutoSubmitting}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 px-6 gap-2"
-              >
-                <Send className="h-3.5 w-3.5" />
-                {submitMutation.isPending || isAutoSubmitting
-                  ? "Invio in corso..."
-                  : "Invia Candidatura"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitMutation.isPending || isAutoSubmitting}
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 px-6 gap-2"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {submitMutation.isPending || isAutoSubmitting
+                    ? "Invio in corso..."
+                    : "Invia Candidatura"}
+                </Button>
+              </div>
             </DialogFooter>
           </>
         )}

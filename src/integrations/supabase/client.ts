@@ -3,6 +3,22 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { mockDbProxy, mockAuthProxy } from "./mock-proxy";
 
+function getClientUserId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cookieMatch = document.cookie?.match(/casino_userId=([^;]+)/);
+    if (cookieMatch && cookieMatch[1]) return decodeURIComponent(cookieMatch[1]);
+    const storedStr = localStorage.getItem("casinorevenge_session");
+    if (storedStr) {
+      const parsed = JSON.parse(storedStr);
+      return parsed.session?.user?.id || parsed.user?.id || null;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return null;
+}
+
 class MockPostgrestBuilder {
   private table: string;
   private operation: "select" | "insert" | "update" | "delete" = "select";
@@ -102,6 +118,7 @@ class MockPostgrestBuilder {
       updateData: this.updateData,
       isMaybeSingle: this.isMaybeSingle,
       isSingle: this.isSingle,
+      clientUserId: getClientUserId(),
     };
 
     try {
@@ -281,7 +298,7 @@ class MockSupabaseClient {
   }
 
   async rpc(name: string, args: any) {
-    const payload = { operation: "rpc", name, args };
+    const payload = { operation: "rpc", name, args, clientUserId: getClientUserId() };
     try {
       const res = await mockDbProxy({ data: payload });
       return res || { data: null, error: null };

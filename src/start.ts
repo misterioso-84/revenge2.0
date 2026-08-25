@@ -18,7 +18,20 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
-export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware],
-}));
+export const startInstance = createStart(() => {
+  // Ensure Telegram bot background polling is active on server runtime
+  if (typeof window === "undefined") {
+    import("./lib/telegram.server")
+      .then((mod) => {
+        if (typeof mod.startBackgroundPolling === "function") {
+          mod.startBackgroundPolling();
+        }
+      })
+      .catch(() => {});
+  }
+
+  return {
+    functionMiddleware: [attachSupabaseAuth],
+    requestMiddleware: [errorMiddleware],
+  };
+});

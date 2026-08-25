@@ -12,4 +12,26 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  plugins: [
+    {
+      name: "telegram-bot-autostart",
+      configureServer(server) {
+        // Eagerly boot Telegram bot polling when Vite dev server starts
+        server
+          .ssrLoadModule("/src/lib/telegram.server.ts")
+          .then((mod) => {
+            if (typeof mod.startBackgroundPolling === "function") {
+              mod.startBackgroundPolling(true);
+              console.log("[Telegram Bot] Active polling initialized on dev server startup.");
+            }
+          })
+          .catch((err) => {
+            console.error(
+              "[Telegram Bot] Failed to auto-start polling on dev server startup:",
+              err,
+            );
+          });
+      },
+    },
+  ],
 });

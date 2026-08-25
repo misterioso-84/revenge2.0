@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, RotateCcw, Save, Coins, Euro, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ArrowRight,
+  RotateCcw,
+  Save,
+  Coins,
+  Euro,
+  Plus,
+  User,
+  Users,
+  Pencil,
+  Search,
+  Check,
+  Filter,
+  RefreshCw,
+  UserCheck,
+} from "lucide-react";
 import { formatDateTime, formatDate, formatMoney, formatDobloni } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -160,7 +184,7 @@ function ConversionsPage() {
 
 function ConvertPanel() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
 
   const { data: citizens = [] } = useQuery({
     queryKey: ["citizens-mini"],
@@ -186,6 +210,11 @@ function ConvertPanel() {
       (await (supabase as any).from("conversion_settings").select("*").maybeSingle())
         .data as Settings,
   });
+  const { data: staffProfiles = [] } = useQuery({
+    queryKey: ["profiles-all"],
+    queryFn: async () =>
+      (await supabase.from("profiles").select("id, username, display_name")).data ?? [],
+  });
 
   const [citizenId, setCitizenId] = useState<string>("");
   const [citizenSearch, setCitizenSearch] = useState<string>("");
@@ -193,6 +222,13 @@ function ConvertPanel() {
   const [nightId, setNightId] = useState<string>("");
   const [direction, setDirection] = useState<Direction>("cash_to_dobloni");
   const [input, setInput] = useState<string>("");
+  const [operatorId, setOperatorId] = useState<string>("");
+
+  useEffect(() => {
+    if (!operatorId && profile?.id) {
+      setOperatorId(profile.id);
+    }
+  }, [profile?.id, operatorId]);
 
   const filteredCitizens = useMemo(() => {
     if (!citizenSearch) return citizens;
@@ -362,11 +398,13 @@ function ConvertPanel() {
       if (isInvalidMultipleOf40)
         throw new Error("L'importo dei dobloni deve essere un multiplo di 40");
       if (exceeds) throw new Error("Limite giornaliero superato — un amministratore può azzerarlo");
+      const activeOperator = operatorId || profile?.id || user?.id;
       const { data, error } = await (supabase as any).rpc("perform_conversion", {
         _citizen: citizenId,
         _night: currentNightId,
         _direction: direction,
         _input: inputNum,
+        _operator_id: activeOperator,
       });
       if (error) throw error;
       return data;
@@ -376,6 +414,7 @@ function ConvertPanel() {
       setInput("");
       qc.invalidateQueries({ queryKey: ["conv-usage"] });
       qc.invalidateQueries({ queryKey: ["conversions-history"] });
+      qc.invalidateQueries({ queryKey: ["all-conversions-stipendi"] });
       refetchUsage();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -398,22 +437,22 @@ function ConvertPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Formatta i limiti coerentemente con la valuta inserita nell'input
-  const formatByDirection = (val: number) => {
-    return direction === "cash_to_dobloni" ? formatMoney(val) : formatDobloni(val);
-  };
+  const activeOpObj = staffProfiles.find((p: any) => p.id === (operatorId || profile?.id));
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Esegui conversione</CardTitle>
+          <CardDescription>Registra una transazione di acquisto o riscatto dobloni</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             <div className="relative">
-              <Label>Cittadino</Label>
-              <div className="flex gap-1 relative">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Cittadino
+              </Label>
+              <div className="flex gap-1 relative mt-1">
                 <Input
                   placeholder="Cerca cittadino…"
                   value={citizenSearch}
@@ -450,23 +489,33 @@ function ConvertPanel() {
                     ) : (
                       <>
                         {filteredCitizens.map((c) => (
-                          <div
+                          <button
                             key={c.id}
-                            className={`p-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground ${
-                              c.id === citizenId ? "bg-accent/50" : ""
-                            }`}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-center justify-between border-b last:border-0 border-border/40"
                             onClick={() => handleSelectCitizen(c)}
                           >
-                            {c.full_name}
-                          </div>
+                            <span className="font-medium">{c.full_name}</span>
+                            {c.id === citizenId && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                Selezionato
+                              </Badge>
+                            )}
+                          </button>
                         ))}
                         {citizenSearch.trim() && !exactExists && (
-                          <div
-                            className="p-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-primary border-t flex items-center gap-2 font-medium"
-                            onClick={() => createCitizen.mutate(citizenSearch)}
-                          >
-                            <Plus className="h-4 w-4" />
-                            Crea cittadino: <strong>{citizenSearch.trim()}</strong>
+                          <div className="p-2 border-t border-border/60 bg-muted/20">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="w-full justify-start text-xs h-8 text-primary"
+                              onClick={() => createCitizen.mutate(citizenSearch)}
+                              disabled={createCitizen.isPending}
+                            >
+                              <Plus className="h-3.5 w-3.5 mr-1" />
+                              Crea cittadino "{citizenSearch.trim()}"
+                            </Button>
                           </div>
                         )}
                       </>
@@ -475,29 +524,77 @@ function ConvertPanel() {
                 </>
               )}
             </div>
+
             <div>
-              <Label>Serata APERTA (giornata)</Label>
-              {nights.length === 0 ? (
-                <div className="p-2.5 border border-amber-500/30 rounded-md text-xs text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 mt-1 flex items-center gap-1.5">
-                  <span>
-                    ⚠️ Nessuna serata APERTA al momento. Apri una serata per poter convertire.
-                  </span>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Serata Aperta
+              </Label>
+              <div className="mt-1">
+                {nights.length === 0 ? (
+                  <div className="text-xs text-amber-500 border border-amber-500/30 rounded-md p-2 bg-amber-500/10">
+                    Nessuna serata aperta. Apri una serata in "Serate".
+                  </div>
+                ) : (
+                  <Select value={currentNightId} onValueChange={setNightId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Seleziona serata" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nights.map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          {new Date(n.night_date).toLocaleDateString("it-IT")}
+                          {n.title ? ` - ${n.title}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Operatore Cassa selector */}
+          <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <User className="h-4 w-4" />
                 </div>
-              ) : (
-                <Select value={currentNightId} onValueChange={setNightId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona serata aperta…" />
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Operatore Cassa Responsabile
+                  </div>
+                  <div className="text-xs font-medium text-foreground flex items-center gap-1.5 mt-0.5">
+                    <span>{activeOpObj?.display_name || activeOpObj?.username || "Tu"}</span>
+                    {(operatorId === profile?.id || (!operatorId && profile?.id)) && (
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] py-0 px-1 border-amber-500/40 text-amber-400"
+                      >
+                        Tu
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-44">
+                <Select
+                  value={operatorId || profile?.id || ""}
+                  onValueChange={(val) => setOperatorId(val)}
+                >
+                  <SelectTrigger className="h-8 text-xs bg-slate-900 border-slate-800">
+                    <SelectValue placeholder="Seleziona operatore" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {nights.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
-                        {formatDate(n.night_date)}
-                        {n.title ? ` · ${n.title}` : ""}
+                  <SelectContent className="max-h-60">
+                    {staffProfiles.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">
+                        {p.display_name || p.username} {p.id === profile?.id ? "(Tu)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
             </div>
           </div>
 
@@ -531,7 +628,7 @@ function ConvertPanel() {
           </div>
 
           <div>
-            <Label>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               {direction === "cash_to_dobloni"
                 ? "Importo in € (soldi ricevuti dal cittadino)"
                 : "Importo in ⛃ (dobloni ricevuti dal cittadino)"}
@@ -543,6 +640,7 @@ function ConvertPanel() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="0"
+              className="mt-1"
             />
             {direction === "dobloni_to_cash" && (
               <div className="mt-2 space-y-2">
@@ -660,6 +758,7 @@ function ConvertPanel() {
       <Card className={exceeds ? "border-destructive/50" : "border-primary/30"}>
         <CardHeader>
           <CardTitle>Anteprima</CardTitle>
+          <CardDescription>Riepilogo conversione e conferma</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 text-center">
@@ -673,6 +772,13 @@ function ConvertPanel() {
               <div className="text-xs text-primary uppercase tracking-wider">Da consegnare</div>
               <div className="mt-1 text-2xl font-bold text-primary">{preview.outStr}</div>
             </div>
+          </div>
+
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-900/40 text-xs flex items-center justify-between">
+            <span className="text-muted-foreground">Registrata a nome di:</span>
+            <span className="font-semibold text-amber-400">
+              {activeOpObj?.display_name || activeOpObj?.username || "Tu"}
+            </span>
           </div>
 
           {exceeds && (
@@ -697,7 +803,7 @@ function ConvertPanel() {
               }
               onClick={() => doConvert.mutate()}
             >
-              <Save className="h-4 w-4" /> Conferma conversione
+              <Save className="h-4 w-4 mr-2" /> Conferma conversione
             </Button>
             {isAdmin && citizenId && currentNightId && (
               <Button
@@ -719,6 +825,24 @@ function ConvertPanel() {
 /* -------------------- History -------------------- */
 
 function HistoryPanel() {
+  const qc = useQueryClient();
+  const { isAdmin } = useAuth();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDirection, setFilterDirection] = useState<string>("all");
+  const [filterNightId, setFilterNightId] = useState<string>("all");
+  const [filterOperatorId, setFilterOperatorId] = useState<string>("all");
+
+  // Single edit modal state
+  const [editingConversion, setEditingConversion] = useState<any | null>(null);
+  const [selectedNewOperator, setSelectedNewOperator] = useState<string>("");
+
+  // Batch reassign modal state
+  const [isBatchOpen, setIsBatchOpen] = useState(false);
+  const [batchSourceOp, setBatchSourceOp] = useState<string>("all");
+  const [batchTargetOp, setBatchTargetOp] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   const { data: rows = [] } = useQuery({
     queryKey: ["conversions-history"],
     queryFn: async () => {
@@ -726,7 +850,7 @@ function HistoryPanel() {
         .from("conversions")
         .select("*, citizens(full_name), nights(night_date, title)")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(300);
       if (error) throw error;
       return data as (Conversion & {
         citizens: { full_name: string } | null;
@@ -735,70 +859,534 @@ function HistoryPanel() {
     },
     refetchInterval: 10000,
   });
+
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles-all"],
     queryFn: async () =>
       (await supabase.from("profiles").select("id, username, display_name")).data ?? [],
     refetchInterval: 10000,
   });
-  const profBy = Object.fromEntries((profiles as any[]).map((p) => [p.id, p]));
+
+  const { data: allNights = [] } = useQuery({
+    queryKey: ["all-nights-list"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("nights")
+        .select("id, night_date, title")
+        .order("night_date", { ascending: false })
+        .limit(50);
+      return (data ?? []) as Night[];
+    },
+  });
+
+  const profBy = useMemo(() => {
+    return Object.fromEntries((profiles as any[]).map((p) => [p.id, p]));
+  }, [profiles]);
+
+  // Mutations
+  const updateSingleOperator = useMutation({
+    mutationFn: async ({
+      conversionId,
+      newOperatorId,
+    }: {
+      conversionId: string;
+      newOperatorId: string;
+    }) => {
+      const { error } = await supabase
+        .from("conversions")
+        .update({ created_by: newOperatorId })
+        .eq("id", conversionId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Operatore cassa aggiornato correttamente");
+      qc.invalidateQueries({ queryKey: ["conversions-history"] });
+      qc.invalidateQueries({ queryKey: ["all-conversions-stipendi"] });
+      setEditingConversion(null);
+    },
+    onError: (e: any) => toast.error(e.message || "Errore durante l'aggiornamento"),
+  });
+
+  const batchReassign = useMutation({
+    mutationFn: async ({
+      targetIds,
+      newOperatorId,
+    }: {
+      targetIds: string[];
+      newOperatorId: string;
+    }) => {
+      if (targetIds.length === 0) throw new Error("Nessuna conversione selezionata");
+      if (!newOperatorId) throw new Error("Seleziona il nuovo operatore");
+
+      for (const id of targetIds) {
+        const { error } = await supabase
+          .from("conversions")
+          .update({ created_by: newOperatorId })
+          .eq("id", id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, vars) => {
+      toast.success(`${vars.targetIds.length} conversioni riassegnate con successo`);
+      qc.invalidateQueries({ queryKey: ["conversions-history"] });
+      qc.invalidateQueries({ queryKey: ["all-conversions-stipendi"] });
+      setIsBatchOpen(false);
+      setSelectedIds([]);
+    },
+    onError: (e: any) => toast.error(e.message || "Errore durante la riassegnazione"),
+  });
+
+  // Filtered rows
+  const filteredRows = useMemo(() => {
+    return rows.filter((r) => {
+      // Search
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const citName = (r.citizens?.full_name || "").toLowerCase();
+        const op = r.created_by ? profBy[r.created_by] : null;
+        const opName = (op?.display_name || op?.username || "").toLowerCase();
+        if (!citName.includes(term) && !opName.includes(term)) {
+          return false;
+        }
+      }
+      // Direction
+      if (filterDirection !== "all" && r.direction !== filterDirection) {
+        return false;
+      }
+      // Night
+      if (filterNightId !== "all" && r.night_id !== filterNightId) {
+        return false;
+      }
+      // Operator
+      if (filterOperatorId !== "all" && r.created_by !== filterOperatorId) {
+        return false;
+      }
+      return true;
+    });
+  }, [rows, searchTerm, filterDirection, filterNightId, filterOperatorId, profBy]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredRows.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredRows.map((r) => r.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((x) => x !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Storico conversioni</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Cittadino</TableHead>
-              <TableHead>Serata</TableHead>
-              <TableHead>Direzione</TableHead>
-              <TableHead className="text-right">Soldi</TableHead>
-              <TableHead className="text-right">Dobloni</TableHead>
-              <TableHead>Operatore</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Nessuna conversione
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((r) => {
-              const op = r.created_by ? profBy[r.created_by] : null;
-              return (
-                <TableRow key={r.id}>
-                  <TableCell className="text-xs">{formatDateTime(r.created_at)}</TableCell>
-                  <TableCell className="font-medium">{r.citizens?.full_name ?? "-"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {r.nights ? new Date(r.nights.night_date).toLocaleDateString("it-IT") : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {r.direction === "cash_to_dobloni" ? "Soldi → Dobloni" : "Dobloni → Soldi"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatMoney(r.eur_amount)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatDobloni(r.dobloni_amount)}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {op?.display_name ?? op?.username ?? "-"}
-                  </TableCell>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <CardTitle className="text-xl">Storico Conversioni Cassa</CardTitle>
+            <CardDescription>
+              Monitora tutte le conversioni effettuate e gestisci l'operatore assegnato
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs border-amber-500/40 hover:bg-amber-500/10 text-amber-400"
+              onClick={() => {
+                setIsBatchOpen(true);
+                setBatchSourceOp(filterOperatorId !== "all" ? filterOperatorId : "all");
+              }}
+            >
+              <Users className="h-3.5 w-3.5 mr-1.5" />
+              Correggi / Riassegna in blocco
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => {
+                qc.invalidateQueries({ queryKey: ["conversions-history"] });
+                toast.info("Storico aggiornato");
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />
+              Aggiorna
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-muted/20 p-3 rounded-xl border border-border/50">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca cittadino o operatore..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 text-xs h-9 bg-background"
+              />
+            </div>
+
+            <div>
+              <Select value={filterDirection} onValueChange={setFilterDirection}>
+                <SelectTrigger className="h-9 text-xs bg-background">
+                  <SelectValue placeholder="Direzione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le direzioni</SelectItem>
+                  <SelectItem value="cash_to_dobloni">Soldi → Dobloni</SelectItem>
+                  <SelectItem value="dobloni_to_cash">Dobloni → Soldi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Select value={filterNightId} onValueChange={setFilterNightId}>
+                <SelectTrigger className="h-9 text-xs bg-background">
+                  <SelectValue placeholder="Tutte le serate" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le serate</SelectItem>
+                  {allNights.map((n) => (
+                    <SelectItem key={n.id} value={n.id}>
+                      {new Date(n.night_date).toLocaleDateString("it-IT")}
+                      {n.title ? ` - ${n.title}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Select value={filterOperatorId} onValueChange={setFilterOperatorId}>
+                <SelectTrigger className="h-9 text-xs bg-background">
+                  <SelectValue placeholder="Tutti gli operatori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti gli operatori</SelectItem>
+                  {profiles.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.display_name || p.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Selection indicator */}
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+              <span>
+                <strong>{selectedIds.length}</strong> conversioni selezionate
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold"
+                  onClick={() => setIsBatchOpen(true)}
+                >
+                  Riassegna Selezionate
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Deseleziona
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Table */}
+          <div className="rounded-xl border border-slate-800 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-slate-900/60">
+                <TableRow>
+                  <TableHead className="w-10 text-center">
+                    <Checkbox
+                      checked={
+                        filteredRows.length > 0 && selectedIds.length === filteredRows.length
+                      }
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Data & Ora</TableHead>
+                  <TableHead>Cittadino</TableHead>
+                  <TableHead>Serata</TableHead>
+                  <TableHead>Direzione</TableHead>
+                  <TableHead className="text-right">Soldi</TableHead>
+                  <TableHead className="text-right">Dobloni</TableHead>
+                  <TableHead>Operatore Cassa</TableHead>
+                  <TableHead className="text-right w-20">Azione</TableHead>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {filteredRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
+                      Nessuna conversione trovata con i filtri applicati
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRows.map((r) => {
+                    const op = r.created_by ? profBy[r.created_by] : null;
+                    const isSelected = selectedIds.includes(r.id);
+                    return (
+                      <TableRow
+                        key={r.id}
+                        className={isSelected ? "bg-amber-500/5 hover:bg-amber-500/10" : ""}
+                      >
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelectOne(r.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {formatDateTime(r.created_at)}
+                        </TableCell>
+                        <TableCell className="font-semibold text-foreground">
+                          {r.citizens?.full_name ?? "-"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {r.nights
+                            ? new Date(r.nights.night_date).toLocaleDateString("it-IT")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={r.direction === "cash_to_dobloni" ? "default" : "secondary"}
+                            className="text-[10px] font-medium"
+                          >
+                            {r.direction === "cash_to_dobloni"
+                              ? "Soldi → Dobloni"
+                              : "Dobloni → Soldi"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-emerald-400">
+                          {formatMoney(r.eur_amount)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-amber-400">
+                          {formatDobloni(r.dobloni_amount)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-amber-400 font-bold">
+                              {(op?.display_name || op?.username || "?")[0]?.toUpperCase()}
+                            </div>
+                            <span className="text-xs font-medium text-slate-200">
+                              {op?.display_name || op?.username || "Non assegnato"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
+                            title="Modifica operatore per questa transazione"
+                            onClick={() => {
+                              setEditingConversion(r);
+                              setSelectedNewOperator(r.created_by || "");
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Single Operator Edit Dialog */}
+      <Dialog
+        open={!!editingConversion}
+        onOpenChange={(open) => {
+          if (!open) setEditingConversion(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md bg-[#12141c] border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <UserCheck className="h-5 w-5 text-amber-400" />
+              Modifica Operatore Cassa
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs">
+              Assegna la conversione all'effettivo operatore che ha gestito la cassa.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingConversion && (
+            <div className="space-y-4 py-2">
+              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cittadino:</span>
+                  <span className="font-semibold text-white">
+                    {editingConversion.citizens?.full_name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data/Ora:</span>
+                  <span>{formatDateTime(editingConversion.created_at)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Importi:</span>
+                  <span className="font-mono text-amber-400">
+                    {formatMoney(editingConversion.eur_amount)} ⇄{" "}
+                    {formatDobloni(editingConversion.dobloni_amount)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                  Nuovo Operatore
+                </Label>
+                <Select value={selectedNewOperator} onValueChange={setSelectedNewOperator}>
+                  <SelectTrigger className="w-full bg-slate-900 border-slate-800">
+                    <SelectValue placeholder="Seleziona operatore" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {profiles.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.display_name || p.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setEditingConversion(null)} className="text-xs">
+              Annulla
+            </Button>
+            <Button
+              variant="default"
+              disabled={!selectedNewOperator || updateSingleOperator.isPending}
+              onClick={() => {
+                if (editingConversion && selectedNewOperator) {
+                  updateSingleOperator.mutate({
+                    conversionId: editingConversion.id,
+                    newOperatorId: selectedNewOperator,
+                  });
+                }
+              }}
+              className="text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold"
+            >
+              Salva Operatore
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Reassign Dialog */}
+      <Dialog open={isBatchOpen} onOpenChange={setIsBatchOpen}>
+        <DialogContent className="sm:max-w-lg bg-[#12141c] border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Users className="h-5 w-5 text-amber-400" />
+              Riassegna Conversioni in Blocco
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs">
+              Correggi lo storico riassegnando le conversioni selezionate o tutte quelle di un
+              operatore.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {selectedIds.length > 0 ? (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+                Hai selezionato manualmente <strong>{selectedIds.length}</strong> conversioni.
+                Verranno tutte aggiornate con l'operatore scelto di seguito.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                  Da quale operatore trasferire?
+                </Label>
+                <Select value={batchSourceOp} onValueChange={setBatchSourceOp}>
+                  <SelectTrigger className="w-full bg-slate-900 border-slate-800">
+                    <SelectValue placeholder="Seleziona operatore origine" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="all">
+                      Tutte le conversioni attualmente visibili ({filteredRows.length})
+                    </SelectItem>
+                    {profiles.map((p: any) => {
+                      const count = rows.filter((r) => r.created_by === p.id).length;
+                      return (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.display_name || p.username} ({count} conversioni)
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Assegna al nuovo operatore:
+              </Label>
+              <Select value={batchTargetOp} onValueChange={setBatchTargetOp}>
+                <SelectTrigger className="w-full bg-slate-900 border-slate-800">
+                  <SelectValue placeholder="Seleziona nuovo operatore" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {profiles.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.display_name || p.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsBatchOpen(false)} className="text-xs">
+              Annulla
+            </Button>
+            <Button
+              variant="default"
+              disabled={!batchTargetOp || batchReassign.isPending}
+              onClick={() => {
+                const targetIds =
+                  selectedIds.length > 0
+                    ? selectedIds
+                    : batchSourceOp === "all"
+                      ? filteredRows.map((r) => r.id)
+                      : rows.filter((r) => r.created_by === batchSourceOp).map((r) => r.id);
+
+                batchReassign.mutate({
+                  targetIds,
+                  newOperatorId: batchTargetOp,
+                });
+              }}
+              className="text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold"
+            >
+              Conferma Riassegnazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

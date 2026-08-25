@@ -394,23 +394,32 @@ export const kickGroupMember = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// 5b. Reinstate / Reintegrate a revoked member into a Telegram group
+// 5b. Reinstate / Reintegrate a revoked or kicked member into a Telegram group
 export const reinstateGroupMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { groupId: string; telegramUserId: number | string }) => d)
+  .inputValidator(
+    (d: { groupId?: string; chatId?: string | number; telegramUserId: number | string }) => d,
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { unbanTelegramChatMember, createTelegramInviteLink, sendTelegramMessage } =
       await import("@/lib/telegram.server");
 
-    const { data: group } = await supabaseAdmin
-      .from("telegram_groups")
-      .select("*")
-      .eq("id", data.groupId)
-      .maybeSingle();
+    const { data: allGroups } = await supabaseAdmin.from("telegram_groups").select("*");
+    const targetGroupId = data.groupId;
+    const targetChatId = data.chatId ? String(data.chatId) : null;
 
-    if (!group) throw new Error("Gruppo non trovato.");
+    const group = (allGroups || []).find(
+      (g: any) =>
+        (targetGroupId && g.id === targetGroupId) ||
+        (targetChatId && String(g.chat_id) === targetChatId) ||
+        (targetGroupId && String(g.chat_id) === String(targetGroupId)),
+    );
+
+    if (!group) throw new Error("Gruppo Telegram non trovato.");
+
+    const effectiveGroupId = group.id;
 
     // Unban from Telegram group so user can rejoin
     try {
@@ -433,7 +442,7 @@ export const reinstateGroupMember = createServerFn({ method: "POST" })
     const { data: allGroupMembers } = await supabaseAdmin
       .from("telegram_group_members")
       .select("*")
-      .eq("group_id", data.groupId);
+      .eq("group_id", effectiveGroupId);
 
     const matchingMembers = (allGroupMembers || []).filter(
       (m: any) => String(m.telegram_user_id) === tgUserIdStr,
@@ -465,8 +474,8 @@ export const reinstateGroupMember = createServerFn({ method: "POST" })
       }
     } else {
       await supabaseAdmin.from("telegram_group_members").upsert({
-        id: `tgm-${data.groupId}-${data.telegramUserId}`,
-        group_id: data.groupId,
+        id: `tgm-${effectiveGroupId}-${data.telegramUserId}`,
+        group_id: effectiveGroupId,
         chat_id: group.chat_id,
         telegram_user_id: data.telegramUserId,
         status: "member",
