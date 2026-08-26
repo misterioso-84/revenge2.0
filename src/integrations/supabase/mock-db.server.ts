@@ -1,4 +1,3 @@
-import initialDbStatic from "../../../mock-db.json";
 import * as neonModuleStatic from "../../lib/neon.server";
 import * as firestoreModuleStatic from "../../lib/firebase.server";
 
@@ -1279,18 +1278,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       console.error("Error loading mock db from file:", e);
     }
 
-    // 4. Statically imported fallback (Perfect for zero-setup static or serverless deploys!)
-    if (!localDb) {
-      console.log(
-        "[Sync Fallback] No local mock DB found on disk. Falling back to statically imported mock-db.json...",
-      );
-      try {
-        localDb = JSON.parse(JSON.stringify(initialDbStatic));
-      } catch (err) {
-        console.error("Error loading statically imported mock db:", err);
-      }
-    }
-
+    // 4. Default in-memory generator fallback (Perfect for zero-setup static or serverless deploys!)
     if (!localDb) {
       console.log("[Sync Fallback] Falling back to generating initial DB...");
       localDb = getInitialDb();
