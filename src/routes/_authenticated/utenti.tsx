@@ -995,6 +995,10 @@ function UsersPage() {
           onToggle={async (roleId: string, assign: boolean) => {
             await assignFn({ data: { userId: rolesTarget.id, customRoleId: roleId, assign } });
             qc.invalidateQueries({ queryKey: ["panel-users"] });
+            qc.invalidateQueries({ queryKey: ["all-profiles-for-roles"] });
+            qc.invalidateQueries({ queryKey: ["user-custom-roles-list"] });
+            qc.invalidateQueries({ queryKey: ["all-user-custom-roles"] });
+            qc.invalidateQueries({ queryKey: ["profiles"] });
           }}
         />
       )}
@@ -1205,9 +1209,38 @@ function ResetDialog({ user, onClose, onSubmit }: any) {
 }
 
 function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
-  const assignedIds = new Set(user.custom_roles?.map((r: any) => r.id) ?? []);
+  const [assigned, setAssigned] = useState<Set<string>>(
+    () => new Set(user.custom_roles?.map((r: any) => r.id) ?? []),
+  );
+  const [togglingMap, setTogglingMap] = useState<Record<string, boolean>>({});
+
   const baseRoles = (customRoles || []).filter((r: any) => !r.is_reparto);
   const reparti = (customRoles || []).filter((r: any) => r.is_reparto === true);
+
+  const handleToggle = async (roleId: string, willAssign: boolean) => {
+    setTogglingMap((prev) => ({ ...prev, [roleId]: true }));
+    setAssigned((prev) => {
+      const next = new Set(prev);
+      if (willAssign) next.add(roleId);
+      else next.delete(roleId);
+      return next;
+    });
+
+    try {
+      await onToggle(roleId, willAssign);
+      toast.success(willAssign ? "Ruolo assegnato" : "Ruolo rimosso");
+    } catch (err: any) {
+      setAssigned((prev) => {
+        const next = new Set(prev);
+        if (willAssign) next.delete(roleId);
+        else next.add(roleId);
+        return next;
+      });
+      toast.error(err?.message || "Errore");
+    } finally {
+      setTogglingMap((prev) => ({ ...prev, [roleId]: false }));
+    }
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -1233,25 +1266,34 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
               <p className="text-xs text-slate-500 italic">Nessun ruolo base disponibile.</p>
             ) : (
               baseRoles.map((r: any) => {
-                const checked = assignedIds.has(r.id);
+                const isChecked = assigned.has(r.id);
+                const isPending = !!togglingMap[r.id];
                 return (
                   <label
                     key={r.id}
-                    className="flex items-start gap-3 p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 cursor-pointer transition-colors"
+                    className={`flex items-start gap-3 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                      isChecked
+                        ? "bg-amber-500/10 border-amber-500/30"
+                        : "bg-slate-900/60 border-slate-800 hover:bg-slate-900"
+                    }`}
                   >
                     <input
                       type="checkbox"
-                      defaultChecked={checked}
-                      onChange={(e) => onToggle(r.id, e.target.checked)}
-                      className="mt-1 rounded text-amber-500"
+                      checked={isChecked}
+                      disabled={isPending}
+                      onChange={(e) => handleToggle(r.id, e.target.checked)}
+                      className="mt-1 rounded text-amber-500 cursor-pointer"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-slate-200 flex items-center gap-2">
                         <span
                           className="h-2 w-2 rounded-full"
                           style={{ backgroundColor: r.staff_color || "#f59e0b" }}
                         />
                         {r.name}
+                        {isPending && (
+                          <RefreshCw className="h-3 w-3 animate-spin text-amber-400 ml-auto" />
+                        )}
                       </div>
                       <div className="text-xs text-slate-400">{r.description ?? "—"}</div>
                     </div>
@@ -1272,19 +1314,25 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
               </p>
             ) : (
               reparti.map((r: any) => {
-                const checked = assignedIds.has(r.id);
+                const isChecked = assigned.has(r.id);
+                const isPending = !!togglingMap[r.id];
                 return (
                   <label
                     key={r.id}
-                    className="flex items-start gap-3 p-2.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                    className={`flex items-start gap-3 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                      isChecked
+                        ? "bg-purple-500/15 border-purple-500/40"
+                        : "bg-purple-500/5 border-purple-500/20 hover:bg-purple-500/10"
+                    }`}
                   >
                     <input
                       type="checkbox"
-                      defaultChecked={checked}
-                      onChange={(e) => onToggle(r.id, e.target.checked)}
-                      className="mt-1 rounded text-purple-500"
+                      checked={isChecked}
+                      disabled={isPending}
+                      onChange={(e) => handleToggle(r.id, e.target.checked)}
+                      className="mt-1 rounded text-purple-500 cursor-pointer"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-purple-200 flex items-center gap-2">
                         <span
                           className="h-2 w-2 rounded-full"
@@ -1294,6 +1342,9 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
                         <Badge className="text-[9px] bg-purple-500/20 text-purple-300 border-purple-500/30">
                           Extrapex
                         </Badge>
+                        {isPending && (
+                          <RefreshCw className="h-3 w-3 animate-spin text-purple-400 ml-auto" />
+                        )}
                       </div>
                       <div className="text-xs text-slate-400">{r.description ?? "—"}</div>
                       <div className="text-[10px] text-purple-300/80 mt-0.5">
@@ -1310,9 +1361,9 @@ function RolesDialog({ user, customRoles, onClose, onToggle }: any) {
         <DialogFooter>
           <Button
             onClick={onClose}
-            className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
           >
-            Chiudi
+            Fatto
           </Button>
         </DialogFooter>
       </DialogContent>

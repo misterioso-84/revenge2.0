@@ -57,6 +57,7 @@ import {
   setMasterExplanationGroup,
   calculateTimeElapsed,
 } from "@/lib/master.functions";
+import { CloudflareD1ControlCard } from "@/components/CloudflareD1ControlCard";
 
 export const Route = createFileRoute("/_authenticated/master")({
   beforeLoad: async () => {
@@ -261,6 +262,9 @@ function MasterPage() {
           SUPERVISIONE E CONTROLLO SPIEGAZIONE RUOLI DIPENDENTI, FORMAZIONE E ABILITAZIONI GRUPPO
         </p>
       </div>
+
+      {/* Cloudflare D1 Migration & Control */}
+      {canManage && <CloudflareD1ControlCard />}
 
       {/* Top Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">

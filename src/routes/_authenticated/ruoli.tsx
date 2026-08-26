@@ -61,6 +61,7 @@ import {
   syncTelegramGroupsNow,
   checkGroupBotPermissionsFn,
 } from "@/lib/telegram-groups.functions";
+import { assignCustomRole } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/ruoli")({
   beforeLoad: async () => {
@@ -429,35 +430,49 @@ function RolesPage() {
                       </div>
                     </div>
 
-                    {/* Assigned Staff Preview */}
-                    {assignedProfiles.length > 0 && (
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    {/* Assigned Staff Preview & Association Controls */}
+                    <div className="pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
                         <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                           <Users className="h-3.5 w-3.5 text-amber-400" />
                           Membri ({assignedProfiles.length}):
                         </div>
-                        <div className="flex items-center -space-x-1.5 overflow-hidden">
-                          {assignedProfiles.slice(0, 5).map((p: any) => (
-                            <img
-                              key={p.id}
-                              src={`https://mc-heads.net/avatar/${encodeURIComponent(p.username || "Steve")}/24`}
-                              alt={p.display_name || p.username}
-                              title={p.display_name || p.username}
-                              className="h-6 w-6 rounded-full border-2 border-[#12141c] object-cover bg-slate-900"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  "https://minotar.net/helm/Steve/24.png";
-                              }}
-                            />
-                          ))}
-                          {assignedProfiles.length > 5 && (
-                            <span className="h-6 px-1.5 rounded-full bg-slate-800 border-2 border-[#12141c] text-[9px] font-bold text-slate-300 flex items-center justify-center">
-                              +{assignedProfiles.length - 5}
-                            </span>
-                          )}
-                        </div>
+                        {assignedProfiles.length > 0 ? (
+                          <div className="flex items-center -space-x-1.5 overflow-hidden">
+                            {assignedProfiles.slice(0, 5).map((p: any) => (
+                              <img
+                                key={p.id}
+                                src={`https://mc-heads.net/avatar/${encodeURIComponent(p.username || "Steve")}/24`}
+                                alt={p.display_name || p.username}
+                                title={`${p.display_name || p.username} (${p.telegram_handle || "Nessun Telegram"})`}
+                                className="h-6 w-6 rounded-full border-2 border-[#12141c] object-cover bg-slate-900"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "https://minotar.net/helm/Steve/24.png";
+                                }}
+                              />
+                            ))}
+                            {assignedProfiles.length > 5 && (
+                              <span className="h-6 px-1.5 rounded-full bg-slate-800 border-2 border-[#12141c] text-[9px] font-bold text-slate-300 flex items-center justify-center">
+                                +{assignedProfiles.length - 5}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-500 italic">Nessun utente</span>
+                        )}
                       </div>
-                    )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setManagingRepartoMembers(r)}
+                        className="border-amber-500/40 text-amber-300 hover:bg-amber-500/15 text-xs shrink-0 font-bold h-7 px-2.5 shadow-sm"
+                      >
+                        <UserPlus className="h-3.5 w-3.5 mr-1 text-amber-400" />
+                        Associa Utenti
+                      </Button>
+                    </div>
 
                     {/* Permissions list */}
                     <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
@@ -656,10 +671,10 @@ function RolesPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setManagingRepartoMembers(rep)}
-                        className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 text-xs shrink-0 font-bold"
+                        className="border-purple-500/40 text-purple-300 hover:bg-purple-500/15 text-xs shrink-0 font-bold h-7 px-2.5 shadow-sm"
                       >
-                        <UserPlus className="h-3.5 w-3.5 mr-1" />
-                        Gestisci Membri
+                        <UserPlus className="h-3.5 w-3.5 mr-1 text-purple-400" />
+                        Associa Utenti
                       </Button>
                     </div>
                   </CardContent>
@@ -829,6 +844,18 @@ function RolesPage() {
       )}
 
       {open && <RoleDialog role={editing} onClose={() => setOpen(false)} />}
+      {managingRepartoMembers && (
+        <ManageRoleMembersDialog
+          role={managingRepartoMembers}
+          onClose={() => {
+            setManagingRepartoMembers(null);
+            qc.invalidateQueries({ queryKey: ["user-custom-roles-list"] });
+            qc.invalidateQueries({ queryKey: ["all-profiles-for-roles"] });
+            qc.invalidateQueries({ queryKey: ["panel-users"] });
+            qc.invalidateQueries({ queryKey: ["all-user-custom-roles"] });
+          }}
+        />
+      )}
       {addManualGroupOpen && (
         <AddTelegramGroupDialog
           allRoles={roles}
@@ -2126,6 +2153,321 @@ function RoleDialog({
             {save.isPending ? "Salvataggio..." : isReparto ? "Salva Reparto" : "Salva Ruolo"}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ManageRoleMembersDialog({ role, onClose }: { role: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "assigned" | "unassigned">("all");
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+
+  const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
+    queryKey: ["all-profiles-for-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, telegram_handle, telegram_user_id")
+        .order("display_name");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  const { data: userCustomRoles = [], refetch: refetchUserRoles } = useQuery({
+    queryKey: ["user-custom-roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_custom_roles").select("*");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  const assignedUserIds = new Set(
+    (userCustomRoles || [])
+      .filter((ucr: any) => ucr.custom_role_id === role.id)
+      .map((ucr: any) => ucr.user_id),
+  );
+
+  const isReparto = !!role.is_reparto;
+  const roleColor = role.staff_color || (isReparto ? "#a855f7" : "#f59e0b");
+
+  const filteredProfiles = allProfiles.filter((p: any) => {
+    const isAssigned = assignedUserIds.has(p.id);
+    if (filterMode === "assigned" && !isAssigned) return false;
+    if (filterMode === "unassigned" && isAssigned) return false;
+
+    if (!search.trim()) return true;
+    const q = search.toLowerCase().trim();
+    const u = (p.username || "").toLowerCase();
+    const d = (p.display_name || "").toLowerCase();
+    const tg = (p.telegram_handle || "").toLowerCase();
+    return u.includes(q) || d.includes(q) || tg.includes(q);
+  });
+
+  const handleToggle = async (userId: string, currentlyAssigned: boolean) => {
+    try {
+      setTogglingUserId(userId);
+      await assignCustomRole({
+        data: {
+          userId,
+          customRoleId: role.id,
+          assign: !currentlyAssigned,
+        },
+      });
+
+      await refetchUserRoles();
+      qc.invalidateQueries({ queryKey: ["user-custom-roles-list"] });
+      qc.invalidateQueries({ queryKey: ["all-profiles-for-roles"] });
+      qc.invalidateQueries({ queryKey: ["panel-users"] });
+      qc.invalidateQueries({ queryKey: ["custom-roles"] });
+      qc.invalidateQueries({ queryKey: ["all-user-custom-roles"] });
+
+      toast.success(
+        !currentlyAssigned
+          ? `Ruolo "${role.name}" assegnato con successo!`
+          : `Ruolo "${role.name}" rimosso dall'utente.`,
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Errore durante l'assegnazione del ruolo");
+    } finally {
+      setTogglingUserId(null);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl bg-[#12141c] border-slate-800 text-white p-0 overflow-hidden shadow-2xl rounded-2xl">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-800/80 bg-gradient-to-b from-[#161a26] to-[#12141c]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div
+                className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-inner"
+                style={{
+                  backgroundColor: `${roleColor}15`,
+                  borderColor: `${roleColor}40`,
+                }}
+              >
+                {isReparto ? (
+                  <Sparkles className="h-6 w-6" style={{ color: roleColor }} />
+                ) : (
+                  <Crown className="h-6 w-6" style={{ color: roleColor }} />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <DialogTitle className="text-xl font-black text-white uppercase tracking-tight">
+                    {role.name}
+                  </DialogTitle>
+                  <Badge
+                    className="text-[10px] uppercase font-mono tracking-widest px-2.5 py-0.5 border"
+                    style={{
+                      backgroundColor: `${roleColor}20`,
+                      color: roleColor,
+                      borderColor: `${roleColor}40`,
+                    }}
+                  >
+                    {isReparto ? "Reparto Extrapex" : "Ruolo Base"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Seleziona gli utenti della Ciurma da associare a questo ruolo per sincronizzare
+                  permessi e gruppi Telegram.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0a0b10] border border-slate-800 rounded-xl px-3 py-1.5 text-right shrink-0">
+              <div className="text-[10px] font-mono uppercase text-slate-500">Membri Assegnati</div>
+              <div className="text-lg font-black text-white" style={{ color: roleColor }}>
+                {assignedUserIds.size}{" "}
+                <span className="text-xs font-normal text-slate-400">/ {allProfiles.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="mt-5 flex flex-col sm:flex-row items-center gap-2.5">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Cerca utente per nickname, nome o @telegram..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-[#0a0b10] border-slate-800 text-white placeholder:text-slate-500 text-xs h-9"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 bg-[#0a0b10] p-1 border border-slate-800 rounded-lg shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setFilterMode("all")}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  filterMode === "all"
+                    ? "bg-slate-800 text-white shadow"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Tutti ({allProfiles.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode("assigned")}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  filterMode === "assigned"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Assegnati ({assignedUserIds.size})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode("unassigned")}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  filterMode === "unassigned"
+                    ? "bg-slate-800 text-white shadow"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Non Assegnati ({allProfiles.length - assignedUserIds.size})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Users List */}
+        <div className="p-4 max-h-[26rem] overflow-y-auto space-y-2 bg-[#0a0b10]">
+          {loadingProfiles ? (
+            <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin text-amber-400" />
+              Caricamento utenti in corso...
+            </div>
+          ) : filteredProfiles.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl bg-slate-900/30 text-slate-400 text-xs">
+              Nessun utente trovato con i criteri di ricerca attuali.
+            </div>
+          ) : (
+            filteredProfiles.map((p: any) => {
+              const isAssigned = assignedUserIds.has(p.id);
+              const isPending = togglingUserId === p.id;
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => !isPending && handleToggle(p.id, isAssigned)}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                    isAssigned
+                      ? "bg-gradient-to-r from-[#171b26] to-[#12141c] border-amber-500/30 hover:border-amber-500/50 shadow-md"
+                      : "bg-[#12141c]/70 border-slate-800/80 hover:bg-[#161924] hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <img
+                        src={`https://mc-heads.net/avatar/${encodeURIComponent(p.username || "Steve")}/36`}
+                        alt={p.username}
+                        className="h-9 w-9 rounded-xl border border-slate-800 object-cover bg-slate-900 shadow"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://minotar.net/helm/Steve/36.png";
+                        }}
+                      />
+                      {isAssigned && (
+                        <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#12141c] flex items-center justify-center">
+                          <Check className="h-2 w-2 text-slate-950 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-white truncate">
+                          {p.display_name || p.username}
+                        </span>
+                        {p.display_name && p.display_name !== p.username && (
+                          <span className="text-[11px] font-mono text-slate-400">
+                            ({p.username})
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                        {p.telegram_handle ? (
+                          <span className="font-mono text-sky-400 flex items-center gap-0.5">
+                            <AtSign className="h-3 w-3" />
+                            {p.telegram_handle.replace(/^@/, "")}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 text-[11px] italic">
+                            Telegram non collegato
+                          </span>
+                        )}
+                        {p.telegram_user_id && (
+                          <span className="text-[10px] font-mono text-slate-500">
+                            ID: {p.telegram_user_id}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    {isPending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin text-amber-400" />
+                    ) : (
+                      <button
+                        type="button"
+                        className={`h-7 px-3 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all ${
+                          isAssigned
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40"
+                            : "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-500/40"
+                        }`}
+                      >
+                        {isAssigned ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Associato
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3.5 w-3.5" />
+                            Associa
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-800/80 bg-[#12141c] flex items-center justify-between">
+          <div className="text-xs text-slate-400">
+            {assignedUserIds.size} utent{assignedUserIds.size === 1 ? "e" : "i"} associat
+            {assignedUserIds.size === 1 ? "o" : "i"} a questo ruolo
+          </div>
+          <Button
+            onClick={onClose}
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-8 px-4"
+          >
+            Chiudi e Salva
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

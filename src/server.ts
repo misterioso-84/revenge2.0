@@ -19,8 +19,19 @@ async function getServerEntry(): Promise<ServerEntry> {
 }
 
 // Catches unhandled SSR errors or h3 500 JSON responses on Cloudflare Pages / Node
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(
+  response: Response,
+  request: Request,
+): Promise<Response> {
   if (response.status < 500) return response;
+
+  // If this is an API route, RPC call, or TanStack server function, preserve JSON format
+  const url = request.url;
+  const isApi = url.includes("/_serverFn") || url.includes("/api/") || url.includes("/_server");
+  if (isApi) {
+    return response;
+  }
+
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
 
@@ -65,7 +76,7 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return await normalizeCatastrophicSsrResponse(response, request);
     } catch (error) {
       console.error("[Server Entry] Unhandled exception:", error);
       return new Response(renderErrorPage(), {

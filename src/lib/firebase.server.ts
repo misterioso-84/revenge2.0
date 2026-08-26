@@ -2,6 +2,24 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore/lite";
 import firebaseConfig from "./firebase-config";
 
+// Circuit breaker state to prevent repeated quota errors
+let writeQuotaExceededUntil = 0;
+let readQuotaExceededUntil = 0;
+
+function isQuotaError(err: any): boolean {
+  if (!err) return false;
+  const msg = String(err?.message || err || "").toLowerCase();
+  const code = String(err?.code || "").toLowerCase();
+  return (
+    code.includes("resource-exhausted") ||
+    code.includes("quota") ||
+    msg.includes("quota limit exceeded") ||
+    msg.includes("quota exceeded") ||
+    msg.includes("free daily write units") ||
+    msg.includes("resource_exhausted")
+  );
+}
+
 // Safely initialize Firebase App
 function getFirebaseApp() {
   if (getApps().length === 0) {
@@ -17,14 +35,19 @@ export function getFirestoreDb(useDefault = false) {
 }
 
 export async function loadDbFromFirestore(): Promise<Record<string, any[]> | null> {
+  if (Date.now() < readQuotaExceededUntil) {
+    return null;
+  }
+
   try {
     return await loadDbFromFirestoreInternal(false);
   } catch (err: any) {
-    if (
-      err?.message?.includes("Quota limit exceeded") ||
-      err?.message?.includes("does not exist")
-    ) {
-      console.warn("[Firestore Database] Skipped loading due to quota or DB existence limits.");
+    if (isQuotaError(err)) {
+      readQuotaExceededUntil = Date.now() + 15 * 60 * 1000; // 15 min cooldown
+      console.warn("[Firestore Database] Read quota limit reached. Using local cache.");
+      return null;
+    }
+    if (err?.message?.includes("does not exist")) {
       return null;
     }
     console.warn(
@@ -34,20 +57,14 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
     try {
       return await loadDbFromFirestoreInternal(true);
     } catch (defaultErr: any) {
-      if (
-        defaultErr?.message?.includes("Quota limit exceeded") ||
-        defaultErr?.message?.includes("does not exist")
-      ) {
+      if (isQuotaError(defaultErr)) {
+        readQuotaExceededUntil = Date.now() + 15 * 60 * 1000;
         console.warn(
-          "[Firestore Database] Skipped loading from default DB due to quota or existence limits.",
+          "[Firestore Database] Read quota limit reached on default DB. Using local cache.",
         );
         return null;
       }
-      console.error(
-        "[Firestore Database] Failed to load from default database as well:",
-        defaultErr?.message || defaultErr,
-      );
-      return null; // Return null instead of throwing to prevent app crash
+      return null;
     }
   }
 }
@@ -55,71 +72,55 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
 async function loadDbFromFirestoreInternal(
   useDefault: boolean,
 ): Promise<Record<string, any[]> | null> {
-  console.log(
-    `[Firestore Database] Loading application state from Firestore (useDefault: ${useDefault})...`,
-  );
   const db = getFirestoreDb(useDefault);
   const docRef = doc(db, "app_state", "global");
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    console.log("[Firestore Database] Loaded application state successfully from Firestore.");
     const payload = docSnap.data();
     if (payload && payload.data) {
-      // The data is stored as a JSON string or parsed object
       if (typeof payload.data === "string") {
         return JSON.parse(payload.data);
       }
       return payload.data;
     }
   }
-  console.log("[Firestore Database] No existing app_state found in Firestore.");
   return null;
 }
 
 export async function saveDbToFirestore(data: Record<string, any[]>) {
+  if (Date.now() < writeQuotaExceededUntil) {
+    return;
+  }
+
   try {
     await saveDbToFirestoreInternal(data, false);
   } catch (err: any) {
-    if (
-      err?.message?.includes("Quota limit exceeded") ||
-      err?.message?.includes("does not exist")
-    ) {
-      console.warn("[Firestore Database] Skipped saving due to quota or DB existence limits.");
+    if (isQuotaError(err)) {
+      writeQuotaExceededUntil = Date.now() + 30 * 60 * 1000; // 30 min cooldown
+      console.warn(
+        "[Firestore Database] Write quota limit exceeded. Changes saved locally in mock-db.json.",
+      );
       return;
     }
-    console.warn(
-      "[Firestore Database] Failed to save using custom database ID, trying default database...",
-      err?.message || err,
-    );
+    if (err?.message?.includes("does not exist")) {
+      return;
+    }
     try {
       await saveDbToFirestoreInternal(data, true);
     } catch (defaultErr: any) {
-      if (
-        defaultErr?.message?.includes("Quota limit exceeded") ||
-        defaultErr?.message?.includes("does not exist")
-      ) {
-        console.warn(
-          "[Firestore Database] Skipped saving to default DB due to quota or existence limits.",
-        );
+      if (isQuotaError(defaultErr)) {
+        writeQuotaExceededUntil = Date.now() + 30 * 60 * 1000;
+        console.warn("[Firestore Database] Write quota limit exceeded on default DB.");
         return;
       }
-      console.error(
-        "[Firestore Database] Failed to save to default database as well:",
-        defaultErr?.message || defaultErr,
-      );
     }
   }
 }
 
 async function saveDbToFirestoreInternal(data: Record<string, any[]>, useDefault: boolean) {
-  console.log(
-    `[Firestore Database] Saving application state to Firestore (useDefault: ${useDefault})...`,
-  );
   const db = getFirestoreDb(useDefault);
   const docRef = doc(db, "app_state", "global");
-
-  // Convert to JSON-safe structure and serialize to string to avoid deep nesting limits or key errors
   const serializedData = JSON.stringify(data);
 
   await setDoc(
@@ -130,6 +131,4 @@ async function saveDbToFirestoreInternal(data: Record<string, any[]>, useDefault
     },
     { merge: true },
   );
-
-  console.log("[Firestore Database] Successfully saved application state to Firestore.");
 }

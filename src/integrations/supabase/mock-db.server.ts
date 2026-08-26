@@ -1,5 +1,6 @@
 import * as neonModuleStatic from "../../lib/neon.server";
 import * as firestoreModuleStatic from "../../lib/firebase.server";
+import * as d1ModuleStatic from "../../lib/d1.server";
 
 let getRequestModule: any = null;
 async function getGetRequest() {
@@ -14,6 +15,10 @@ async function getGetRequest() {
     }
   }
   return null;
+}
+
+async function getD1() {
+  return d1ModuleStatic;
 }
 
 async function getNeon() {
@@ -1193,12 +1198,45 @@ async function loadDb(): Promise<Record<string, any[]>> {
     return initPromise;
   }
 
+  let d1Failed = false;
   let neonFailed = false;
   let firestoreFailed = false;
 
   isInitializing = true;
   initPromise = (async () => {
-    // 1. Attempt Neon Postgres
+    // 1. Attempt Cloudflare D1 ('revenge')
+    const d1Mod = await getD1();
+    if (d1Mod && d1Mod.loadDbFromD1) {
+      try {
+        console.log("[Cloudflare D1 Sync] Attempting to load database from D1 ('revenge')...");
+        const d1Data = await d1Mod.loadDbFromD1();
+        if (d1Data) {
+          console.log(
+            "[Cloudflare D1 Sync] Successfully loaded database from D1 ('revenge'). Merging with initial DB and updating local cache...",
+          );
+          const initialDb = getInitialDb();
+          const mergedDb = { ...initialDb, ...d1Data };
+          mergedDb.audit_logs = mergedDb.audit_logs || [];
+          cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
+          try {
+            const { fs, path } = await getFsAndPath();
+            if (fs && path) {
+              const dbFile = path.join(process.cwd(), "mock-db.json");
+              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
+            }
+          } catch (e) {
+            console.error("Error saving local DB cache:", e);
+          }
+          return cachedDb;
+        }
+      } catch (err) {
+        console.error("[Cloudflare D1 Sync] Failed to load from D1:", err);
+        d1Failed = true;
+      }
+    }
+
+    // 2. Attempt Neon Postgres
     const neonMod = await getNeon();
     if (neonMod && neonMod.loadDbFromNeon) {
       try {
@@ -1290,6 +1328,14 @@ async function loadDb(): Promise<Record<string, any[]>> {
 
     // Seed backends with initial/local state if we had to fall back to files/static and we are absolutely sure the load didn't just fail!
     console.log("[Sync Fallback] Seeding backends with database state...");
+    if (!d1Failed && d1Mod && d1Mod.saveDbToD1) {
+      try {
+        await d1Mod.saveDbToD1(localDb);
+        console.log("[Cloudflare D1 Sync] Database state successfully seeded to D1 ('revenge').");
+      } catch (err) {
+        console.error("[Cloudflare D1 Sync] Failed to seed D1:", err);
+      }
+    }
     if (!neonFailed && neonMod && neonMod.saveDbToNeon) {
       try {
         await neonMod.saveDbToNeon(localDb);
@@ -1317,6 +1363,40 @@ async function loadDb(): Promise<Record<string, any[]>> {
   return result;
 }
 
+let cloudSyncTimeout: any = null;
+
+async function syncToCloud(db: Record<string, any[]>) {
+  // 1. Save to Cloudflare D1 ('revenge')
+  try {
+    const d1Mod = await getD1();
+    if (d1Mod && d1Mod.saveDbToD1) {
+      await d1Mod.saveDbToD1(db);
+    }
+  } catch (err) {
+    // silently catch
+  }
+
+  // 2. Save to Neon Postgres
+  try {
+    const neonMod = await getNeon();
+    if (neonMod && neonMod.saveDbToNeon) {
+      await neonMod.saveDbToNeon(db);
+    }
+  } catch (err) {
+    // silently catch
+  }
+
+  // 3. Save to Firestore
+  try {
+    const firestoreMod = await getFirestore();
+    if (firestoreMod && firestoreMod.saveDbToFirestore) {
+      await firestoreMod.saveDbToFirestore(db);
+    }
+  } catch (err) {
+    // silently catch
+  }
+}
+
 async function saveDb(db: Record<string, any[]>) {
   db.audit_logs = db.audit_logs || [];
   cachedDb = db;
@@ -1326,7 +1406,6 @@ async function saveDb(db: Record<string, any[]>) {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem("casinorevenge_db", JSON.stringify(db));
-      console.log("[Local Storage Sync] Saved database to localStorage.");
     } catch (e) {
       console.error("Error saving db to localStorage:", e);
     }
@@ -1343,29 +1422,13 @@ async function saveDb(db: Record<string, any[]>) {
     console.error("Error saving mock db locally:", e);
   }
 
-  // 2. Save to Neon Postgres
-  const neonMod = await getNeon();
-  if (neonMod && neonMod.saveDbToNeon) {
-    console.log("[Neon Sync] Saving database state to Neon Postgres...");
-    try {
-      await neonMod.saveDbToNeon(db);
-      console.log("[Neon Sync] Database state successfully saved to Neon Postgres.");
-    } catch (err) {
-      console.error("[Neon Sync] Failed to save database state to Neon Postgres:", err);
-    }
+  // Debounce cloud saving to save write quotas and prevent blocking user RPC requests
+  if (cloudSyncTimeout) {
+    clearTimeout(cloudSyncTimeout);
   }
-
-  // 3. Save to Firestore
-  const firestoreMod = await getFirestore();
-  if (firestoreMod && firestoreMod.saveDbToFirestore) {
-    console.log("[Firestore Sync] Saving database state to Firestore...");
-    try {
-      await firestoreMod.saveDbToFirestore(db);
-      console.log("[Firestore Sync] Database state successfully saved to Firestore.");
-    } catch (err) {
-      console.error("[Firestore Sync] Failed to save database state to Firestore:", err);
-    }
-  }
+  cloudSyncTimeout = setTimeout(() => {
+    syncToCloud(db).catch(() => {});
+  }, 1500);
 }
 
 function logOperation(
