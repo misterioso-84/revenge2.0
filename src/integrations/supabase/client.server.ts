@@ -125,6 +125,27 @@ class MockSupabaseServerClient {
       return await handleMockAuth(data);
     },
     admin: {
+      getUserById: async (userId: string) => {
+        const db = await queryMockDb({
+          table: "profiles",
+          operation: "select",
+          filters: [{ column: "id", value: userId, op: "eq" }],
+          isMaybeSingle: true,
+        });
+        const profile = db.data;
+        if (!profile) return { data: { user: null }, error: { message: "User not found" } };
+        return {
+          data: {
+            user: {
+              id: profile.id,
+              email: profile.email || `${profile.username || "user"}@revenge.local`,
+              created_at: profile.created_at,
+              user_metadata: { username: profile.username, display_name: profile.display_name },
+            },
+          },
+          error: null,
+        };
+      },
       listUsers: async () => {
         const db = await queryMockDb({ table: "profiles", operation: "select" });
         const users = (db.data || []).map((p: any) => ({

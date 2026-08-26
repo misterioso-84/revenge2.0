@@ -59,11 +59,11 @@ const NAV: NavItem[] = [
   { to: "/conversioni", label: "Conversioni", icon: ArrowLeftRight },
   { to: "/servizi", label: "Catalogo Servizi", icon: Tag },
   { to: "/eventi", label: "Gestione Eventi", icon: Sparkles },
-  // { to: "/badge", label: "Badge & Timbrature", icon: Clock },
-  { to: "/master", label: "Master Spiegazioni", icon: GraduationCap },
   { to: "/dipendenti", label: "Dipendenti", icon: UserCheck },
   { to: "/stipendi", label: "Stipendi & Payroll", icon: Banknote },
   { to: "/congedi", label: "Congedi", icon: Palmtree },
+  { to: "/board", label: "Board & Bacheca", icon: ClipboardList },
+  { to: "/master", label: "Master Spiegazioni", icon: GraduationCap },
   { to: "/messaggi-telegram", label: "Messaggi Telegram", icon: Send },
   { to: "/attivita", label: "Registro Attività", icon: History, adminOnly: true },
   { to: "/utenti", label: "Utenti", icon: UserCog, adminOnly: true },
@@ -157,6 +157,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     if (n.to === "/dashboard") {
       return true;
+    }
+    if (n.to === "/board") {
+      return (
+        isAdmin ||
+        permissions.includes("board.access") ||
+        permissions.includes("board.admin") ||
+        permissions.includes("board.manage_categories") ||
+        permissions.includes("board.manage_subcategories") ||
+        permissions.includes("board.notes.create") ||
+        permissions.includes("board.tasks.create") ||
+        permissions.includes("board.meetings.manage")
+      );
     }
     if (n.to === "/cittadini") {
       return (

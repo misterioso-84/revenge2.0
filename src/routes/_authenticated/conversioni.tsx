@@ -222,13 +222,8 @@ function ConvertPanel() {
   const [nightId, setNightId] = useState<string>("");
   const [direction, setDirection] = useState<Direction>("cash_to_dobloni");
   const [input, setInput] = useState<string>("");
-  const [operatorId, setOperatorId] = useState<string>("");
-
-  useEffect(() => {
-    if (!operatorId && profile?.id) {
-      setOperatorId(profile.id);
-    }
-  }, [profile?.id, operatorId]);
+  const activeOperatorId = profile?.id || user?.id || "";
+  const currentOperatorName = profile?.display_name || profile?.username || "Tu";
 
   const filteredCitizens = useMemo(() => {
     if (!citizenSearch) return citizens;
@@ -553,48 +548,29 @@ function ConvertPanel() {
             </div>
           </div>
 
-          {/* Operatore Cassa selector */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+          {/* Operatore Cassa automatico */}
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                   <User className="h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400/80">
                     Operatore Cassa Responsabile
                   </div>
-                  <div className="text-xs font-medium text-foreground flex items-center gap-1.5 mt-0.5">
-                    <span>{activeOpObj?.display_name || activeOpObj?.username || "Tu"}</span>
-                    {(operatorId === profile?.id || (!operatorId && profile?.id)) && (
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] py-0 px-1 border-amber-500/40 text-amber-400"
-                      >
-                        Tu
-                      </Badge>
-                    )}
+                  <div className="text-xs font-bold text-foreground flex items-center gap-1.5 mt-0.5">
+                    <span>{profile?.display_name || profile?.username || "Utente Collegato"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="w-44">
-                <Select
-                  value={operatorId || profile?.id || ""}
-                  onValueChange={(val) => setOperatorId(val)}
-                >
-                  <SelectTrigger className="h-8 text-xs bg-slate-900 border-slate-800">
-                    <SelectValue placeholder="Seleziona operatore" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {staffProfiles.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id} className="text-xs">
-                        {p.display_name || p.username} {p.id === profile?.id ? "(Tu)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0.5 px-2 bg-amber-500/10 border-amber-500/40 text-amber-400 font-medium"
+              >
+                🔒 Registrato a tuo nome
+              </Badge>
             </div>
           </div>
 
@@ -776,9 +752,7 @@ function ConvertPanel() {
 
           <div className="p-3 rounded-lg border border-slate-800 bg-slate-900/40 text-xs flex items-center justify-between">
             <span className="text-muted-foreground">Registrata a nome di:</span>
-            <span className="font-semibold text-amber-400">
-              {activeOpObj?.display_name || activeOpObj?.username || "Tu"}
-            </span>
+            <span className="font-semibold text-amber-400">{currentOperatorName}</span>
           </div>
 
           {exceeds && (

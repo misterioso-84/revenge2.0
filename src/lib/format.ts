@@ -75,4 +75,23 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   { key: "candidature.gestisci", label: "Gestire, creare moduli e valutare candidature staff" },
   { key: "candidature.visualizza", label: "Vedere tutte le candidature e risposte inviate" },
   { key: "telegram.send_message", label: "Inviare messaggi Telegram nei gruppi bot" },
+  { key: "board.access", label: "Accesso al portale Board & Bacheca Casinò Revenge" },
+  { key: "board.manage_categories", label: "Creare e gestire Macro-Categorie sulla Board" },
+  {
+    key: "board.manage_subcategories",
+    label: "Creare e gestire Sottocategorie e Canali della Board",
+  },
+  { key: "board.notes.create", label: "Creare appunti e note di testo" },
+  { key: "board.notes.edit", label: "Modificare appunti e note" },
+  { key: "board.notes.delete", label: "Eliminare appunti e note" },
+  { key: "board.pin", label: "Fissare o rimuovere elementi in alto (Pin)" },
+  { key: "board.tasks.create", label: "Creare Task operative" },
+  { key: "board.tasks.assign", label: "Assegnare Task con scadenza ai membri dello Staff" },
+  { key: "board.tasks.update_status", label: "Aggiornare lo stato e completare Task operative" },
+  { key: "board.tasks.delete", label: "Eliminare Task dalla Board" },
+  { key: "board.meetings.manage", label: "Pianificare e gestire Riunioni in alto nella Board" },
+  {
+    key: "board.admin",
+    label: "Amministratore Totale della Board (Bypass permessi e moderazione completa)",
+  },
 ];

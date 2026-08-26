@@ -562,15 +562,22 @@ export const getUserTelegramGroups = createServerFn({ method: "GET" })
     ]);
 
     const isAdmin = (userRoles || []).some((r: any) => r.role === "admin");
-    const userCustomRoleIds = (customRoles || []).map((cr: any) => cr.custom_role_id);
+    const userRoleList: string[] = [];
+    (userRoles || []).forEach((r: any) => r.role && userRoleList.push(r.role));
+    (customRoles || []).forEach((cr: any) => {
+      if (cr.custom_role_id) userRoleList.push(cr.custom_role_id);
+      if (cr.custom_roles?.name) userRoleList.push(cr.custom_roles.name);
+    });
+
     const userHandle = profile?.telegram_handle
       ? profile.telegram_handle.toLowerCase().replace("@", "")
       : "";
+    const userTgIdStr = profile?.telegram_user_id ? String(profile.telegram_user_id) : "";
 
     const { isUserOrHandleAuthorizedForGroup } = await import("@/lib/telegram.server");
 
     const userGroups = (allGroups || []).filter((g: any) =>
-      isUserOrHandleAuthorizedForGroup(g, profile, userCustomRoleIds, isAdmin),
+      isUserOrHandleAuthorizedForGroup(g, profile, userRoleList, isAdmin),
     );
 
     return userGroups.map((g: any) => {
@@ -579,6 +586,8 @@ export const getUserTelegramGroups = createServerFn({ method: "GET" })
         const matchesGroup = m.group_id === g.id || String(m.chat_id) === String(g.chat_id);
         if (!matchesGroup) return false;
         if (m.user_id === userId) return true;
+        if (userTgIdStr && m.telegram_user_id && String(m.telegram_user_id) === userTgIdStr)
+          return true;
         if (userHandle && m.telegram_handle) {
           const cleanMHandle = m.telegram_handle.toLowerCase().replace("@", "");
           if (cleanMHandle === userHandle) return true;
@@ -586,7 +595,10 @@ export const getUserTelegramGroups = createServerFn({ method: "GET" })
         return false;
       });
 
-      const isInside = membership?.status === "member";
+      const isInside =
+        membership?.status === "member" ||
+        membership?.status === "administrator" ||
+        membership?.status === "creator";
       const isKicked = membership?.status === "kicked";
 
       return {
@@ -677,9 +689,13 @@ export const generateGroupInviteLink = createServerFn({ method: "POST" })
     }
 
     const isAdmin = (userRoles || []).some((r: any) => r.role === "admin");
-    const userCustomRoleIds = (customRoles || []).map((cr: any) => cr.custom_role_id);
+    const userRoleList: string[] = [];
+    (userRoles || []).forEach((r: any) => r.role && userRoleList.push(r.role));
+    (customRoles || []).forEach((cr: any) => {
+      if (cr.custom_role_id) userRoleList.push(cr.custom_role_id);
+    });
 
-    const isAllowed = isUserOrHandleAuthorizedForGroup(group, profile, userCustomRoleIds, isAdmin);
+    const isAllowed = isUserOrHandleAuthorizedForGroup(group, profile, userRoleList, isAdmin);
 
     if (!isAllowed) {
       throw new Error("Non disponi dei ruoli o eccezioni necessarie per accedere a questo gruppo.");
@@ -689,7 +705,7 @@ export const generateGroupInviteLink = createServerFn({ method: "POST" })
     let inviteLink: string | null = null;
 
     try {
-      inviteLink = await createTelegramInviteLink(group.chat_id, `Invito ${userName}`, 1, 48);
+      inviteLink = await createTelegramInviteLink(group.chat_id, `Invito ${userName}`, 0, 48);
     } catch (err) {
       console.warn("createTelegramInviteLink error:", err);
     }

@@ -13,6 +13,7 @@ import {
   Home,
   ShieldAlert,
   Sparkles,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -136,14 +137,24 @@ export function SiteNavbar({ onOpenLogin, onOpenRegister }: SiteNavbarProps) {
             })}
 
             {hasEmployeeAccess && (
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1.5 px-2.5 lg:px-3 xl:px-4 py-1.5 xl:py-2 rounded-full text-xs xl:text-[13px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-sm whitespace-nowrap shrink-0 ml-0.5"
-              >
-                <ShieldAlert className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-amber-400 shrink-0" />
-                <span className="hidden xl:inline">Gestionale Dipendenti</span>
-                <span className="xl:hidden inline">Gestionale</span>
-              </Link>
+              <>
+                <Link
+                  to="/board"
+                  className="flex items-center gap-1.5 px-2.5 lg:px-3 xl:px-4 py-1.5 xl:py-2 rounded-full text-xs xl:text-[13px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-sm whitespace-nowrap shrink-0 ml-0.5"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-amber-400 shrink-0" />
+                  <span className="hidden xl:inline">Board Staff</span>
+                  <span className="xl:hidden inline">Board</span>
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-1.5 px-2.5 lg:px-3 xl:px-4 py-1.5 xl:py-2 rounded-full text-xs xl:text-[13px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-sm whitespace-nowrap shrink-0 ml-0.5"
+                >
+                  <ShieldAlert className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-amber-400 shrink-0" />
+                  <span className="hidden xl:inline">Gestionale Dipendenti</span>
+                  <span className="xl:hidden inline">Gestionale</span>
+                </Link>
+              </>
             )}
           </nav>
 

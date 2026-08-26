@@ -43,6 +43,7 @@ import {
   Flame,
   Zap,
   GraduationCap,
+  LayoutDashboard,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { getUserTelegramGroups, generateGroupInviteLink } from "@/lib/telegram-groups.functions";
@@ -63,6 +64,13 @@ type FeatureItem = {
 };
 
 const FEATURES: FeatureItem[] = [
+  {
+    title: "Board & Workspace Staff",
+    description: "Bacheca comunicazioni, note operative staff, direttive aziendali e accesso SSO.",
+    to: "/board",
+    icon: LayoutDashboard,
+    permissions: [],
+  },
   {
     title: "Anagrafica Cittadini",
     description: "Gestione dei dati dei clienti del casinò, livello di membership e note dedicate.",

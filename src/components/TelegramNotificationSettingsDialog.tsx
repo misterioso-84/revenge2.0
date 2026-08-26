@@ -53,6 +53,8 @@ import {
   Sparkles,
   Eye,
   Check,
+  Pin,
+  ClipboardList,
 } from "lucide-react";
 import {
   getTelegramNotificationRulesFn,
@@ -71,7 +73,8 @@ interface TelegramNotificationRule {
     | "staff"
     | "congedi"
     | "stipendi"
-    | "sicurezza";
+    | "sicurezza"
+    | "board";
   section_title: string;
   event_type: string;
   title: string;
@@ -108,6 +111,7 @@ const SECTION_CONFIG = [
   { id: "congedi", label: "Ferie & Congedi", icon: CalendarDays, color: "text-orange-400" },
   { id: "stipendi", label: "Stipendi", icon: Banknote, color: "text-green-400" },
   { id: "sicurezza", label: "Sicurezza & Bot", icon: ShieldAlert, color: "text-rose-400" },
+  { id: "board", label: "Board & Bacheca", icon: ClipboardList, color: "text-amber-400" },
 ];
 
 export const TelegramNotificationSettingsDialog: React.FC<Props> = ({
@@ -352,6 +356,12 @@ export const TelegramNotificationSettingsDialog: React.FC<Props> = ({
         return <UserMinus className="w-5 h-5 text-rose-500" />;
       case "system_daily_audit":
         return <Activity className="w-5 h-5 text-sky-400" />;
+      case "board_task_assigned":
+        return <CheckSquare className="w-5 h-5 text-amber-400" />;
+      case "board_meeting_scheduled":
+        return <CalendarDays className="w-5 h-5 text-indigo-400" />;
+      case "board_announcement_pinned":
+        return <Pin className="w-5 h-5 text-rose-400" />;
       default:
         return <Bell className="w-5 h-5 text-amber-400" />;
     }

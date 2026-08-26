@@ -576,7 +576,7 @@ export async function getTelegramChat(chatId: number | string) {
 export async function createTelegramInviteLink(
   chatId: number | string,
   name?: string,
-  memberLimit: number = 1,
+  memberLimit: number = 0,
   expireHours: number = 48,
 ) {
   try {
@@ -584,10 +584,12 @@ export async function createTelegramInviteLink(
     const payload: any = {
       chat_id: chatId,
       name: name || "Invito Casinò Revenge",
-      member_limit: memberLimit,
       expire_date: expireDate,
       creates_join_request: false,
     };
+    if (memberLimit > 0) {
+      payload.member_limit = memberLimit;
+    }
     const res = await fetch(`${API_URL}/createChatInviteLink`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -945,22 +947,72 @@ export function isUserOrHandleAuthorizedForGroup(
 ): boolean {
   if (!group) return false;
 
-  // 0. If user is fired or has employee access revoked, they are NEVER authorized in staff groups
+  // 0. Fired employees or employees without employee access are NEVER authorized in staff groups
   if (profile && (profile.is_fired === true || profile.has_employee_access === false)) {
     return false;
   }
 
-  // 1. Admins are authorized
-  if (isAdmin) return true;
+  // 1. Admins or groups with disabled checks are inherently authorized
+  if (isAdmin || group.ignore_checks || group.disable_checks) return true;
 
   const allowedRoles = group.allowed_role_ids || [];
+
+  // If allowedRoles is empty or contains "all" / "staff", any active staff member is allowed
+  if (allowedRoles.length === 0 || allowedRoles.includes("all") || allowedRoles.includes("staff")) {
+    if (profile?.has_employee_access !== false) return true;
+  }
+
   if (allowedRoles.includes("admin") || allowedRoles.includes("crole-admin")) {
     if (isAdmin) return true;
   }
 
-  // 2. Check custom roles
-  const roleSet = Array.isArray(userRoleIds) ? new Set(userRoleIds) : new Set(userRoleIds || []);
-  const hasRole = allowedRoles.some((rId: string) => roleSet.has(rId));
+  // 2. Build set of user roles, custom role IDs, and role names
+  const roleSet = new Set<string>();
+  const rawRoleList = Array.isArray(userRoleIds) ? userRoleIds : Array.from(userRoleIds || []);
+
+  for (const r of rawRoleList) {
+    if (!r) continue;
+    const str = String(r).trim();
+    roleSet.add(str);
+    roleSet.add(str.toLowerCase());
+  }
+
+  if (profile) {
+    if (profile.role) {
+      roleSet.add(String(profile.role).trim());
+      roleSet.add(String(profile.role).trim().toLowerCase());
+    }
+    if (profile.custom_role) {
+      roleSet.add(String(profile.custom_role).trim());
+      roleSet.add(String(profile.custom_role).trim().toLowerCase());
+    }
+    if (profile.username) {
+      roleSet.add(String(profile.username).trim().toLowerCase());
+    }
+  }
+
+  const cleanAllowedRoles = allowedRoles.map((r: any) =>
+    String(r || "")
+      .trim()
+      .toLowerCase(),
+  );
+
+  const hasRole = cleanAllowedRoles.some((allowed: string) => {
+    if (!allowed) return false;
+    if (allowed === "admin" && isAdmin) return true;
+    for (const userRole of roleSet) {
+      const cleanUserRole = userRole.toLowerCase();
+      if (
+        cleanUserRole === allowed ||
+        cleanUserRole.includes(allowed) ||
+        allowed.includes(cleanUserRole)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  });
+
   if (hasRole) return true;
 
   // 3. Check manual exceptions / allowed handles / allowed nicknames / manual user ids
@@ -3385,6 +3437,47 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       silent: false,
       icon: "Activity",
     },
+
+    // 9. BOARD & BACHECA AZIENDALE
+    {
+      id: "rule_board_task_assigned",
+      section: "board",
+      section_title: "Board & Bacheca",
+      event_type: "board_task_assigned",
+      title: "Nuova Task Assegnata sulla Board",
+      description:
+        "Notifica quando una task con scadenza viene assegnata a uno o più membri dello staff.",
+      enabled: true,
+      chat_id: "-1003625594442",
+      silent: false,
+      icon: "CheckSquare",
+    },
+    {
+      id: "rule_board_meeting_scheduled",
+      section: "board",
+      section_title: "Board & Bacheca",
+      event_type: "board_meeting_scheduled",
+      title: "Nuova Riunione Programmata",
+      description:
+        "Notifica quando viene convocata e pianificata una riunione o briefing sulla Board.",
+      enabled: true,
+      chat_id: "-1003625594442",
+      silent: false,
+      icon: "CalendarDays",
+    },
+    {
+      id: "rule_board_announcement_pinned",
+      section: "board",
+      section_title: "Board & Bacheca",
+      event_type: "board_announcement_pinned",
+      title: "Comunicazione Fissata in Bacheca",
+      description:
+        "Notifica quando una nota o direttiva importante viene fissata in alto nella Board.",
+      enabled: true,
+      chat_id: "-1003625594442",
+      silent: false,
+      icon: "Pin",
+    },
   ];
 }
 
@@ -3556,6 +3649,16 @@ export async function resolveFallbackChatIdForSection(
             (title.includes("direzione") ||
               title.includes("dipendenti") ||
               title.includes("staff") ||
+              title.includes("master"))
+          )
+            return true;
+          if (
+            sec === "board" &&
+            (title.includes("direzione") ||
+              title.includes("staff") ||
+              title.includes("comunicaz") ||
+              title.includes("annunc") ||
+              title.includes("board") ||
               title.includes("master"))
           )
             return true;
@@ -3779,8 +3882,9 @@ export function formatTelegramNotificationPayload(
       };
 
     case "conversion_completed": {
-      const dir =
-        payload.direction === "eur_to_dobloni" ? "💶 Euro ➔ 🪙 Dobloni" : "🪙 Dobloni ➔ 💶 Euro";
+      const isEurToDob =
+        payload.direction === "eur_to_dobloni" || payload.direction === "cash_to_dobloni";
+      const dir = isEurToDob ? "💶 Euro ➔ 🪙 Dobloni" : "🪙 Dobloni ➔ 💶 Euro";
       const eur = Number(payload.eur_amount || payload.eur || 0).toLocaleString("it-IT");
       const dob = Number(payload.dobloni_amount || payload.dobloni || 0).toLocaleString("it-IT");
       return {
@@ -4010,6 +4114,52 @@ export function formatTelegramNotificationPayload(
           `\n✅ <i>Integrità del sistema e controllo permessi verificati con successo.</i>`,
       };
 
+    case "board_task_assigned":
+      return {
+        title: "Nuova Task Assegnata sulla Board",
+        defaultSilent: false,
+        html:
+          `📋 <b>NUOVA TASK ASSEGNATA SULLA BOARD</b>\n\n` +
+          `📌 <b>Titolo:</b> <b>${escapeHtml(payload.task_title || "Task Operativa")}</b>\n` +
+          `📁 <b>Categoria:</b> ${escapeHtml(payload.category_name || "Board Generale")} / ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `👤 <b>Assegnata a:</b> <b>${escapeHtml(payload.assigned_to_names || "Staff")}</b>\n` +
+          `⏰ <b>Scadenza:</b> <b>${escapeHtml(payload.deadline || "Nessuna data limite")}</b>\n` +
+          `⚡ <b>Priorità:</b> <b>${escapeHtml(payload.priority || "Normale")}</b>\n` +
+          `✍️ <b>Creata da:</b> ${escapeHtml(payload.created_by_name || "Staff")}\n` +
+          (payload.content ? `\n📝 <i>${escapeHtml(payload.content)}</i>\n` : "") +
+          `\n⏱️ <i>Notifica automatica Board Casinò Revenge emessa alle ${nowStr}</i>`,
+      };
+
+    case "board_meeting_scheduled":
+      return {
+        title: "Nuova Riunione Programmata",
+        defaultSilent: false,
+        html:
+          `📅 <b>CONVOCAZIONE RIUNIONE DI STAFF</b>\n\n` +
+          `📢 <b>Oggetto:</b> <b>${escapeHtml(payload.meeting_title || "Riunione Staff")}</b>\n` +
+          `📁 <b>Sezione:</b> ${escapeHtml(payload.category_name || "Board")} / ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `🗓️ <b>Data e Ora:</b> <b>${escapeHtml(payload.meeting_date || "Da definire")}</b>\n` +
+          `📍 <b>Luogo / Canale:</b> ${escapeHtml(payload.meeting_location || "Canale Vocale Staff / Discord")}\n` +
+          `👥 <b>Partecipanti Invitati:</b> ${escapeHtml(payload.attendees_names || "Tutti i membri autorizzati")}\n` +
+          (payload.agenda
+            ? `\n📋 <b>Ordine del Giorno:</b>\n${escapeHtml(payload.agenda)}\n`
+            : "") +
+          `\n⏱️ <i>Convocata da ${escapeHtml(payload.created_by_name || "Direzione")} alle ${nowStr}</i>`,
+      };
+
+    case "board_announcement_pinned":
+      return {
+        title: "Annuncio Fissato in Bacheca",
+        defaultSilent: false,
+        html:
+          `📌 <b>NUOVA COMUNICAZIONE FISSATA IN ALTO</b>\n\n` +
+          `📢 <b>Titolo:</b> <b>${escapeHtml(payload.announcement_title || "Comunicazione Ufficiale")}</b>\n` +
+          `📁 <b>Categoria:</b> ${escapeHtml(payload.category_name || "Bacheca")} / ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `✍️ <b>Autore:</b> <b>${escapeHtml(payload.author_name || "Staff")}</b>\n` +
+          (payload.content ? `\n📄 <b>Contenuto:</b>\n${escapeHtml(payload.content)}\n` : "") +
+          `\n⭐ <i>Fissato in evidenza per tutto il personale autorizzato alle ${nowStr}</i>`,
+      };
+
     default:
       return {
         title: escapeHtml(payload.title || "Notifica di Sistema"),
@@ -4096,21 +4246,41 @@ export async function dispatchTelegramNotification(
     console.log(
       `[Telegram Notifications] Dispatching '${eventType}' -> Target Chat ID: ${targetChatId}`,
     );
-    const res = await sendTelegramMessage(targetChatId, html, undefined, {
+    let res = await sendTelegramMessage(targetChatId, html, undefined, {
       disableNotification: silent,
     });
 
     if (res && res.ok) {
       console.log(`[Telegram Notifications] Successfully sent '${eventType}' to ${targetChatId}`);
       return { success: true, sentTo: [String(targetChatId)] };
-    } else {
-      console.error(`[Telegram Notifications] Send failed for '${eventType}':`, res);
-      return {
-        success: false,
-        sentTo: [],
-        error: res?.description || "Errore sconosciuto durante l'invio su Telegram",
-      };
     }
+
+    // Fallback: If primary targetChatId failed (or was hardcoded dummy ID), try resolving real registered group
+    console.warn(
+      `[Telegram Notifications] Primary send failed for '${eventType}' to ${targetChatId} (${res?.description}). Trying active group fallback...`,
+    );
+    const fallbackChatId = await resolveFallbackChatIdForSection(rule.section, rule.title);
+    if (fallbackChatId && String(fallbackChatId) !== String(targetChatId)) {
+      console.log(
+        `[Telegram Notifications] Retrying '${eventType}' with fallback Chat ID: ${fallbackChatId}`,
+      );
+      res = await sendTelegramMessage(fallbackChatId, html, undefined, {
+        disableNotification: silent,
+      });
+      if (res && res.ok) {
+        console.log(
+          `[Telegram Notifications] Successfully sent '${eventType}' to fallback group ${fallbackChatId}`,
+        );
+        return { success: true, sentTo: [String(fallbackChatId)] };
+      }
+    }
+
+    console.error(`[Telegram Notifications] All attempts failed for '${eventType}':`, res);
+    return {
+      success: false,
+      sentTo: [],
+      error: res?.description || "Errore sconosciuto durante l'invio su Telegram",
+    };
   } catch (err: any) {
     console.error("[Telegram Notifications] Error in dispatchTelegramNotification:", err);
     return { success: false, sentTo: [], error: err.message || String(err) };
@@ -4463,12 +4633,28 @@ export async function dispatchDbEventNotifications(
           });
         }
       } else if (table === "conversions" && operation === "insert") {
+        let opName = item.operator_name;
+        if (
+          (!opName || opName === "Cassiere") &&
+          (item.created_by || item.operator_id) &&
+          db?.profiles
+        ) {
+          const targetOpId = item.operator_id || item.created_by;
+          const p = (db.profiles || []).find((prof: any) => prof.id === targetOpId);
+          if (p) opName = p.display_name || p.username;
+        }
+        let citName = item.citizen_name;
+        if ((!citName || citName === "Cittadino") && item.citizen_id && db?.citizens) {
+          const c = (db.citizens || []).find((cit: any) => cit.id === item.citizen_id);
+          if (c) citName = c.full_name;
+        }
+
         await dispatchTelegramNotification("conversion_completed", {
-          direction: item.direction || (item.eur_amount ? "eur_to_dobloni" : "dobloni_to_eur"),
+          direction: item.direction || (item.eur_amount ? "cash_to_dobloni" : "dobloni_to_cash"),
           eur_amount: item.eur_amount || item.eur || item.amount || 0,
           dobloni_amount: item.dobloni_amount || item.dobloni || 0,
-          citizen_name: item.citizen_name || "Cittadino",
-          operator_name: item.operator_name || item.created_by || "Cassiere",
+          citizen_name: citName || "Cittadino",
+          operator_name: opName || "Cassiere",
         });
       } else if (table === "leave_requests" && operation === "insert") {
         let empName = item.employee_name || item.user_name;
