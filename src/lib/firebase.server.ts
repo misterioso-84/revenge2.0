@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore/lite";
-import firebaseConfig from "../../firebase-applet-config.json";
+import firebaseConfig from "./firebase-config";
 
 // Safely initialize Firebase App
 function getFirebaseApp() {

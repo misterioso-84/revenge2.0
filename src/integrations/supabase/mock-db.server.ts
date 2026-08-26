@@ -21,7 +21,7 @@ async function getNeon() {
 }
 
 async function getFirestore() {
-  return null;
+  return firestoreModuleStatic;
 }
 
 let fsModule: any = null;

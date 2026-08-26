@@ -1,0 +1,13 @@
+export const firebaseConfig = {
+  projectId: "modular-legacy-pxhgq",
+  appId: "1:883484343026:web:8014adac62301f035c6e6b",
+  apiKey: "AIzaSyBQ4GsNh-KSOQOVMly3m-ppPzFgWTNbr2A",
+  authDomain: "modular-legacy-pxhgq.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-casinorevenge-e69f02a8-da04-4305-b489-f50b762ca728",
+  storageBucket: "modular-legacy-pxhgq.firebasestorage.app",
+  messagingSenderId: "883484343026",
+  measurementId: "",
+  oAuthClientId: "883484343026-h6b5j7hpmcie8l1rev790in8kq3bsg65.apps.googleusercontent.com",
+};
+
+export default firebaseConfig;
