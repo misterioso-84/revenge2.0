@@ -3884,17 +3884,25 @@ export function formatTelegramNotificationPayload(
     case "conversion_completed": {
       const isEurToDob =
         payload.direction === "eur_to_dobloni" || payload.direction === "cash_to_dobloni";
-      const dir = isEurToDob ? "💶 Euro ➔ 🪙 Dobloni" : "🪙 Dobloni ➔ 💶 Euro";
+      const dir = isEurToDob ? "💶 Soldi (Euro) ➔ 🪙 Dobloni" : "🪙 Dobloni ➔ 💶 Soldi (Euro)";
+      const balanceImpact = isEurToDob
+        ? "🟢 <b>ENTRATA CASSA (+ GUADAGNO PER IL CASINÒ)</b>"
+        : "🔴 <b>USCITA CASSA (- ESBORSO EURO / PAGAMENTO CLIENTE)</b>";
       const eur = Number(payload.eur_amount || payload.eur || 0).toLocaleString("it-IT");
       const dob = Number(payload.dobloni_amount || payload.dobloni || 0).toLocaleString("it-IT");
+      const eurSign = isEurToDob ? `+€ ${eur}` : `-€ ${eur}`;
+      const dobSign = isEurToDob ? `+🪙 ${dob}` : `-🪙 ${dob}`;
       return {
-        title: "Conversione Cassa Dobloni ⇄ Euro",
+        title: isEurToDob
+          ? "🟢 Entrata Cassa — Soldi ➔ Dobloni"
+          : "🔴 Uscita Cassa — Dobloni ➔ Soldi",
         defaultSilent: false,
         html:
           `💱 <b>TRANSAZIONE DI CASSA REGISTRATA</b>\n\n` +
+          `📊 <b>Esito Bilancio:</b> ${balanceImpact}\n` +
           `🔄 <b>Operazione:</b> <b>${dir}</b>\n` +
-          `💵 <b>Controvalore Euro:</b> € ${eur}\n` +
-          `🪙 <b>Controvalore Dobloni:</b> 🪙 ${dob}\n` +
+          `💵 <b>Controvalore Euro:</b> <b>${eurSign}</b>\n` +
+          `🪙 <b>Controvalore Dobloni:</b> <b>${dobSign}</b>\n` +
           `👤 <b>Cliente:</b> ${escapeHtml(payload.citizen_name || payload.client || "Cliente al banco")}\n` +
           `💼 <b>Operatore Cassa:</b> ${escapeHtml(payload.operator_name || payload.created_by || "Cassiere")}\n` +
           `\n⏱️ <i>Registrata il ${nowStr}</i>`,

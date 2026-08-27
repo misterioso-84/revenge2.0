@@ -855,16 +855,26 @@ function SchedaCittadinoPage() {
                                 <TableCell className="py-3.5">
                                   <Badge
                                     variant="secondary"
-                                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
+                                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 inline-flex items-center gap-1.5 ${
                                       isCashToDobloni
                                         ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                        : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                        : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                                     }`}
                                   >
-                                    {isCashToDobloni ? "Acquisto Dobloni" : "Incasso in Contanti"}
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        isCashToDobloni ? "bg-emerald-400" : "bg-rose-400"
+                                      }`}
+                                    />
+                                    {isCashToDobloni ? "Acquisto Dobloni (+€)" : "Riconversione Contanti (-€)"}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="py-3.5 text-right font-mono font-bold text-slate-200 text-xs">
+                                <TableCell
+                                  className={`py-3.5 text-right font-mono font-bold text-xs ${
+                                    isCashToDobloni ? "text-emerald-400" : "text-rose-400"
+                                  }`}
+                                >
+                                  {isCashToDobloni ? "+" : "-"}
                                   {formatMoney(c.eur_amount)}
                                 </TableCell>
                                 <TableCell className="py-3.5 text-right font-mono font-bold text-amber-400 text-xs">

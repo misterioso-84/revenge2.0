@@ -582,11 +582,20 @@ function ConvertPanel() {
                 setDirection("cash_to_dobloni");
                 setInput("");
               }}
-              className="h-14"
+              className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
+                direction === "cash_to_dobloni"
+                  ? "bg-emerald-500/20 text-emerald-300 border-2 border-emerald-500 hover:bg-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                  : "hover:border-emerald-500/40 hover:text-emerald-300"
+              }`}
             >
-              <Euro className="h-4 w-4" /> <ArrowRight className="h-4 w-4" />{" "}
-              <Coins className="h-4 w-4" />
-              <span className="ml-1">Soldi → Dobloni</span>
+              <div className="flex items-center gap-1.5 font-bold text-sm">
+                <Euro className="h-4 w-4 text-emerald-400" /> <ArrowRight className="h-3.5 w-3.5" />{" "}
+                <Coins className="h-4 w-4 text-amber-400" />
+                <span>Soldi → Dobloni</span>
+              </div>
+              <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                🟢 Entrata Cassa (+ Guadagno)
+              </span>
             </Button>
             <Button
               type="button"
@@ -595,11 +604,20 @@ function ConvertPanel() {
                 setDirection("dobloni_to_cash");
                 setInput("");
               }}
-              className="h-14"
+              className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
+                direction === "dobloni_to_cash"
+                  ? "bg-rose-500/20 text-rose-300 border-2 border-rose-500 hover:bg-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                  : "hover:border-rose-500/40 hover:text-rose-300"
+              }`}
             >
-              <Coins className="h-4 w-4" /> <ArrowRight className="h-4 w-4" />{" "}
-              <Euro className="h-4 w-4" />
-              <span className="ml-1">Dobloni → Soldi</span>
+              <div className="flex items-center gap-1.5 font-bold text-sm">
+                <Coins className="h-4 w-4 text-amber-400" /> <ArrowRight className="h-3.5 w-3.5" />{" "}
+                <Euro className="h-4 w-4 text-rose-400" />
+                <span>Dobloni → Soldi</span>
+              </div>
+              <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                🔴 Uscita Cassa (- Esborso Euro)
+              </span>
             </Button>
           </div>
 
@@ -731,22 +749,83 @@ function ConvertPanel() {
         </CardContent>
       </Card>
 
-      <Card className={exceeds ? "border-destructive/50" : "border-primary/30"}>
+      <Card
+        className={`transition-colors ${
+          exceeds
+            ? "border-destructive/60 bg-destructive/5"
+            : direction === "cash_to_dobloni"
+              ? "border-emerald-500/40 bg-gradient-to-b from-emerald-950/15 via-slate-900/40 to-slate-950"
+              : "border-rose-500/40 bg-gradient-to-b from-rose-950/15 via-slate-900/40 to-slate-950"
+        }`}
+      >
         <CardHeader>
-          <CardTitle>Anteprima</CardTitle>
-          <CardDescription>Riepilogo conversione e conferma</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle>Anteprima Transazione</CardTitle>
+            <Badge
+              className={`text-xs font-bold px-2.5 py-1 ${
+                direction === "cash_to_dobloni"
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                  : "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+              }`}
+            >
+              {direction === "cash_to_dobloni"
+                ? "🟢 ENTRATA (+ Guadagno Cassa)"
+                : "🔴 USCITA (- Esborso Euro)"}
+            </Badge>
+          </div>
+          <CardDescription>
+            {direction === "cash_to_dobloni"
+              ? "Il cliente versa euro in cassa e riceve dobloni di gioco"
+              : "Il cliente riconverte i dobloni e la cassa deve erogare euro"}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 text-center">
-            <div className="rounded-lg border border-border p-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                In entrata
+            <div
+              className={`rounded-lg border p-4 transition-colors ${
+                direction === "cash_to_dobloni"
+                  ? "border-emerald-500/30 bg-emerald-500/5"
+                  : "border-slate-800 bg-slate-900/50"
+              }`}
+            >
+              <div
+                className={`text-xs uppercase tracking-wider font-semibold ${
+                  direction === "cash_to_dobloni" ? "text-emerald-400" : "text-muted-foreground"
+                }`}
+              >
+                {direction === "cash_to_dobloni" ? "Euro Ricevuti (Incasso)" : "Dobloni Ricevuti"}
               </div>
-              <div className="mt-1 text-xl font-bold">{preview.inStr}</div>
+              <div
+                className={`mt-1 text-xl font-bold font-mono ${
+                  direction === "cash_to_dobloni" ? "text-emerald-400" : "text-amber-400"
+                }`}
+              >
+                {direction === "cash_to_dobloni" ? `+${preview.inStr}` : preview.inStr}
+              </div>
             </div>
-            <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
-              <div className="text-xs text-primary uppercase tracking-wider">Da consegnare</div>
-              <div className="mt-1 text-2xl font-bold text-primary">{preview.outStr}</div>
+            <div
+              className={`rounded-lg border p-4 transition-colors ${
+                direction === "dobloni_to_cash"
+                  ? "border-rose-500/40 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+                  : "border-primary/40 bg-primary/5"
+              }`}
+            >
+              <div
+                className={`text-xs uppercase tracking-wider font-semibold ${
+                  direction === "dobloni_to_cash" ? "text-rose-400" : "text-primary"
+                }`}
+              >
+                {direction === "dobloni_to_cash"
+                  ? "Euro da Pagare al Cliente"
+                  : "Dobloni da Consegnare"}
+              </div>
+              <div
+                className={`mt-1 text-2xl font-bold font-mono ${
+                  direction === "dobloni_to_cash" ? "text-rose-400 font-extrabold" : "text-primary"
+                }`}
+              >
+                {direction === "dobloni_to_cash" ? `-${preview.outStr}` : preview.outStr}
+              </div>
             </div>
           </div>
 
@@ -1137,18 +1216,35 @@ function HistoryPanel() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={r.direction === "cash_to_dobloni" ? "default" : "secondary"}
-                            className="text-[10px] font-medium"
+                            variant="secondary"
+                            className={`text-[11px] font-semibold px-2 py-0.5 inline-flex items-center gap-1.5 ${
+                              r.direction === "cash_to_dobloni"
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                            }`}
                           >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                r.direction === "cash_to_dobloni" ? "bg-emerald-400" : "bg-rose-400"
+                              }`}
+                            />
                             {r.direction === "cash_to_dobloni"
-                              ? "Soldi → Dobloni"
-                              : "Dobloni → Soldi"}
+                              ? "Soldi → Dobloni (+€)"
+                              : "Dobloni → Soldi (-€)"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-emerald-400">
+                        <TableCell
+                          className={`text-right font-mono font-bold ${
+                            r.direction === "cash_to_dobloni"
+                              ? "text-emerald-400"
+                              : "text-rose-400"
+                          }`}
+                        >
+                          {r.direction === "cash_to_dobloni" ? "+" : "-"}
                           {formatMoney(r.eur_amount)}
                         </TableCell>
                         <TableCell className="text-right font-mono font-bold text-amber-400">
+                          {r.direction === "cash_to_dobloni" ? "+" : "-"}
                           {formatDobloni(r.dobloni_amount)}
                         </TableCell>
                         <TableCell>

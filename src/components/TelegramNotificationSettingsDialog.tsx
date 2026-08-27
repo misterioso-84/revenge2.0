@@ -794,11 +794,14 @@ export const TelegramNotificationSettingsDialog: React.FC<Props> = ({
                             💱 <b>TRANSAZIONE DI CASSA REGISTRATA</b>
                             <br />
                             <br />
-                            🔄 <b>Operazione:</b> <b>💶 Euro ➔ 🪙 Dobloni</b>
+                            📊 <b>Esito Bilancio:</b> 🟢{" "}
+                            <b>ENTRATA CASSA (+ GUADAGNO PER IL CASINÒ)</b>
                             <br />
-                            💵 <b>Controvalore Euro:</b> € 500
+                            🔄 <b>Operazione:</b> <b>💶 Soldi (Euro) ➔ 🪙 Dobloni</b>
                             <br />
-                            🪙 <b>Controvalore Dobloni:</b> 🪙 50
+                            💵 <b>Controvalore Euro:</b> <b>+€ 500</b>
+                            <br />
+                            🪙 <b>Controvalore Dobloni:</b> <b>+🪙 50</b>
                             <br />
                             👤 <b>Cliente:</b> Francesco Totti
                             <br />
