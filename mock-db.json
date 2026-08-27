@@ -245,24 +245,6 @@
       "show_in_staff_list": true
     },
     {
-      "id": "7jqqvbfk763",
-      "name": "Dealer Jr.",
-      "created_at": "2026-07-15T09:47:53.623Z",
-      "updated_at": "2026-08-13T15:15:23.656Z",
-      "description": null,
-      "permissions": [
-        "cittadini.read",
-        "cittadini.write",
-        "serate.gestisci",
-        "serate.consulta",
-        "servizi.read",
-        "conversioni.esegui"
-      ],
-      "staff_color": "#97b807",
-      "staff_weight": 3,
-      "show_in_staff_list": true
-    },
-    {
       "id": "745nc4e6n1r",
       "name": "Caposala Jr.",
       "created_at": "2026-07-15T09:48:24.215Z",
@@ -370,9 +352,9 @@
     },
     {
       "id": "77ofiysgn69",
-      "name": "Dealer Sr.",
+      "name": "Dealer",
       "created_at": "2026-08-13T15:16:14.516Z",
-      "updated_at": "2026-08-13T15:17:23.722Z",
+      "updated_at": "2026-08-27T09:04:52.703Z",
       "description": null,
       "permissions": [
         "cittadini.read",
@@ -384,7 +366,8 @@
       ],
       "staff_color": "#73c400",
       "staff_weight": 4,
-      "show_in_staff_list": true
+      "show_in_staff_list": true,
+      "is_reparto": false
     },
     {
       "id": "0sai80zv3b1",
@@ -2427,6 +2410,176 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-h725ffga7yg",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "update",
+      "table_name": "custom_roles",
+      "details": "Modificato ruolo personalizzato: Dealer",
+      "created_at": "2026-08-27T09:04:52.703Z"
+    },
+    {
+      "id": "log-qoxj89fn4nq",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "delete",
+      "table_name": "custom_roles",
+      "details": "Modificato ruolo personalizzato: ",
+      "created_at": "2026-08-27T09:04:42.210Z"
+    },
+    {
+      "id": "log-qw7fopwlefn",
+      "user_id": "mock-user-id-1234",
+      "username": "Giuse84pro",
+      "user_display_name": "Giuse84pro",
+      "action": "delete",
+      "table_name": "user_custom_roles",
+      "details": "DELETE su tabella user_custom_roles",
+      "created_at": "2026-08-27T09:04:41.794Z"
+    },
+    {
+      "id": "log-yk8m98bsiea",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.516Z"
+    },
+    {
+      "id": "log-1z0l6l9aa4t",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.515Z"
+    },
+    {
+      "id": "log-fn06ky9la2",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.515Z"
+    },
+    {
+      "id": "log-i4o85wr3i3j",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.514Z"
+    },
+    {
+      "id": "log-yd10poj4xah",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.514Z"
+    },
+    {
+      "id": "log-v9accn12d1",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.513Z"
+    },
+    {
+      "id": "log-qeo1fmp1lid",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.513Z"
+    },
+    {
+      "id": "log-1m2yd1yjqno",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_chat_messages",
+      "details": "UPSERT su tabella telegram_chat_messages",
+      "created_at": "2026-08-27T09:03:51.512Z"
+    },
+    {
+      "id": "log-m2vyzxflc6l",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "upsert",
+      "table_name": "telegram_group_members",
+      "details": "UPSERT su tabella telegram_group_members",
+      "created_at": "2026-08-27T09:03:42.054Z"
+    },
+    {
+      "id": "log-ehmp14l7svw",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "update",
+      "table_name": "board_items",
+      "details": "UPDATE su tabella board_items",
+      "created_at": "2026-08-27T08:57:38.656Z"
+    },
+    {
+      "id": "log-lybqrb3dv1p",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "update",
+      "table_name": "board_items",
+      "details": "UPDATE su tabella board_items",
+      "created_at": "2026-08-27T08:57:35.290Z"
+    },
+    {
+      "id": "log-7sgeydl4orc",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "update",
+      "table_name": "board_items",
+      "details": "UPDATE su tabella board_items",
+      "created_at": "2026-08-27T08:57:33.682Z"
+    },
+    {
+      "id": "log-c9nsca60hyw",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "update",
+      "table_name": "board_items",
+      "details": "UPDATE su tabella board_items",
+      "created_at": "2026-08-27T08:57:31.779Z"
+    },
+    {
+      "id": "log-01kjiph4ttln",
+      "user_id": "system",
+      "username": "sistema",
+      "user_display_name": "Sistema",
+      "action": "update",
+      "table_name": "board_items",
+      "details": "UPDATE su tabella board_items",
+      "created_at": "2026-08-27T08:57:30.182Z"
+    },
     {
       "id": "log-aonrxutb7wm",
       "user_id": "system",
@@ -8237,7 +8390,7 @@
       "is_revoked": false,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
       "device_type": "desktop",
-      "last_active": "2026-08-27T08:57:48.858Z",
+      "last_active": "2026-08-27T09:11:53.640Z",
       "country_code": "IT",
       "country_flag": "🇮🇹",
       "country_name": "Italia",
@@ -8421,7 +8574,6 @@
         "s4aarlf68v",
         "oytljvym3pr",
         "0sai80zv3b1",
-        "7jqqvbfk763",
         "qb8h239wnp",
         "gsstr50iroe",
         "5d7eafafjmu",
@@ -8865,20 +9017,86 @@
     },
     {
       "id": "tgm-tgroup-1003625594442-8565037802",
-      "created_at": "2026-08-26T17:18:22.488Z",
-      "updated_at": "2026-08-26T17:20:31.846Z",
+      "created_at": "2026-08-27T09:03:42.054Z",
+      "updated_at": "2026-08-27T09:03:42.053Z",
       "group_id": "tgroup-1003625594442",
       "chat_id": -1003625594442,
       "telegram_user_id": 8565037802,
-      "telegram_handle": "@Blatnoms",
+      "telegram_handle": "@blatnoms",
       "user_id": "mock-user-id-1234",
       "status": "member",
       "verified": true,
-      "joined_at": "2026-08-26T17:20:31.846Z"
+      "joined_at": "2026-08-27T09:03:42.053Z"
     }
   ],
   "telegram_pending_codes": [],
   "telegram_chat_messages": [
+    {
+      "id": "seed-dm-377913887-1",
+      "created_at": "2026-08-27T07:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.516Z",
+      "chat_id": "377913887",
+      "message_id": 201,
+      "sender_type": "user",
+      "sender_name": "itz_vampire",
+      "sender_username": "iTzVampire",
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "Salve staff del Casinò Revenge! Ho completato la verifica del mio profilo su Telegram.",
+      "date": 1787814231,
+      "is_pinned": false,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1,
+          "users": [
+            {
+              "id": "staff",
+              "name": "Staff"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed-dm-2042713235-1",
+      "created_at": "2026-08-27T07:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.515Z",
+      "chat_id": "2042713235",
+      "message_id": 201,
+      "sender_type": "user",
+      "sender_name": "Kyrael_",
+      "sender_username": "kyraelz",
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "Salve staff del Casinò Revenge! Ho completato la verifica del mio profilo su Telegram.",
+      "date": 1787814231,
+      "is_pinned": false,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1,
+          "users": [
+            {
+              "id": "staff",
+              "name": "Staff"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
     {
       "id": "tg-8565037802-855",
       "created_at": "2026-08-26T17:29:53.000Z",
@@ -8900,6 +9118,204 @@
       "reactions": [],
       "inline_buttons": [],
       "delivery_status": "read"
+    },
+    {
+      "id": "seed-dm-8565037802-1",
+      "created_at": "2026-08-27T07:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.514Z",
+      "chat_id": "8565037802",
+      "message_id": 201,
+      "sender_type": "user",
+      "sender_name": "Giuse84pro",
+      "sender_username": "Blatnoms",
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "Salve staff del Casinò Revenge! Ho completato la verifica del mio profilo su Telegram.",
+      "date": 1787814231,
+      "is_pinned": false,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1,
+          "users": [
+            {
+              "id": "staff",
+              "name": "Staff"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed--1003625594442-1",
+      "created_at": "2026-08-27T05:03:51.508Z",
+      "updated_at": "2026-08-27T09:03:51.512Z",
+      "chat_id": "-1003625594442",
+      "message_id": 101,
+      "sender_type": "bot",
+      "sender_name": "Casinò Revenge Bot",
+      "sender_username": null,
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "👋 <b>Canale Ufficiale Casinò [ᴅɪʀᴇᴢɪᴏɴᴇ] ・ 𝐀𝐓𝐋𝐀𝐍𝐓𝐈𝐒 𝐑𝐏</b> collegato e operativo con il Casinò Revenge a Liberty Bay.",
+      "date": 1787807031,
+      "is_pinned": true,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👑",
+          "count": 3,
+          "users": [
+            {
+              "id": "1",
+              "name": "Capitano"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed--1004334505365-1",
+      "created_at": "2026-08-27T05:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.513Z",
+      "chat_id": "-1004334505365",
+      "message_id": 101,
+      "sender_type": "bot",
+      "sender_name": "Casinò Revenge Bot",
+      "sender_username": null,
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "👋 <b>Canale Ufficiale Casinò [ᴄᴀɴᴅɪᴅᴀᴛɪ ᴍᴏᴢᴢɪ] ・ 𝐀𝐓𝐋𝐀𝐍𝐓𝐈𝐒 𝐑𝐏</b> collegato e operativo con il Casinò Revenge a Liberty Bay.",
+      "date": 1787807031,
+      "is_pinned": true,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👑",
+          "count": 3,
+          "users": [
+            {
+              "id": "1",
+              "name": "Capitano"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed--1001815625559-1",
+      "created_at": "2026-08-27T05:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.513Z",
+      "chat_id": "-1001815625559",
+      "message_id": 101,
+      "sender_type": "bot",
+      "sender_name": "Casinò Revenge Bot",
+      "sender_username": null,
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "👋 <b>Canale Ufficiale Casinò [ᴅɪᴘᴇɴᴅᴇɴᴛɪ] ・ 𝐀𝐓𝐋𝐀𝐍𝐓𝐈𝐒 𝐑𝐏</b> collegato e operativo con il Casinò Revenge a Liberty Bay.",
+      "date": 1787807031,
+      "is_pinned": true,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👑",
+          "count": 3,
+          "users": [
+            {
+              "id": "1",
+              "name": "Capitano"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed--1004480446106-1",
+      "created_at": "2026-08-27T05:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.514Z",
+      "chat_id": "-1004480446106",
+      "message_id": 101,
+      "sender_type": "bot",
+      "sender_name": "Casinò Revenge Bot",
+      "sender_username": null,
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "👋 <b>Canale Ufficiale Casinò [ᴇᴠᴇɴᴛɪ] ・ 𝐀𝐓𝐋𝐀𝐍𝐓𝐈𝐒 𝐑𝐏</b> collegato e operativo con il Casinò Revenge a Liberty Bay.",
+      "date": 1787807031,
+      "is_pinned": true,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👑",
+          "count": 3,
+          "users": [
+            {
+              "id": "1",
+              "name": "Capitano"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
+    },
+    {
+      "id": "seed--1004444354205-1",
+      "created_at": "2026-08-27T05:03:51.509Z",
+      "updated_at": "2026-08-27T09:03:51.514Z",
+      "chat_id": "-1004444354205",
+      "message_id": 101,
+      "sender_type": "bot",
+      "sender_name": "Casinò Revenge Bot",
+      "sender_username": null,
+      "sender_avatar": null,
+      "sender_role": null,
+      "sender_id": null,
+      "text": "👋 <b>Canale Ufficiale Casinò [ᴍᴀꜱᴛᴇʀ] ・ 𝐀𝐓𝐋𝐀𝐍𝐓𝐈𝐒 𝐑𝐏</b> collegato e operativo con il Casinò Revenge a Liberty Bay.",
+      "date": 1787807031,
+      "is_pinned": true,
+      "pinned_at": null,
+      "reply_to_message_id": null,
+      "reply_to_message": null,
+      "reactions": [
+        {
+          "emoji": "👑",
+          "count": 3,
+          "users": [
+            {
+              "id": "1",
+              "name": "Capitano"
+            }
+          ]
+        }
+      ],
+      "inline_buttons": [],
+      "delivery_status": "delivered"
     }
   ],
   "telegram_notification_rules": [
@@ -9634,7 +10050,7 @@
       "content": "Eseguire il controllo di bilanciamento delle ruote della roulette nei tavoli 1 e 2, verificare la scorta di fiches nei cassetti cassa e compilare la scheda di apertura.",
       "is_pinned": false,
       "priority": "urgent",
-      "task_status": "in_progress",
+      "task_status": "done",
       "deadline": "2026-08-27T17:16:55.932Z",
       "assigned_to_ids": [
         "mock-user-id-1234"
@@ -9651,20 +10067,20 @@
         {
           "id": "chk-2",
           "text": "Controllo scorta fiches sala",
-          "done": false
+          "done": true
         },
         {
           "id": "chk-3",
           "text": "Registrazione tagliandi cassa",
-          "done": false
+          "done": true
         }
       ],
       "author_id": "mock-user-id-1234",
       "author_name": "Capitano Sala",
       "author_role": "Staff",
       "created_at": "2026-08-26T09:16:55.932Z",
-      "updated_at": "2026-08-27T08:57:28.293Z",
-      "completed_at": "2026-08-27T08:57:00.051Z",
+      "updated_at": "2026-08-27T08:57:38.656Z",
+      "completed_at": "2026-08-27T08:57:38.656Z",
       "completed_by": "Giuse84pro"
     },
     {
