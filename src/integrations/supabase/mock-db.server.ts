@@ -1166,13 +1166,15 @@ function ensureDbTables(db: Record<string, any[]>) {
 
 let cachedDb: Record<string, any[]> | null = null;
 let lastLoadedTime = 0;
-const CACHE_TTL_MS = 2000; // 2 seconds Cache TTL to prevent serving stale data in serverless environments
 let isInitializing = false;
 let initPromise: Promise<Record<string, any[]>> | null = null;
 
+export function clearDbCache() {
+  cachedDb = null;
+}
+
 async function loadDb(): Promise<Record<string, any[]>> {
-  const now = Date.now();
-  if (cachedDb && now - lastLoadedTime < CACHE_TTL_MS) {
+  if (cachedDb) {
     return ensureDbTables(cachedDb);
   }
 
@@ -1428,7 +1430,7 @@ async function saveDb(db: Record<string, any[]>) {
   }
   cloudSyncTimeout = setTimeout(() => {
     syncToCloud(db).catch(() => {});
-  }, 1500);
+  }, 300);
 }
 
 function logOperation(

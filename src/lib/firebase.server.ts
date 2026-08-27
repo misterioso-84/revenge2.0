@@ -1,6 +1,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore/lite";
 import firebaseConfig from "./firebase-config";
+import fs from "fs";
+import path from "path";
 
 // Circuit breaker state to prevent repeated quota errors
 let writeQuotaExceededUntil = 0;
@@ -8,7 +10,7 @@ let readQuotaExceededUntil = 0;
 
 function isQuotaError(err: any): boolean {
   if (!err) return false;
-  const msg = String(err?.message || err || "").toLowerCase();
+  const msg = String(err?.message || err?.cause || err?.stack || err || "").toLowerCase();
   const code = String(err?.code || "").toLowerCase();
   return (
     code.includes("resource-exhausted") ||
@@ -16,8 +18,37 @@ function isQuotaError(err: any): boolean {
     msg.includes("quota limit exceeded") ||
     msg.includes("quota exceeded") ||
     msg.includes("free daily write units") ||
-    msg.includes("resource_exhausted")
+    msg.includes("resource_exhausted") ||
+    msg.includes("quota_exceeded") ||
+    msg.includes("limit exceeded") ||
+    msg.includes("429")
   );
+}
+
+function isFirestoreWriteDisabled(): boolean {
+  if (Date.now() < writeQuotaExceededUntil) return true;
+  try {
+    const quotaFile = path.join(process.cwd(), ".firestore-quota-exceeded");
+    if (fs.existsSync(quotaFile)) {
+      const stat = fs.statSync(quotaFile);
+      if (Date.now() - stat.mtimeMs < 24 * 60 * 60 * 1000) {
+        return true;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  return false;
+}
+
+function markFirestoreQuotaExceeded() {
+  writeQuotaExceededUntil = Date.now() + 24 * 60 * 60 * 1000;
+  try {
+    const quotaFile = path.join(process.cwd(), ".firestore-quota-exceeded");
+    fs.writeFileSync(quotaFile, new Date().toISOString(), "utf-8");
+  } catch (e) {
+    // ignore
+  }
 }
 
 // Safely initialize Firebase App
@@ -44,7 +75,9 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
   } catch (err: any) {
     if (isQuotaError(err)) {
       readQuotaExceededUntil = Date.now() + 15 * 60 * 1000; // 15 min cooldown
-      console.warn("[Firestore Database] Read quota limit reached. Using local cache.");
+      console.warn(
+        "[Firestore Database] Read quota limit reached. Using Cloudflare D1 / local cache.",
+      );
       return null;
     }
     if (err?.message?.includes("does not exist")) {
@@ -60,7 +93,7 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
       if (isQuotaError(defaultErr)) {
         readQuotaExceededUntil = Date.now() + 15 * 60 * 1000;
         console.warn(
-          "[Firestore Database] Read quota limit reached on default DB. Using local cache.",
+          "[Firestore Database] Read quota limit reached on default DB. Using Cloudflare D1 / local cache.",
         );
         return null;
       }
@@ -89,7 +122,7 @@ async function loadDbFromFirestoreInternal(
 }
 
 export async function saveDbToFirestore(data: Record<string, any[]>) {
-  if (Date.now() < writeQuotaExceededUntil) {
+  if (isFirestoreWriteDisabled()) {
     return;
   }
 
@@ -97,9 +130,9 @@ export async function saveDbToFirestore(data: Record<string, any[]>) {
     await saveDbToFirestoreInternal(data, false);
   } catch (err: any) {
     if (isQuotaError(err)) {
-      writeQuotaExceededUntil = Date.now() + 30 * 60 * 1000; // 30 min cooldown
+      markFirestoreQuotaExceeded();
       console.warn(
-        "[Firestore Database] Write quota limit exceeded. Changes saved locally in mock-db.json.",
+        "[Firestore Database] Write quota limit exceeded. Firestore sync paused for 24h. Data persists in Cloudflare D1 / local storage.",
       );
       return;
     }
@@ -110,7 +143,7 @@ export async function saveDbToFirestore(data: Record<string, any[]>) {
       await saveDbToFirestoreInternal(data, true);
     } catch (defaultErr: any) {
       if (isQuotaError(defaultErr)) {
-        writeQuotaExceededUntil = Date.now() + 30 * 60 * 1000;
+        markFirestoreQuotaExceeded();
         console.warn("[Firestore Database] Write quota limit exceeded on default DB.");
         return;
       }

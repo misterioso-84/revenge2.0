@@ -102,6 +102,7 @@ export const syncToD1NowFn = createServerFn({ method: "POST" }).handler(async ()
  */
 export const loadFromD1NowFn = createServerFn({ method: "POST" }).handler(async () => {
   try {
+    mockDb.clearDbCache();
     const d1Data = await loadDbFromD1();
     if (d1Data) {
       await mockDb.saveSupabaseDb(d1Data);
