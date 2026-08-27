@@ -303,7 +303,7 @@ class MockSupabaseClient {
       const res = await mockDbProxy({ data: payload });
       return res || { data: null, error: null };
     } catch (e: any) {
-      console.error("[Supabase Client] RPC error:", e);
+      console.warn("[Supabase Client] RPC call failed:", e?.message || e);
       return { data: null, error: { message: e?.message || "Errore RPC" } };
     }
   }

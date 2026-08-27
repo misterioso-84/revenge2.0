@@ -393,7 +393,7 @@ function ConvertPanel() {
       if (isInvalidMultipleOf40)
         throw new Error("L'importo dei dobloni deve essere un multiplo di 40");
       if (exceeds) throw new Error("Limite giornaliero superato — un amministratore può azzerarlo");
-      const activeOperator = operatorId || profile?.id || user?.id;
+      const activeOperator = activeOperatorId || profile?.id || user?.id;
       const { data, error } = await (supabase as any).rpc("perform_conversion", {
         _citizen: citizenId,
         _night: currentNightId,
@@ -432,7 +432,7 @@ function ConvertPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const activeOpObj = staffProfiles.find((p: any) => p.id === (operatorId || profile?.id));
+  const activeOpObj = staffProfiles.find((p: any) => p.id === (activeOperatorId || profile?.id));
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">

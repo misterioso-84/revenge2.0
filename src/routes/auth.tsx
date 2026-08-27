@@ -11,7 +11,6 @@ import { usernameToEmail } from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Accesso — Casinò Revenge" },
