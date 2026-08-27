@@ -47,6 +47,8 @@ import {
   AtSign,
   Gamepad2,
   X,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/format";
 import { toast } from "sonner";
@@ -95,9 +97,9 @@ function RolesPage() {
   const { data: roles = [] } = useQuery({
     queryKey: ["custom-roles"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("custom_roles").select("*").order("name");
+      const { data, error } = await supabase.from("custom_roles").select("*");
       if (error) throw error;
-      return data;
+      return (data || []).sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
     },
   });
 
@@ -122,8 +124,12 @@ function RolesPage() {
     },
   });
 
-  const baseRoles = (roles || []).filter((r: any) => !r.is_reparto);
-  const reparti = (roles || []).filter((r: any) => r.is_reparto === true);
+  const baseRoles = (roles || [])
+    .filter((r: any) => !r.is_reparto)
+    .sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
+  const reparti = (roles || [])
+    .filter((r: any) => r.is_reparto === true)
+    .sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
 
   const filteredBaseRoles = baseRoles.filter((r: any) => {
     if (!searchQuery.trim()) return true;
@@ -145,6 +151,51 @@ function RolesPage() {
     );
   });
 
+  const moveRole = async (currentIndex: number, direction: "up" | "down", list: any[]) => {
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    const currentItem = list[currentIndex];
+    const targetItem = list[targetIndex];
+
+    const currentWeight = currentItem.staff_weight ?? 50;
+    const targetWeight = targetItem.staff_weight ?? 50;
+
+    let newCurrentWeight: number;
+    let newTargetWeight: number;
+
+    if (currentWeight === targetWeight) {
+      if (direction === "up") {
+        newCurrentWeight = currentWeight + 5;
+        newTargetWeight = currentWeight;
+      } else {
+        newCurrentWeight = Math.max(0, currentWeight - 5);
+        newTargetWeight = currentWeight;
+      }
+    } else {
+      newCurrentWeight = targetWeight;
+      newTargetWeight = currentWeight;
+    }
+
+    try {
+      await Promise.all([
+        supabase
+          .from("custom_roles")
+          .update({ staff_weight: newCurrentWeight })
+          .eq("id", currentItem.id),
+        supabase
+          .from("custom_roles")
+          .update({ staff_weight: newTargetWeight })
+          .eq("id", targetItem.id),
+      ]);
+      qc.invalidateQueries({ queryKey: ["custom-roles"] });
+      qc.invalidateQueries({ queryKey: ["public-staff-list"] });
+      toast.success(`Ordine aggiornato per "${currentItem.name}"`);
+    } catch (err: any) {
+      toast.error(err.message || "Errore durante il riordino");
+    }
+  };
+
   const {
     data: telegramGroups = [],
     isLoading: tgLoading,
@@ -162,12 +213,19 @@ function RolesPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
+      await supabase.from("user_custom_roles").delete().eq("custom_role_id", id);
       const { error } = await supabase.from("custom_roles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom-roles"] });
-      toast.success("Ruolo eliminato");
+      qc.invalidateQueries({ queryKey: ["user-custom-roles-list"] });
+      qc.invalidateQueries({ queryKey: ["public-staff-list"] });
+      toast.success("Ruolo eliminato con successo!");
+      setRoleToDelete(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Errore durante l'eliminazione del ruolo");
     },
   });
 
@@ -360,7 +418,7 @@ function RolesPage() {
                 </CardContent>
               </Card>
             )}
-            {filteredBaseRoles.map((r: any) => {
+            {filteredBaseRoles.map((r: any, idx: number) => {
               const roleColor = r.staff_color || "#3b82f6";
               const assignedUserLinks = (userCustomRoles || []).filter(
                 (ucr: any) => ucr.custom_role_id === r.id,
@@ -386,9 +444,12 @@ function RolesPage() {
                           <h3 className="font-black text-lg text-white tracking-tight truncate">
                             {r.name}
                           </h3>
+                          <Badge className="bg-amber-500/10 text-amber-300 border-amber-500/30 text-[10px] font-bold">
+                            #{idx + 1} Gerarchia (Peso: {r.staff_weight ?? 50})
+                          </Badge>
                           {r.show_in_staff_list ? (
                             <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
-                              ⚓ In Ciurma (Peso: {r.staff_weight ?? 50})
+                              ⚓ In Ciurma
                             </Badge>
                           ) : (
                             <Badge
@@ -404,7 +465,31 @@ function RolesPage() {
                         </p>
                       </div>
 
-                      <div className="flex gap-1 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Move Up/Down Controls */}
+                        <div className="flex flex-col gap-0.5 mr-1 border-r border-slate-800 pr-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={idx === 0}
+                            onClick={() => moveRole(idx, "up", filteredBaseRoles)}
+                            className="h-6 w-6 text-slate-400 hover:text-amber-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Sposta Su (Aumenta Priorità/Peso)"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={idx === filteredBaseRoles.length - 1}
+                            onClick={() => moveRole(idx, "down", filteredBaseRoles)}
+                            className="h-6 w-6 text-slate-400 hover:text-amber-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Sposta Giù (Diminuisci Priorità/Peso)"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+
                         <Button
                           size="icon"
                           variant="ghost"
@@ -560,7 +645,7 @@ function RolesPage() {
               </Card>
             )}
 
-            {filteredReparti.map((rep: any) => {
+            {filteredReparti.map((rep: any, idx: number) => {
               const assignedUserLinks = (userCustomRoles || []).filter(
                 (ucr: any) => ucr.custom_role_id === rep.id,
               );
@@ -580,10 +665,13 @@ function RolesPage() {
                   <CardContent className="pt-5 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-lg text-white">{rep.name}</h3>
                           <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-[10px] font-semibold">
                             Extrapex
+                          </Badge>
+                          <Badge className="bg-purple-500/10 text-purple-300 border-purple-500/30 text-[10px] font-bold">
+                            #{idx + 1} (Peso: {rep.staff_weight ?? 50})
                           </Badge>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
@@ -591,7 +679,31 @@ function RolesPage() {
                         </p>
                       </div>
 
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Move Up/Down Controls */}
+                        <div className="flex flex-col gap-0.5 mr-1 border-r border-slate-800 pr-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={idx === 0}
+                            onClick={() => moveRole(idx, "up", filteredReparti)}
+                            className="h-6 w-6 text-slate-400 hover:text-purple-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Sposta Su (Aumenta Priorità/Peso)"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={idx === filteredReparti.length - 1}
+                            onClick={() => moveRole(idx, "down", filteredReparti)}
+                            className="h-6 w-6 text-slate-400 hover:text-purple-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Sposta Giù (Diminuisci Priorità/Peso)"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+
                         <Button
                           size="icon"
                           variant="ghost"
@@ -600,7 +712,7 @@ function RolesPage() {
                             setIsRepartoDialog(true);
                             setOpen(true);
                           }}
-                          className="hover:bg-slate-800 text-slate-300"
+                          className="hover:bg-slate-800 text-slate-300 h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -608,7 +720,7 @@ function RolesPage() {
                           size="icon"
                           variant="ghost"
                           onClick={() => setRoleToDelete(rep)}
-                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -865,6 +977,54 @@ function RolesPage() {
             refetchGroups();
           }}
         />
+      )}
+
+      {/* Delete Role Confirmation Dialog */}
+      {roleToDelete && (
+        <Dialog open={!!roleToDelete} onOpenChange={(isOpen) => !isOpen && setRoleToDelete(null)}>
+          <DialogContent className="max-w-md bg-[#12141c] border-slate-800 text-white shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-rose-400">
+                <Trash2 className="h-5 w-5" />
+                Elimina {roleToDelete.is_reparto ? "Reparto" : "Ruolo Base"}
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 text-xs pt-1">
+                Sei sicuro di voler eliminare definitivamente{" "}
+                <strong className="text-white">"{roleToDelete.name}"</strong>?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="p-3 bg-rose-950/30 border border-rose-500/30 rounded-xl space-y-2 text-xs text-rose-200">
+              <div className="font-bold flex items-center gap-1.5 text-rose-400">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                Attenzione: Eliminazione Irreversibile
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Il {roleToDelete.is_reparto ? "reparto" : "ruolo"} verrà rimosso dalla gerarchia, da
+                tutti gli account dei membri assegnati e dai gruppi Telegram autorizzati.
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-3">
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setRoleToDelete(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                Annulla
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={del.isPending}
+                onClick={() => del.mutate(roleToDelete.id)}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                {del.isPending ? "Eliminazione..." : "Elimina Definitivamente"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

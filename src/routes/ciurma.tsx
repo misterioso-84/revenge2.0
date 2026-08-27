@@ -99,10 +99,15 @@ function StaffCiurmaPage() {
     >,
   );
 
-  const roleGroups = Object.values(groupedRoles).sort((a, b) => b.weight - a.weight);
+  const roleGroups = Object.values(groupedRoles).sort((a, b) => {
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    return a.name.localeCompare(b.name);
+  });
 
-  // Filtered reparti based on search query
+  // Filtered reparti based on search query, sorted by staffWeight hierarchy
   const filteredReparti = repartiList
+    .slice()
+    .sort((a: any, b: any) => (b.staffWeight ?? 50) - (a.staffWeight ?? 50))
     .map((rep: any) => {
       const q = search.toLowerCase().trim();
       if (!q) return rep;

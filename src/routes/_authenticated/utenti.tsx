@@ -271,8 +271,8 @@ function UsersPage() {
   const { data: customRoles = [] } = useQuery({
     queryKey: ["custom-roles"],
     queryFn: async () => {
-      const { data } = await supabase.from("custom_roles").select("*").order("name");
-      return data ?? [];
+      const { data } = await supabase.from("custom_roles").select("*");
+      return (data ?? []).sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
     },
   });
 

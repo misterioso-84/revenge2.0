@@ -153,7 +153,7 @@ function DipendentiPage() {
     queryKey: ["all-custom-roles"],
     queryFn: async () => {
       const { data } = await supabase.from("custom_roles").select("*");
-      return data ?? [];
+      return (data ?? []).sort((a: any, b: any) => (b.staff_weight ?? 50) - (a.staff_weight ?? 50));
     },
     enabled: canRead,
     refetchInterval: 10000,

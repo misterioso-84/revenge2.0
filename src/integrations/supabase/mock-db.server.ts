@@ -2642,6 +2642,24 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       return true;
     });
 
+    if (table === "custom_roles" && deletedRows.length > 0) {
+      const deletedRoleIds = new Set(deletedRows.map((r) => r.id));
+      if (Array.isArray(db.user_custom_roles)) {
+        db.user_custom_roles = db.user_custom_roles.filter(
+          (ucr) => !deletedRoleIds.has(ucr.custom_role_id),
+        );
+      }
+      if (Array.isArray(db.telegram_groups)) {
+        db.telegram_groups.forEach((tg: any) => {
+          if (Array.isArray(tg.allowed_role_ids)) {
+            tg.allowed_role_ids = tg.allowed_role_ids.filter(
+              (rid: string) => !deletedRoleIds.has(rid),
+            );
+          }
+        });
+      }
+    }
+
     if (table === "night_items") {
       recalculateNightsTotals(db);
     }
