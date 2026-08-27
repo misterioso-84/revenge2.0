@@ -6,12 +6,12 @@ pages_build_output_dir = ".output/public"
 [[d1_databases]]
 binding = "DB"
 database_name = "revenge"
-database_id = "revenge"
+database_id = "9558a0df-2a03-4d8f-b582-1b4e2a7155c9"
 
 [[d1_databases]]
 binding = "revenge"
 database_name = "revenge"
-database_id = "revenge"
+database_id = "9558a0df-2a03-4d8f-b582-1b4e2a7155c9"
 
 [vars]
 VITE_SUPABASE_URL = "https://cmjbvjagilykfzqkzkti.supabase.co"
