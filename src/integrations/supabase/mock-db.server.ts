@@ -1365,7 +1365,13 @@ async function loadDb(): Promise<Record<string, any[]>> {
   return result;
 }
 
-let cloudSyncTimeout: any = null;
+export async function getSupabaseDb(): Promise<Record<string, any[]>> {
+  return await loadDb();
+}
+
+export async function saveSupabaseDb(data: Record<string, any[]>): Promise<void> {
+  await saveDb(data);
+}
 
 async function syncToCloud(db: Record<string, any[]>) {
   // 1. Save to Cloudflare D1 ('revenge')
@@ -1375,7 +1381,7 @@ async function syncToCloud(db: Record<string, any[]>) {
       await d1Mod.saveDbToD1(db);
     }
   } catch (err) {
-    // silently catch
+    console.error("[syncToCloud] Error saving to D1:", err);
   }
 
   // 2. Save to Neon Postgres
@@ -1424,13 +1430,8 @@ async function saveDb(db: Record<string, any[]>) {
     console.error("Error saving mock db locally:", e);
   }
 
-  // Debounce cloud saving to save write quotas and prevent blocking user RPC requests
-  if (cloudSyncTimeout) {
-    clearTimeout(cloudSyncTimeout);
-  }
-  cloudSyncTimeout = setTimeout(() => {
-    syncToCloud(db).catch(() => {});
-  }, 300);
+  // 2. Synchronize directly and synchronously to D1 & Cloud storage so modifications persist instantly
+  await syncToCloud(db);
 }
 
 function logOperation(

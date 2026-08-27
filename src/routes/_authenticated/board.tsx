@@ -65,6 +65,9 @@ import {
   Calendar,
   Eye,
   Edit3,
+  Sun,
+  BellRing,
+  GitBranch,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -75,12 +78,15 @@ import {
   deleteBoardCategoryFn,
   createBoardSubcategoryFn,
   updateBoardSubcategoryFn,
+  updateBoardSubcategoryPermissionsFn,
   deleteBoardSubcategoryFn,
   createBoardItemFn,
   updateBoardItemFn,
   togglePinBoardItemFn,
   updateTaskStatusFn,
   deleteBoardItemFn,
+  triggerTaskDueRemindersFn,
+  triggerDailyTaskMorningBriefingFn,
   BoardCategory,
   BoardSubcategory,
   BoardItem,
@@ -168,7 +174,7 @@ export function BoardPage() {
   const [permPublishUserIds, setPermPublishUserIds] = useState<string[]>([]);
   const [employeeSearch, setEmployeeSearch] = useState("");
 
-  // Subcategory Dialogs
+  // Subcategory Dialogs & Form
   const [openSubcategoryDialog, setOpenSubcategoryDialog] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<BoardSubcategory | null>(null);
   const [subcategoryToDelete, setSubcategoryToDelete] = useState<BoardSubcategory | null>(null);
@@ -176,9 +182,30 @@ export function BoardPage() {
     category_id: "",
     name: "",
     description: "",
-    icon: "FileText",
+    icon: "Folder",
     color: "#3b82f6",
+    permission_mode: "inherit" as "inherit" | "public" | "restricted",
+    allowed_roles: [] as string[],
+    allowed_user_ids: [] as string[],
+    publish_mode: "inherit" as "inherit" | "all_viewers" | "restricted",
+    publish_roles: [] as string[],
+    publish_user_ids: [] as string[],
   });
+
+  // Subcategory Permissions Dialog
+  const [openSubPermissionsDialog, setOpenSubPermissionsDialog] = useState(false);
+  const [permSubcategory, setPermSubcategory] = useState<BoardSubcategory | null>(null);
+  const [subPermActiveTab, setSubPermActiveTab] = useState<"view" | "publish">("view");
+  const [subPermViewMode, setSubPermViewMode] = useState<"inherit" | "public" | "restricted">(
+    "inherit",
+  );
+  const [subPermViewRoles, setSubPermViewRoles] = useState<string[]>([]);
+  const [subPermViewUserIds, setSubPermViewUserIds] = useState<string[]>([]);
+  const [subPermPublishMode, setSubPermPublishMode] = useState<
+    "inherit" | "all_viewers" | "restricted"
+  >("inherit");
+  const [subPermPublishRoles, setSubPermPublishRoles] = useState<string[]>([]);
+  const [subPermPublishUserIds, setSubPermPublishUserIds] = useState<string[]>([]);
 
   // Item Dialogs
   const [openItemDialog, setOpenItemDialog] = useState(false);
@@ -325,28 +352,55 @@ export function BoardPage() {
   const createSubcategoryMutation = useMutation({
     mutationFn: (values: typeof subcategoryForm) =>
       createBoardSubcategoryFn({
-        data: { ...values, allowed_roles: [] },
+        data: values,
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["boardData"] });
       setOpenSubcategoryDialog(false);
       setSelectedSubcategoryId(res.subcategory.id);
-      toast.success("Sezione aggiunta alla cartella!");
+      toast.success("Sottocategoria aggiunta alla cartella!");
     },
-    onError: (err: any) => toast.error(err.message || "Errore nella creazione della sezione"),
+    onError: (err: any) => toast.error(err.message || "Errore nella creazione della sottocategoria"),
   });
 
   const updateSubcategoryMutation = useMutation({
-    mutationFn: (values: typeof subcategoryForm & { id: string }) =>
+    mutationFn: (values: {
+      id: string;
+      name: string;
+      description: string;
+      icon: string;
+      color: string;
+    }) =>
       updateBoardSubcategoryFn({
-        data: { ...values, allowed_roles: [] },
+        data: values,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["boardData"] });
       setOpenSubcategoryDialog(false);
-      toast.success("Sezione modificata!");
+      toast.success("Sottocategoria modificata!");
     },
-    onError: (err: any) => toast.error(err.message || "Errore aggiornamento sezione"),
+    onError: (err: any) => toast.error(err.message || "Errore aggiornamento sottocategoria"),
+  });
+
+  const updateSubcategoryPermissionsMutation = useMutation({
+    mutationFn: (values: {
+      id: string;
+      permission_mode: "inherit" | "public" | "restricted";
+      allowed_roles: string[];
+      allowed_user_ids: string[];
+      publish_mode: "inherit" | "all_viewers" | "restricted";
+      publish_roles: string[];
+      publish_user_ids: string[];
+      can_manage_roles: string[];
+      can_manage_user_ids: string[];
+    }) => updateBoardSubcategoryPermissionsFn({ data: values }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["boardData"] });
+      setOpenSubPermissionsDialog(false);
+      toast.success("Permessi della sottocategoria salvati con successo!");
+    },
+    onError: (err: any) =>
+      toast.error(err.message || "Errore aggiornamento permessi sottocategoria"),
   });
 
   const deleteSubcategoryMutation = useMutation({
@@ -357,9 +411,35 @@ export function BoardPage() {
         setSelectedSubcategoryId(null);
       }
       setSubcategoryToDelete(null);
-      toast.success("Sezione eliminata!");
+      toast.success("Sottocategoria eliminata!");
     },
-    onError: (err: any) => toast.error(err.message || "Errore eliminazione sezione"),
+    onError: (err: any) => toast.error(err.message || "Errore eliminazione sottocategoria"),
+  });
+
+  const triggerTaskDueRemindersMutation = useMutation({
+    mutationFn: () => triggerTaskDueRemindersFn(),
+    onSuccess: (res: any) => {
+      if (res.remindersSent > 0) {
+        toast.success(
+          `Inviati ${res.remindersSent} promemoria privati (DM) su Telegram per le task in scadenza!`,
+        );
+      } else {
+        toast.info(
+          `Nessun promemoria necessario: tutte le ${res.totalChecked} task attive sono in orario o già notificate.`,
+        );
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Errore invio promemoria scadenze"),
+  });
+
+  const triggerDailyBriefingMutation = useMutation({
+    mutationFn: () => triggerDailyTaskMorningBriefingFn(),
+    onSuccess: (res: any) => {
+      toast.success(
+        `Report mattutino inviato! ${res.dmSentCount} DM recapitati agli operatori (${res.totalTodayCount} task che scadono oggi, ${res.totalOverdueCount} scadute).`,
+      );
+    },
+    onError: (err: any) => toast.error(err.message || "Errore invio briefing mattutino"),
   });
 
   const createItemMutation = useMutation({
@@ -511,6 +591,20 @@ export function BoardPage() {
     setOpenPermissionsDialog(true);
   };
 
+  const handleOpenSubPermissions = (sub: BoardSubcategory, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPermSubcategory(sub);
+    setSubPermActiveTab("view");
+    setSubPermViewMode(sub.permission_mode || "inherit");
+    setSubPermViewRoles(sub.allowed_roles || []);
+    setSubPermViewUserIds(sub.allowed_user_ids || []);
+    setSubPermPublishMode(sub.publish_mode || "inherit");
+    setSubPermPublishRoles(sub.publish_roles || []);
+    setSubPermPublishUserIds(sub.publish_user_ids || []);
+    setEmployeeSearch("");
+    setOpenSubPermissionsDialog(true);
+  };
+
   const handleOpenCreateSubcategory = (catId?: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setEditingSubcategory(null);
@@ -518,8 +612,14 @@ export function BoardPage() {
       category_id: catId || selectedCategoryId || categories[0]?.id || "",
       name: "",
       description: "",
-      icon: "FileText",
+      icon: "Folder",
       color: "#3b82f6",
+      permission_mode: "inherit",
+      allowed_roles: [],
+      allowed_user_ids: [],
+      publish_mode: "inherit",
+      publish_roles: [],
+      publish_user_ids: [],
     });
     setOpenSubcategoryDialog(true);
   };
@@ -531,8 +631,14 @@ export function BoardPage() {
       category_id: sub.category_id,
       name: sub.name,
       description: sub.description,
-      icon: sub.icon,
-      color: sub.color,
+      icon: sub.icon || "Folder",
+      color: sub.color || "#3b82f6",
+      permission_mode: sub.permission_mode || "inherit",
+      allowed_roles: sub.allowed_roles || [],
+      allowed_user_ids: sub.allowed_user_ids || [],
+      publish_mode: sub.publish_mode || "inherit",
+      publish_roles: sub.publish_roles || [],
+      publish_user_ids: sub.publish_user_ids || [],
     });
     setOpenSubcategoryDialog(true);
   };
@@ -792,7 +898,7 @@ export function BoardPage() {
                 <span style={{ color: currentCategory.color }}>{currentCategory.name}</span>
               </span>
             ) : (
-              "Cartelle & Sezioni Staff"
+              "Cartelle & Sottocategorie Staff"
             )}
           </h1>
           <p className="text-xs text-slate-400">
@@ -805,6 +911,41 @@ export function BoardPage() {
 
         {/* Global Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Quick Automation Actions (Admin / Manager) */}
+          {(isBoardAdmin || permissions.has("board:manage_categories")) && (
+            <div className="flex items-center gap-1.5 mr-1 border-r border-slate-800 pr-3">
+              <Button
+                onClick={() => triggerTaskDueRemindersMutation.mutate()}
+                disabled={triggerTaskDueRemindersMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="bg-blue-950/30 hover:bg-blue-900/50 text-blue-300 border-blue-800/40 text-xs h-9 gap-1.5"
+                title="Invia promemoria privato (DM Telegram) a chi ha task in scadenza (<24h)"
+              >
+                <BellRing
+                  className={`w-3.5 h-3.5 ${triggerTaskDueRemindersMutation.isPending ? "animate-spin" : ""}`}
+                />
+                <span className="hidden md:inline">Promemoria Scadenze (DM)</span>
+                <span className="md:hidden">Promemoria DM</span>
+              </Button>
+
+              <Button
+                onClick={() => triggerDailyBriefingMutation.mutate()}
+                disabled={triggerDailyBriefingMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 border-amber-800/40 text-xs h-9 gap-1.5"
+                title="Invia il report mattutino (07:00) con le task del giorno e priorità"
+              >
+                <Sun
+                  className={`w-3.5 h-3.5 ${triggerDailyBriefingMutation.isPending ? "animate-spin" : ""}`}
+                />
+                <span className="hidden md:inline">Briefing 07:00</span>
+                <span className="md:hidden">Briefing</span>
+              </Button>
+            </div>
+          )}
+
           {/* If on home view, button to create folder */}
           {!selectedCategoryId && (
             <Button
@@ -996,7 +1137,7 @@ export function BoardPage() {
                         {/* Contents Summary Pills */}
                         <div className="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-300 font-medium">
                           <span className="bg-slate-800/80 px-2 py-1 rounded-md border border-slate-700/60 flex items-center gap-1">
-                            <Layers className="w-3 h-3 text-slate-400" /> {catSubs.length} sezioni
+                            <Layers className="w-3 h-3 text-slate-400" /> {catSubs.length} sottocategorie
                           </span>
                           <span className="bg-slate-800/80 px-2 py-1 rounded-md border border-slate-700/60 flex items-center gap-1">
                             <FileText className="w-3 h-3 text-amber-400" /> {noteCount} note
@@ -1085,11 +1226,11 @@ export function BoardPage() {
       {/* VIEW 2: INSIDE A FOLDER (CARTELLE SELEZIONATA) */}
       {selectedCategoryId && currentCategory && (
         <div className="space-y-6">
-          {/* Subcategories (Sections / Canali) Navigation Bar */}
+          {/* Subcategories Navigation Bar */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-amber-400" /> Sezioni interne alla cartella
+                <Layers className="w-3.5 h-3.5 text-amber-400" /> Sottocategorie & Sotto-cartelle
               </span>
               {canManageCurrentCategory && (
                 <Button
@@ -1098,7 +1239,7 @@ export function BoardPage() {
                   onClick={(e) => handleOpenCreateSubcategory(currentCategory.id, e)}
                   className="h-7 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 gap-1"
                 >
-                  <Plus className="w-3 h-3 text-amber-400" /> Nuova Sezione
+                  <Plus className="w-3 h-3 text-amber-400" /> Nuova Sottocategoria
                 </Button>
               )}
             </div>
@@ -1137,19 +1278,34 @@ export function BoardPage() {
                       onClick={() => setSelectedSubcategoryId(sub.id)}
                       className="px-3 py-1.5 flex items-center gap-1.5"
                     >
+                      {sub.permission_mode === "restricted" ? (
+                        <Lock className="w-3 h-3 text-purple-400" title="Sottocategoria Riservata" />
+                      ) : sub.permission_mode === "inherit" ? (
+                        <GitBranch className="w-3 h-3 text-slate-400" title="Eredita permessi cartella" />
+                      ) : (
+                        <Unlock className="w-3 h-3 text-emerald-400" title="Sottocategoria Libera" />
+                      )}
                       <span>{sub.name}</span>
                       <span className="bg-slate-900/80 px-1.5 py-0.2 rounded-full text-[10px] text-slate-400">
                         {subItemCount}
                       </span>
                     </button>
 
-                    {canManageCurrentCategory && (
-                      <div className="pr-1.5 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {(canManageCurrentCategory || sub.can_edit_permissions || isBoardAdmin) && (
+                      <div className="pr-1.5 flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenSubPermissions(sub, e)}
+                          className="p-1 hover:text-amber-300 text-slate-400"
+                          title="Permessi Sottocategoria"
+                        >
+                          <Key className="w-3 h-3" />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => handleOpenEditSubcategory(sub, e)}
-                          className="p-1 hover:text-amber-300 text-slate-500"
-                          title="Modifica sezione"
+                          className="p-1 hover:text-amber-300 text-slate-400"
+                          title="Modifica sottocategoria"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
@@ -1159,8 +1315,8 @@ export function BoardPage() {
                             e.stopPropagation();
                             setSubcategoryToDelete(sub);
                           }}
-                          className="p-1 hover:text-rose-400 text-slate-500"
-                          title="Elimina sezione"
+                          className="p-1 hover:text-rose-400 text-slate-400"
+                          title="Elimina sottocategoria"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -1172,7 +1328,7 @@ export function BoardPage() {
 
               {activeSubcategories.length === 0 && (
                 <div className="text-xs text-slate-500 italic py-1">
-                  Nessuna sezione specifica creata. Puoi crearne una per organizzare i file.
+                  Nessuna sottocategoria creata. Puoi crearne una per organizzare i file e impostare permessi dedicati.
                 </div>
               )}
             </div>
@@ -2106,24 +2262,24 @@ export function BoardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG 4: CREA / MODIFICA SOTTOCATEGORIA (SEZIONE) */}
+      {/* DIALOG 4: CREA / MODIFICA SOTTOCATEGORIA */}
       <Dialog open={openSubcategoryDialog} onOpenChange={setOpenSubcategoryDialog}>
         <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Layers className="w-5 h-5 text-blue-400" />
-              {editingSubcategory ? "Modifica Sezione" : "Aggiungi Sezione"}
+              {editingSubcategory ? "Modifica Sottocategoria" : "Aggiungi Sottocategoria"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-400">
-              Crea una sezione per organizzare i file all'interno della cartella.
+              Crea una sottocategoria per organizzare file e task con permessi dedicati.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300">Nome Sezione *</label>
+              <label className="font-semibold text-slate-300">Nome Sottocategoria *</label>
               <Input
-                placeholder="Es. Note Rapide, Verbali, Da Fare Urgenti..."
+                placeholder="Es. Task Settimanali, Note Interne, Verbali..."
                 value={subcategoryForm.name}
                 onChange={(e) => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
                 className="bg-slate-800 border-slate-700 text-slate-100 text-xs"
@@ -2132,7 +2288,7 @@ export function BoardPage() {
             <div className="space-y-1.5">
               <label className="font-semibold text-slate-300">Descrizione (Opzionale)</label>
               <Input
-                placeholder="Breve scopo di questa sezione..."
+                placeholder="Breve scopo di questa sottocategoria..."
                 value={subcategoryForm.description}
                 onChange={(e) =>
                   setSubcategoryForm({ ...subcategoryForm, description: e.target.value })
@@ -2155,7 +2311,7 @@ export function BoardPage() {
               type="button"
               onClick={() => {
                 if (!subcategoryForm.name.trim()) {
-                  toast.error("Inserisci un nome per la sezione.");
+                  toast.error("Inserisci un nome per la sottocategoria.");
                   return;
                 }
                 if (editingSubcategory) {
@@ -2170,7 +2326,434 @@ export function BoardPage() {
               disabled={createSubcategoryMutation.isPending || updateSubcategoryMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
             >
-              {editingSubcategory ? "Salva Modifiche" : "Crea Sezione"}
+              {editingSubcategory ? "Salva Modifiche" : "Crea Sottocategoria"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG 4.5: GESTIONE PERMESSI SOTTOCATEGORIA */}
+      <Dialog open={openSubPermissionsDialog} onOpenChange={setOpenSubPermissionsDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <Key className="w-5 h-5 text-amber-400" />
+              Permessi Sottocategoria:{" "}
+              <span className="text-amber-400">"{permSubcategory?.name}"</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Imposta regole di visibilità e permessi di pubblicazione specifici per questa sottocategoria.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Mode Selector Tabs (Visualizzazione vs Pubblicazione) */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setSubPermActiveTab("view")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
+                subPermActiveTab === "view"
+                  ? "bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm"
+                  : "bg-slate-800/40 border-slate-800 text-slate-400 hover:bg-slate-800"
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" /> Chi può Accedere / Vedere
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubPermActiveTab("publish")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
+                subPermActiveTab === "publish"
+                  ? "bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm"
+                  : "bg-slate-800/40 border-slate-800 text-slate-400 hover:bg-slate-800"
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" /> Chi può Creare / Pubblicare
+            </button>
+          </div>
+
+          {/* TAB 1: VISIBILITÀ SOTTOCATEGORIA */}
+          {subPermActiveTab === "view" && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="space-y-2">
+                <label className="font-semibold text-slate-300">Modalità di Accesso</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div
+                    onClick={() => setSubPermViewMode("inherit")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermViewMode === "inherit"
+                        ? "bg-blue-500/10 border-blue-500/50 text-blue-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <GitBranch className="w-4 h-4 text-blue-400" /> Eredita
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Stessi permessi della cartella genitore.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setSubPermViewMode("public")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermViewMode === "public"
+                        ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <Unlock className="w-4 h-4 text-emerald-400" /> Libera
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Tutto lo staff con accesso alla bacheca può vedere.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setSubPermViewMode("restricted")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermViewMode === "restricted"
+                        ? "bg-purple-500/10 border-purple-500/50 text-purple-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <Lock className="w-4 h-4 text-purple-400" /> Riservata
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Solo ruoli o dipendenti specificati.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {subPermViewMode === "restricted" && (
+                <div className="space-y-4 pt-2 border-t border-slate-800">
+                  {/* Ruoli con permesso */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-purple-400" /> Ruoli Autorizzati
+                      </label>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setSubPermViewRoles(customRoles.map((r) => r.id))}
+                          className="text-purple-400 hover:underline"
+                        >
+                          Tutti i ruoli
+                        </button>
+                        <span>•</span>
+                        <button
+                          type="button"
+                          onClick={() => setSubPermViewRoles([])}
+                          className="text-slate-400 hover:underline"
+                        >
+                          Deseleziona
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {customRoles.map((r) => {
+                        const isChecked =
+                          subPermViewRoles.includes(r.id) || subPermViewRoles.includes(r.name);
+                        return (
+                          <div
+                            key={r.id}
+                            onClick={() => {
+                              setSubPermViewRoles((prev) =>
+                                isChecked
+                                  ? prev.filter((x) => x !== r.id && x !== r.name)
+                                  : [...prev, r.id],
+                              );
+                            }}
+                            className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center gap-2 transition-colors ${
+                              isChecked
+                                ? "bg-purple-500/10 border-purple-500/50 text-purple-200"
+                                : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:bg-slate-800"
+                            }`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                                isChecked
+                                  ? "bg-purple-500 border-purple-500 text-slate-950"
+                                  : "border-slate-600"
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span className="truncate font-medium">{r.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dipendenti specifici */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-blue-400" /> Dipendenti Specifici
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {subPermViewUserIds.length} selezionati
+                      </span>
+                    </div>
+
+                    <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                      {filteredStaffMembers.map((emp) => {
+                        const isChecked = subPermViewUserIds.includes(emp.id);
+                        return (
+                          <div
+                            key={emp.id}
+                            onClick={() => {
+                              setSubPermViewUserIds((prev) =>
+                                isChecked ? prev.filter((id) => id !== emp.id) : [...prev, emp.id],
+                              );
+                            }}
+                            className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition-colors ${
+                              isChecked
+                                ? "bg-purple-500/10 border-purple-500/50 text-purple-200"
+                                : "bg-slate-800/40 border-slate-700/60 text-slate-300 hover:bg-slate-800"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                                  isChecked
+                                    ? "bg-purple-500 border-purple-500 text-slate-950"
+                                    : "border-slate-600"
+                                }`}
+                              >
+                                {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                              </div>
+                              <span className="font-medium">{emp.display_name}</span>
+                              <span className="text-[11px] text-slate-500">(@{emp.username})</span>
+                            </div>
+                            {emp.custom_roles.length > 0 && (
+                              <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">
+                                {emp.custom_roles.join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: PUBBLICAZIONE SOTTOCATEGORIA */}
+          {subPermActiveTab === "publish" && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="space-y-2">
+                <label className="font-semibold text-slate-300">Regola di Pubblicazione</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div
+                    onClick={() => setSubPermPublishMode("inherit")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermPublishMode === "inherit"
+                        ? "bg-blue-500/10 border-blue-500/50 text-blue-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <GitBranch className="w-4 h-4 text-blue-400" /> Eredita
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Stesse regole di scrittura della cartella genitore.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setSubPermPublishMode("all_viewers")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermPublishMode === "all_viewers"
+                        ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <Users className="w-4 h-4 text-emerald-400" /> Chiunque può vedere
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Tutti coloro che hanno accesso a questa sottocategoria possono aggiungere file.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setSubPermPublishMode("restricted")}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      subPermPublishMode === "restricted"
+                        ? "bg-amber-500/10 border-amber-500/50 text-amber-200 shadow-sm"
+                        : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      <Lock className="w-4 h-4 text-amber-400" /> Limitata
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Solo ruoli o dipendenti specificati possono pubblicare.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {subPermPublishMode === "restricted" && (
+                <div className="space-y-4 pt-2 border-t border-slate-800">
+                  {/* Ruoli autorizzati a pubblicare */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-amber-400" /> Ruoli Autorizzati a Pubblicare
+                      </label>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setSubPermPublishRoles(customRoles.map((r) => r.id))}
+                          className="text-amber-400 hover:underline"
+                        >
+                          Tutti i ruoli
+                        </button>
+                        <span>•</span>
+                        <button
+                          type="button"
+                          onClick={() => setSubPermPublishRoles([])}
+                          className="text-slate-400 hover:underline"
+                        >
+                          Deseleziona
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {customRoles.map((r) => {
+                        const isChecked =
+                          subPermPublishRoles.includes(r.id) || subPermPublishRoles.includes(r.name);
+                        return (
+                          <div
+                            key={r.id}
+                            onClick={() => {
+                              setSubPermPublishRoles((prev) =>
+                                isChecked
+                                  ? prev.filter((x) => x !== r.id && x !== r.name)
+                                  : [...prev, r.id],
+                              );
+                            }}
+                            className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center gap-2 transition-colors ${
+                              isChecked
+                                ? "bg-amber-500/10 border-amber-500/50 text-amber-200"
+                                : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:bg-slate-800"
+                            }`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                                isChecked
+                                  ? "bg-amber-500 border-amber-500 text-slate-950"
+                                  : "border-slate-600"
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span className="truncate font-medium">{r.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dipendenti autorizzati a pubblicare */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-emerald-400" /> Dipendenti con Permesso di Pubblicazione
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {subPermPublishUserIds.length} selezionati
+                      </span>
+                    </div>
+
+                    <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                      {filteredStaffMembers.map((emp) => {
+                        const isChecked = subPermPublishUserIds.includes(emp.id);
+                        return (
+                          <div
+                            key={emp.id}
+                            onClick={() => {
+                              setSubPermPublishUserIds((prev) =>
+                                isChecked ? prev.filter((id) => id !== emp.id) : [...prev, emp.id],
+                              );
+                            }}
+                            className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition-colors ${
+                              isChecked
+                                ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-200"
+                                : "bg-slate-800/40 border-slate-700/60 text-slate-300 hover:bg-slate-800"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                                  isChecked
+                                    ? "bg-emerald-500 border-emerald-500 text-slate-950"
+                                    : "border-slate-600"
+                                }`}
+                              >
+                                {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                              </div>
+                              <span className="font-medium">{emp.display_name}</span>
+                              <span className="text-[11px] text-slate-500">(@{emp.username})</span>
+                            </div>
+                            {emp.custom_roles.length > 0 && (
+                              <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">
+                                {emp.custom_roles.join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="pt-3 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpenSubPermissionsDialog(false)}
+              className="border-slate-700 text-slate-300 text-xs"
+            >
+              Annulla
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!permSubcategory) return;
+                updateSubcategoryPermissionsMutation.mutate({
+                  id: permSubcategory.id,
+                  permission_mode: subPermViewMode,
+                  allowed_roles: subPermViewRoles,
+                  allowed_user_ids: subPermViewUserIds,
+                  publish_mode: subPermPublishMode,
+                  publish_roles: subPermPublishRoles,
+                  publish_user_ids: subPermPublishUserIds,
+                  can_manage_roles: [],
+                  can_manage_user_ids: [],
+                });
+              }}
+              disabled={updateSubcategoryPermissionsMutation.isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
+            >
+              {updateSubcategoryPermissionsMutation.isPending
+                ? "Salvataggio..."
+                : "Salva Permessi Sottocategoria"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2185,11 +2768,11 @@ export function BoardPage() {
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-rose-400 flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-rose-500" />
-              Elimina Sezione
+              Elimina Sottocategoria
             </DialogTitle>
           </DialogHeader>
           <div className="py-2 text-xs text-slate-300">
-            Sei sicuro di voler eliminare la sezione{" "}
+            Sei sicuro di voler eliminare la sottocategoria{" "}
             <strong className="text-white">"{subcategoryToDelete?.name}"</strong>? I documenti al
             suo interno verranno cancellati.
           </div>
@@ -2209,7 +2792,7 @@ export function BoardPage() {
               }}
               className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
             >
-              Elimina Sezione
+              Elimina Sottocategoria
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2299,13 +2882,13 @@ export function BoardPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Sezione *</label>
+                <label className="font-semibold text-slate-300">Sottocategoria *</label>
                 <Select
                   value={itemForm.subcategory_id}
                   onValueChange={(val) => setItemForm({ ...itemForm, subcategory_id: val })}
                 >
                   <SelectTrigger className="bg-slate-800 border-slate-700 text-xs h-9">
-                    <SelectValue placeholder="Seleziona Sezione" />
+                    <SelectValue placeholder="Seleziona Sottocategoria" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800 text-xs">
                     {subcategories

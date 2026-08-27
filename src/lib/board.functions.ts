@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { dispatchTelegramNotification } from "@/lib/telegram.server";
+import {
+  dispatchTelegramNotification,
+  sendDirectTelegramNotificationToUser,
+} from "@/lib/telegram.server";
 
 export interface BoardCategory {
   id: string;
@@ -58,10 +61,26 @@ export interface BoardSubcategory {
   icon: string;
   color: string;
   sort_order: number;
-  allowed_roles: string[];
   created_by?: string;
   created_by_name?: string;
   created_at: string;
+
+  // Granular Subcategory Permissions (Relative to / under folder)
+  permission_mode?: "inherit" | "public" | "restricted"; // Who can view
+  allowed_roles?: string[]; // Roles allowed to view when restricted
+  allowed_user_ids?: string[]; // Users allowed to view when restricted
+  publish_mode?: "inherit" | "all_viewers" | "restricted"; // Who can post items inside
+  publish_roles?: string[]; // Roles allowed to post when restricted
+  publish_user_ids?: string[]; // Users allowed to post when restricted
+  can_manage_roles?: string[]; // Roles allowed to manage this subcategory
+  can_manage_user_ids?: string[]; // Specific user IDs allowed to manage this subcategory
+
+  // Computed flags for current user
+  can_view?: boolean;
+  can_publish?: boolean;
+  can_manage?: boolean;
+  can_delete?: boolean;
+  can_edit_permissions?: boolean;
 }
 
 export interface BoardChecklistItem {
@@ -301,23 +320,111 @@ export const getBoardDataFn = createServerFn({ method: "GET" })
       };
     });
 
+    // Map of processed categories for quick parent lookup
+    const catMap = new Map(processedCategories.map((c) => [c.id, c]));
+
+    // Process subcategories with relative permissions
+    const processedSubcategories: BoardSubcategory[] = (subcategories || []).map((sub: any) => {
+      const parentCat = catMap.get(sub.category_id);
+      const isSubCreator = sub.created_by === context.userId;
+      const isParentCatCreator = parentCat?.created_by === context.userId;
+      const isParentManager = parentCat?.can_manage || false;
+
+      // Subcategory Manager / Admin check
+      const hasSubManagePerm =
+        isAdmin ||
+        isBoardAdmin ||
+        isSubCreator ||
+        isParentCatCreator ||
+        isParentManager ||
+        permissions.has("board.manage_subcategories") ||
+        permissions.has("board.manage_categories") ||
+        permissions.has("board.admin") ||
+        (sub.can_manage_user_ids || []).includes(context.userId) ||
+        (sub.can_manage_roles || []).some(
+          (r: string) => customRoleIds.includes(r) || roles.includes(r),
+        );
+
+      // View Permission calculation
+      let canViewSub = false;
+      if (!parentCat || !parentCat.can_view) {
+        canViewSub = false;
+      } else if (hasSubManagePerm) {
+        canViewSub = true;
+      } else if (sub.permission_mode === "restricted") {
+        const inAllowedUsers = (sub.allowed_user_ids || []).includes(context.userId);
+        const inAllowedRoles = (sub.allowed_roles || []).some(
+          (r: string) => customRoleIds.includes(r) || roles.includes(r),
+        );
+        canViewSub = inAllowedUsers || inAllowedRoles;
+      } else {
+        // "inherit" or "public" - inherits folder visibility
+        canViewSub = true;
+      }
+
+      // Publish Permission calculation
+      let canPublishSub = false;
+      if (!canViewSub || (parentCat && !parentCat.can_publish)) {
+        canPublishSub = false;
+      } else if (hasSubManagePerm) {
+        canPublishSub = true;
+      } else if (sub.publish_mode === "restricted") {
+        const inPublishUsers = (sub.publish_user_ids || []).includes(context.userId);
+        const inPublishRoles = (sub.publish_roles || []).some(
+          (r: string) => customRoleIds.includes(r) || roles.includes(r),
+        );
+        canPublishSub = inPublishUsers || inPublishRoles;
+      } else {
+        // "inherit" or "all_viewers"
+        canPublishSub = true;
+      }
+
+      return {
+        id: sub.id,
+        category_id: sub.category_id,
+        name: sub.name,
+        description: sub.description || "",
+        icon: sub.icon || "Folder",
+        color: sub.color || "#3b82f6",
+        sort_order: sub.sort_order ?? 0,
+        created_by: sub.created_by,
+        created_by_name: sub.created_by_name,
+        created_at: sub.created_at,
+        permission_mode: sub.permission_mode || "inherit",
+        allowed_roles: sub.allowed_roles || [],
+        allowed_user_ids: sub.allowed_user_ids || [],
+        publish_mode: sub.publish_mode || "inherit",
+        publish_roles: sub.publish_roles || [],
+        publish_user_ids: sub.publish_user_ids || [],
+        can_manage_roles: sub.can_manage_roles || [],
+        can_manage_user_ids: sub.can_manage_user_ids || [],
+        can_view: canViewSub,
+        can_publish: canPublishSub,
+        can_manage: hasSubManagePerm,
+        can_delete: hasSubManagePerm,
+        can_edit_permissions: hasSubManagePerm,
+      };
+    });
+
     // Filter categories visible to current user
     const visibleCategories = processedCategories.filter((cat) => cat.can_view);
-
     const visibleCategoryIds = new Set(visibleCategories.map((c) => c.id));
 
-    // Filter subcategories & items belonging to visible categories
-    const visibleSubcategories = (subcategories || []).filter((sub: any) =>
-      visibleCategoryIds.has(sub.category_id),
+    // Filter subcategories visible to current user and belonging to visible categories
+    const visibleSubcategories = processedSubcategories.filter(
+      (sub) => sub.can_view && visibleCategoryIds.has(sub.category_id),
     );
+    const visibleSubcategoryIds = new Set(visibleSubcategories.map((s) => s.id));
 
-    const visibleItems = (items || []).filter((item: any) =>
-      visibleCategoryIds.has(item.category_id),
+    // Filter items visible to current user
+    const visibleItems = (items || []).filter(
+      (item: any) =>
+        visibleCategoryIds.has(item.category_id) && visibleSubcategoryIds.has(item.subcategory_id),
     );
 
     return {
       categories: visibleCategories,
-      subcategories: visibleSubcategories as BoardSubcategory[],
+      subcategories: visibleSubcategories,
       items: visibleItems as BoardItem[],
       customRoles: (customRoles || []) as BoardCustomRole[],
       staffMembers: employees,
@@ -560,9 +667,16 @@ export const createBoardSubcategoryFn = createServerFn({ method: "POST" })
       category_id: z.string(),
       name: z.string().min(2, "Nome sottocategoria obbligatorio"),
       description: z.string().default(""),
-      icon: z.string().default("FileText"),
+      icon: z.string().default("Folder"),
       color: z.string().default("#3b82f6"),
+      permission_mode: z.enum(["inherit", "public", "restricted"]).default("inherit"),
       allowed_roles: z.array(z.string()).default([]),
+      allowed_user_ids: z.array(z.string()).default([]),
+      publish_mode: z.enum(["inherit", "all_viewers", "restricted"]).default("inherit"),
+      publish_roles: z.array(z.string()).default([]),
+      publish_user_ids: z.array(z.string()).default([]),
+      can_manage_roles: z.array(z.string()).default([]),
+      can_manage_user_ids: z.array(z.string()).default([]),
     }),
   )
   .handler(async ({ context, data }) => {
@@ -581,13 +695,20 @@ export const createBoardSubcategoryFn = createServerFn({ method: "POST" })
       category_id: data.category_id,
       name: data.name.trim(),
       description: data.description.trim(),
-      icon: data.icon,
-      color: data.color,
+      icon: data.icon || "Folder",
+      color: data.color || "#3b82f6",
       sort_order: Date.now(),
-      allowed_roles: data.allowed_roles,
       created_by: context.userId,
       created_by_name: profile?.display_name || profile?.username || "Staff",
       created_at: new Date().toISOString(),
+      permission_mode: data.permission_mode,
+      allowed_roles: data.allowed_roles,
+      allowed_user_ids: data.allowed_user_ids,
+      publish_mode: data.publish_mode,
+      publish_roles: data.publish_roles,
+      publish_user_ids: data.publish_user_ids,
+      can_manage_roles: data.can_manage_roles,
+      can_manage_user_ids: data.can_manage_user_ids,
     };
 
     const { data: created, error } = await supabaseAdmin
@@ -601,7 +722,7 @@ export const createBoardSubcategoryFn = createServerFn({ method: "POST" })
   });
 
 /**
- * 6. Update Subcategory
+ * 6. Update Subcategory (Metadata)
  */
 export const updateBoardSubcategoryFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -610,22 +731,36 @@ export const updateBoardSubcategoryFn = createServerFn({ method: "POST" })
       id: z.string(),
       name: z.string().min(2),
       description: z.string().default(""),
-      icon: z.string().default("FileText"),
+      icon: z.string().default("Folder"),
       color: z.string().default("#3b82f6"),
-      allowed_roles: z.array(z.string()).default([]),
       sort_order: z.number().optional(),
     }),
   )
   .handler(async ({ context, data }) => {
-    const { isBoardAdmin, permissions } = await getUserPermissions(context);
-    assertPermission(
-      permissions,
-      ["board.manage_subcategories", "board.manage_categories", "board.admin"],
-      isBoardAdmin,
-      "Non hai il permesso di modificare sottocategorie.",
-    );
-
+    const { isAdmin, isBoardAdmin, permissions } = await getUserPermissions(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: sub } = await supabaseAdmin
+      .from("board_subcategories")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    if (!sub) throw new Error("Sottocategoria non trovata.");
+
+    const isCreator = sub.created_by === context.userId;
+    const canManage =
+      isAdmin ||
+      isBoardAdmin ||
+      isCreator ||
+      permissions.has("board.manage_subcategories") ||
+      permissions.has("board.manage_categories") ||
+      permissions.has("board.admin");
+
+    if (!canManage) {
+      throw new Error("Non hai il permesso di modificare questa sottocategoria.");
+    }
+
     const { error } = await supabaseAdmin
       .from("board_subcategories")
       .update({
@@ -633,8 +768,68 @@ export const updateBoardSubcategoryFn = createServerFn({ method: "POST" })
         description: data.description.trim(),
         icon: data.icon,
         color: data.color,
-        allowed_roles: data.allowed_roles,
         sort_order: data.sort_order,
+      })
+      .eq("id", data.id);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+/**
+ * 6b. Update Subcategory Permissions (Granular relative access control)
+ */
+export const updateBoardSubcategoryPermissionsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    z.object({
+      id: z.string(),
+      permission_mode: z.enum(["inherit", "public", "restricted"]),
+      allowed_roles: z.array(z.string()).default([]),
+      allowed_user_ids: z.array(z.string()).default([]),
+      publish_mode: z.enum(["inherit", "all_viewers", "restricted"]),
+      publish_roles: z.array(z.string()).default([]),
+      publish_user_ids: z.array(z.string()).default([]),
+      can_manage_roles: z.array(z.string()).default([]),
+      can_manage_user_ids: z.array(z.string()).default([]),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const { isAdmin, isBoardAdmin, permissions } = await getUserPermissions(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: sub } = await supabaseAdmin
+      .from("board_subcategories")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    if (!sub) throw new Error("Sottocategoria non trovata.");
+
+    const isCreator = sub.created_by === context.userId;
+    const canManage =
+      isAdmin ||
+      isBoardAdmin ||
+      isCreator ||
+      permissions.has("board.manage_subcategories") ||
+      permissions.has("board.manage_categories") ||
+      permissions.has("board.admin");
+
+    if (!canManage) {
+      throw new Error("Non hai il permesso di modificare i permessi di questa sottocategoria.");
+    }
+
+    const { error } = await supabaseAdmin
+      .from("board_subcategories")
+      .update({
+        permission_mode: data.permission_mode,
+        allowed_roles: data.allowed_roles,
+        allowed_user_ids: data.allowed_user_ids,
+        publish_mode: data.publish_mode,
+        publish_roles: data.publish_roles,
+        publish_user_ids: data.publish_user_ids,
+        can_manage_roles: data.can_manage_roles,
+        can_manage_user_ids: data.can_manage_user_ids,
       })
       .eq("id", data.id);
 
@@ -649,15 +844,30 @@ export const deleteBoardSubcategoryFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(z.object({ id: z.string() }))
   .handler(async ({ context, data }) => {
-    const { isBoardAdmin, permissions } = await getUserPermissions(context);
-    assertPermission(
-      permissions,
-      ["board.manage_subcategories", "board.manage_categories", "board.admin"],
-      isBoardAdmin,
-      "Non hai il permesso di eliminare sottocategorie.",
-    );
-
+    const { isAdmin, isBoardAdmin, permissions } = await getUserPermissions(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: sub } = await supabaseAdmin
+      .from("board_subcategories")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    if (!sub) throw new Error("Sottocategoria non trovata.");
+
+    const isCreator = sub.created_by === context.userId;
+    const canDelete =
+      isAdmin ||
+      isBoardAdmin ||
+      isCreator ||
+      permissions.has("board.manage_subcategories") ||
+      permissions.has("board.manage_categories") ||
+      permissions.has("board.admin");
+
+    if (!canDelete) {
+      throw new Error("Non hai il permesso di eliminare questa sottocategoria.");
+    }
+
     await Promise.all([
       supabaseAdmin.from("board_items").delete().eq("subcategory_id", data.id),
       supabaseAdmin.from("board_subcategories").delete().eq("id", data.id),
@@ -824,31 +1034,53 @@ export const createBoardItemFn = createServerFn({ method: "POST" })
     // Telegram Notification Dispatch
     try {
       if (data.type === "task" && data.assigned_to_names && data.assigned_to_names.length > 0) {
+        const deadlineFormatted = newItem.deadline
+          ? new Date(newItem.deadline).toLocaleString("it-IT", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Nessuna data limite";
+
+        const priorityLabel =
+          newItem.priority === "urgent"
+            ? "🔴 URGENTE"
+            : newItem.priority === "high"
+              ? "🟠 ALTA"
+              : newItem.priority === "medium"
+                ? "🟡 MEDIA"
+                : "🟢 BASSA";
+
+        // 1. Send Group Notification
         await dispatchTelegramNotification("board_task_assigned", {
           task_title: newItem.title,
           category_name: catName,
           subcategory_name: subcatName,
           assigned_to_names: newItem.assigned_to_names?.join(", ") || "Staff",
-          deadline: newItem.deadline
-            ? new Date(newItem.deadline).toLocaleString("it-IT", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "Nessuna data limite",
-          priority:
-            newItem.priority === "urgent"
-              ? "🔴 URGENTE"
-              : newItem.priority === "high"
-                ? "🟠 ALTA"
-                : newItem.priority === "medium"
-                  ? "🟡 MEDIA"
-                  : "🟢 BASSA",
+          deadline: deadlineFormatted,
+          priority: priorityLabel,
           created_by_name: authorName,
           content: newItem.content,
         });
+
+        // 2. Send Private DM Notification to each assigned member
+        if (data.assigned_to_ids && data.assigned_to_ids.length > 0) {
+          const dmText =
+            `📋 <b>TI È STATA ASSEGNATA UNA NUOVA TASK!</b>\n\n` +
+            `📌 <b>Titolo:</b> <b>${newItem.title}</b>\n` +
+            `📁 <b>Cartella:</b> ${catName} / <b>Sottocategoria:</b> ${subcatName}\n` +
+            `⏰ <b>Scadenza:</b> <b>${deadlineFormatted}</b>\n` +
+            `⚡ <b>Priorità:</b> <b>${priorityLabel}</b>\n` +
+            `✍️ <b>Assegnata da:</b> ${authorName}\n` +
+            (newItem.content ? `\n📝 <b>Istruzioni:</b>\n<i>${newItem.content}</i>\n` : "") +
+            `\n👉 <i>Accedi alla Board per iniziare a lavorarci e aggiornare lo stato.</i>`;
+
+          for (const uId of data.assigned_to_ids) {
+            await sendDirectTelegramNotificationToUser(supabaseAdmin, uId, dmText).catch(() => {});
+          }
+        }
       } else if (data.type === "meeting" && data.meeting_date) {
         await dispatchTelegramNotification("board_meeting_scheduled", {
           meeting_title: newItem.title,
@@ -1169,4 +1401,265 @@ export const deleteBoardItemFn = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("board_items").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { success: true };
+  });
+
+/**
+ * 13. Trigger Task Due Reminders (DM to assigned users if deadline approaches)
+ */
+export const triggerTaskDueRemindersFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch active tasks with deadlines
+    const { data: activeTasks } = await supabaseAdmin
+      .from("board_items")
+      .select("*")
+      .eq("type", "task")
+      .neq("task_status", "done")
+      .not("deadline", "is", null);
+
+    const [{ data: categories = [] }, { data: subcategories = [] }] = await Promise.all([
+      supabaseAdmin.from("board_categories").select("id, name"),
+      supabaseAdmin.from("board_subcategories").select("id, name"),
+    ]);
+
+    const catMap = new Map((categories || []).map((c: any) => [c.id, c.name]));
+    const subcatMap = new Map((subcategories || []).map((s: any) => [s.id, s.name]));
+
+    const now = Date.now();
+    let remindersSent = 0;
+    const notifiedTasks: string[] = [];
+
+    for (const task of activeTasks || []) {
+      if (!task.deadline || !task.assigned_to_ids || task.assigned_to_ids.length === 0) continue;
+
+      const deadlineTime = new Date(task.deadline).getTime();
+      const diffMs = deadlineTime - now;
+      const hoursRemaining = diffMs / (1000 * 60 * 60);
+
+      // Trigger if deadline is in less than 24 hours, or overdue (within last 72 hours)
+      if (hoursRemaining <= 24 && hoursRemaining >= -72) {
+        const catName = catMap.get(task.category_id) || "Board";
+        const subcatName = subcatMap.get(task.subcategory_id) || "Generale";
+
+        const timeRemainingStr =
+          hoursRemaining < 0
+            ? `Scaduta da ${Math.abs(Math.round(hoursRemaining))} ore ⚠️`
+            : hoursRemaining < 1
+              ? `Meno di 1 ora al termine! 🚨`
+              : `Mancano circa ${Math.round(hoursRemaining)} ore ⏰`;
+
+        const priorityLabel =
+          task.priority === "urgent"
+            ? "🔴 URGENTE"
+            : task.priority === "high"
+              ? "🟠 ALTA"
+              : task.priority === "medium"
+                ? "🟡 MEDIA"
+                : "🟢 BASSA";
+
+        const statusLabel =
+          task.task_status === "in_progress"
+            ? "In Corso 🟡"
+            : task.task_status === "review"
+              ? "In Revisione 🟣"
+              : "Da Iniziare ⚪";
+
+        const deadlineFormatted = new Date(task.deadline).toLocaleString("it-IT", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const pendingChecks = (task.checklist || []).filter((c: any) => !c.done);
+        const checklistStr =
+          pendingChecks.length > 0
+            ? `${pendingChecks.length} voci su ${(task.checklist || []).length} ancora da completare`
+            : "";
+
+        const dmText =
+          `⚠️ <b>PROMEMORIA TASK IN SCADENZA: MANCA POCO!</b>\n\n` +
+          `📌 <b>Task:</b> <b>${task.title}</b>\n` +
+          `📁 <b>Cartella:</b> ${catName} / <b>Sottocategoria:</b> ${subcatName}\n` +
+          `⏰ <b>Scadenza:</b> <b>${deadlineFormatted}</b> (<i>${timeRemainingStr}</i>)\n` +
+          `⚡ <b>Priorità:</b> <b>${priorityLabel}</b>\n` +
+          `📊 <b>Stato Attuale:</b> <b>${statusLabel}</b>\n` +
+          (task.content ? `\n📝 <b>Dettagli:</b>\n<i>${task.content}</i>\n` : "") +
+          (checklistStr ? `\n☑️ <i>${checklistStr}</i>\n` : "") +
+          `\n🚨 <i>Ti ricordiamo di completarla e aggiornare il pannello gestionale.</i>`;
+
+        for (const uId of task.assigned_to_ids) {
+          const sent = await sendDirectTelegramNotificationToUser(supabaseAdmin, uId, dmText);
+          if (sent) remindersSent++;
+        }
+
+        notifiedTasks.push(task.title);
+      }
+    }
+
+    return {
+      success: true,
+      remindersSent,
+      totalChecked: (activeTasks || []).length,
+      tasksNotified: notifiedTasks,
+    };
+  });
+
+/**
+ * 14. Trigger Daily Task Morning Briefing (Ore 07:00 DM report & channel briefing)
+ */
+export const triggerDailyTaskMorningBriefingFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [
+      { data: activeTasks },
+      { data: allProfiles },
+      { data: categories = [] },
+      { data: subcategories = [] },
+    ] = await Promise.all([
+      supabaseAdmin.from("board_items").select("*").eq("type", "task").neq("task_status", "done"),
+      supabaseAdmin
+        .from("profiles")
+        .select(
+          "id, username, display_name, telegram_handle, telegram_user_id, telegram_chat_id, telegram_connected",
+        ),
+      supabaseAdmin.from("board_categories").select("id, name"),
+      supabaseAdmin.from("board_subcategories").select("id, name"),
+    ]);
+
+    const catMap = new Map((categories || []).map((c: any) => [c.id, c.name]));
+    const subcatMap = new Map((subcategories || []).map((s: any) => [s.id, s.name]));
+    const profileMap = new Map((allProfiles || []).map((p: any) => [p.id, p]));
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000;
+
+    const todayDateStr = now.toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+
+    // Group tasks by assigned user
+    const tasksByUser = new Map<string, any[]>();
+    for (const task of activeTasks || []) {
+      for (const uId of task.assigned_to_ids || []) {
+        const list = tasksByUser.get(uId) || [];
+        list.push(task);
+        tasksByUser.set(uId, list);
+      }
+    }
+
+    let dmSentCount = 0;
+    let totalTodayCount = 0;
+    let totalOverdueCount = 0;
+    const staffSummaryLines: string[] = [];
+
+    for (const [uId, uTasks] of tasksByUser.entries()) {
+      const userProf = profileMap.get(uId);
+      const staffName = userProf?.display_name || userProf?.username || "Operatore";
+
+      const todayTasks: any[] = [];
+      const overdueTasks: any[] = [];
+      const otherTasks: any[] = [];
+
+      for (const t of uTasks) {
+        if (!t.deadline) {
+          otherTasks.push(t);
+          continue;
+        }
+        const dTime = new Date(t.deadline).getTime();
+        if (dTime < todayStart) {
+          overdueTasks.push(t);
+        } else if (dTime >= todayStart && dTime <= todayEnd) {
+          todayTasks.push(t);
+        } else {
+          otherTasks.push(t);
+        }
+      }
+
+      totalTodayCount += todayTasks.length;
+      totalOverdueCount += overdueTasks.length;
+
+      // Sort otherTasks by priority
+      const priorityOrder: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+      otherTasks.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+
+      const formatTaskLine = (t: any) => {
+        const cat = catMap.get(t.category_id) || "Board";
+        const sub = subcatMap.get(t.subcategory_id) || "Generale";
+        const pIcon =
+          t.priority === "urgent"
+            ? "🔴"
+            : t.priority === "high"
+              ? "🟠"
+              : t.priority === "medium"
+                ? "🟡"
+                : "🟢";
+        const pName = t.priority?.toUpperCase() || "NORMALE";
+        const timeStr = t.deadline
+          ? new Date(t.deadline).toLocaleTimeString("it-IT", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "";
+        return `• ${pIcon} <b>${t.title}</b> (${cat}/${sub})${timeStr ? ` — ⏰ <i>entro le ${timeStr}</i>` : ""} [${pName}]`;
+      };
+
+      let dmText = `🌅 <b>REPORT TASK GIORNALIERO (ORE 07:00)</b>\n\n`;
+      dmText += `👤 <b>Operatore:</b> <b>${staffName}</b>\n`;
+      dmText += `📅 <b>Data:</b> ${todayDateStr}\n\n`;
+
+      if (todayTasks.length > 0) {
+        dmText += `🚨 <b>TASK CHE SCADONO OGGI (${todayTasks.length}):</b>\n`;
+        dmText += todayTasks.map((t) => formatTaskLine(t)).join("\n") + "\n\n";
+      }
+
+      if (overdueTasks.length > 0) {
+        dmText += `⚠️ <b>TASK SCADUTE DA COMPLETARE (${overdueTasks.length}):</b>\n`;
+        dmText += overdueTasks.map((t) => formatTaskLine(t)).join("\n") + "\n\n";
+      }
+
+      if (otherTasks.length > 0) {
+        dmText += `📋 <b>ALTRE TASK ATTIVE IN CARICO (${otherTasks.length}):</b>\n`;
+        dmText += otherTasks.map((t) => formatTaskLine(t)).join("\n") + "\n\n";
+      }
+
+      dmText += `📊 <i>Totale task attive assegnate: ${uTasks.length}. Ti auguriamo un buon lavoro!</i>`;
+
+      const sent = await sendDirectTelegramNotificationToUser(supabaseAdmin, uId, dmText);
+      if (sent) dmSentCount++;
+
+      staffSummaryLines.push(
+        `• <b>${staffName}</b>: ${uTasks.length} task (🚨 ${todayTasks.length} oggi, ⚠️ ${overdueTasks.length} scadute)`,
+      );
+    }
+
+    // Consolidated group notification
+    await dispatchTelegramNotification("board_daily_morning_briefing", {
+      today_date: todayDateStr,
+      today_count: totalTodayCount,
+      overdue_count: totalOverdueCount,
+      total_open: (activeTasks || []).length,
+      summary_body:
+        staffSummaryLines.length > 0
+          ? `👥 <b>Ripartizione Operativa Staff:</b>\n${staffSummaryLines.join("\n")}`
+          : "✅ <i>Nessuna task aperta o in scadenza per la giornata odierna.</i>",
+    });
+
+    return {
+      success: true,
+      dmSentCount,
+      totalTodayCount,
+      totalOverdueCount,
+      totalOpen: (activeTasks || []).length,
+    };
   });

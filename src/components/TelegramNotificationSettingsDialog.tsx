@@ -55,6 +55,7 @@ import {
   Check,
   Pin,
   ClipboardList,
+  Sun,
 } from "lucide-react";
 import {
   getTelegramNotificationRulesFn,
@@ -358,6 +359,10 @@ export const TelegramNotificationSettingsDialog: React.FC<Props> = ({
         return <Activity className="w-5 h-5 text-sky-400" />;
       case "board_task_assigned":
         return <CheckSquare className="w-5 h-5 text-amber-400" />;
+      case "board_task_due_reminder":
+        return <AlertTriangle className="w-5 h-5 text-rose-400" />;
+      case "board_daily_morning_briefing":
+        return <Sun className="w-5 h-5 text-amber-400" />;
       case "board_meeting_scheduled":
         return <CalendarDays className="w-5 h-5 text-indigo-400" />;
       case "board_announcement_pinned":

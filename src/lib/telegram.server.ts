@@ -177,6 +177,69 @@ export async function sendTelegramMessage(
   }
 }
 
+export async function sendDirectTelegramNotificationToUser(
+  supabaseAdmin: any,
+  userId: string,
+  htmlMessage: string,
+  options?: { disableNotification?: boolean },
+) {
+  try {
+    if (!userId || !htmlMessage) return false;
+
+    // 1. Fetch Profile
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select(
+        "id, username, display_name, telegram_handle, telegram_user_id, telegram_chat_id, telegram_connected",
+      )
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile) return false;
+
+    let targetChatId: string | number | null =
+      profile.telegram_chat_id || profile.telegram_user_id || null;
+
+    // 2. If no numeric chat_id on profile, lookup in telegram_group_members using telegram_handle or username
+    if (!targetChatId && profile.telegram_handle) {
+      const cleanH = profile.telegram_handle.replace("@", "").trim().toLowerCase();
+      const { data: members } = await supabaseAdmin
+        .from("telegram_group_members")
+        .select("telegram_user_id, telegram_handle, username")
+        .or(`telegram_handle.ilike.%${cleanH}%,username.ilike.%${cleanH}%`)
+        .limit(1);
+
+      if (members && members.length > 0 && members[0].telegram_user_id) {
+        targetChatId = members[0].telegram_user_id;
+      }
+    }
+
+    // 3. Fallback to telegram_chat_messages to find user's private chat_id
+    if (!targetChatId && profile.telegram_handle) {
+      const cleanH = profile.telegram_handle.replace("@", "").trim().toLowerCase();
+      const { data: msgs } = await supabaseAdmin
+        .from("telegram_chat_messages")
+        .select("sender_id, chat_id, sender_handle")
+        .or(`sender_handle.ilike.%${cleanH}%,sender_name.ilike.%${cleanH}%`)
+        .limit(1);
+
+      if (msgs && msgs.length > 0 && msgs[0].sender_id) {
+        targetChatId = msgs[0].sender_id;
+      }
+    }
+
+    if (targetChatId) {
+      const result = await sendTelegramMessage(targetChatId, htmlMessage, undefined, options);
+      return !!result?.ok;
+    }
+
+    return false;
+  } catch (err) {
+    console.error("[Telegram] Error in sendDirectTelegramNotificationToUser:", userId, err);
+    return false;
+  }
+}
+
 export async function pinTelegramChatMessage(
   chatId: number | string,
   messageId: number,
@@ -3453,6 +3516,32 @@ export function getDefaultTelegramNotificationRules(): TelegramNotificationRule[
       icon: "CheckSquare",
     },
     {
+      id: "rule_board_task_due_reminder",
+      section: "board",
+      section_title: "Board & Bacheca",
+      event_type: "board_task_due_reminder",
+      title: "Promemoria Scadenza Task Imminente",
+      description:
+        "Invia promemoria in privato (DM) allo staff se una task assegnata sta per scadere e non è completata.",
+      enabled: true,
+      chat_id: "-1003625594442",
+      silent: false,
+      icon: "AlertTriangle",
+    },
+    {
+      id: "rule_board_daily_morning_briefing",
+      section: "board",
+      section_title: "Board & Bacheca",
+      event_type: "board_daily_morning_briefing",
+      title: "Riepilogo Giornaliero Task (Ore 07:00)",
+      description:
+        "Invia ogni giorno alle ore 07:00 l'elenco delle task da svolgere in privato ai singoli dipendenti e al gruppo staff.",
+      enabled: true,
+      chat_id: "-1003625594442",
+      silent: false,
+      icon: "Sun",
+    },
+    {
       id: "rule_board_meeting_scheduled",
       section: "board",
       section_title: "Board & Bacheca",
@@ -4129,13 +4218,45 @@ export function formatTelegramNotificationPayload(
         html:
           `📋 <b>NUOVA TASK ASSEGNATA SULLA BOARD</b>\n\n` +
           `📌 <b>Titolo:</b> <b>${escapeHtml(payload.task_title || "Task Operativa")}</b>\n` +
-          `📁 <b>Categoria:</b> ${escapeHtml(payload.category_name || "Board Generale")} / ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `📁 <b>Cartella:</b> ${escapeHtml(payload.category_name || "Board Generale")} / <b>Sottocategoria:</b> ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
           `👤 <b>Assegnata a:</b> <b>${escapeHtml(payload.assigned_to_names || "Staff")}</b>\n` +
           `⏰ <b>Scadenza:</b> <b>${escapeHtml(payload.deadline || "Nessuna data limite")}</b>\n` +
           `⚡ <b>Priorità:</b> <b>${escapeHtml(payload.priority || "Normale")}</b>\n` +
           `✍️ <b>Creata da:</b> ${escapeHtml(payload.created_by_name || "Staff")}\n` +
           (payload.content ? `\n📝 <i>${escapeHtml(payload.content)}</i>\n` : "") +
           `\n⏱️ <i>Notifica automatica Board Casinò Revenge emessa alle ${nowStr}</i>`,
+      };
+
+    case "board_task_due_reminder":
+      return {
+        title: "Promemoria Scadenza Task",
+        defaultSilent: false,
+        html:
+          `⚠️ <b>PROMEMORIA SCADENZA TASK: MANCA POCO!</b>\n\n` +
+          `📌 <b>Task:</b> <b>${escapeHtml(payload.task_title || "Task Operativa")}</b>\n` +
+          `📁 <b>Cartella:</b> ${escapeHtml(payload.category_name || "Board")} / <b>Sottocategoria:</b> ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `👤 <b>Assegnata a:</b> <b>${escapeHtml(payload.assigned_to_names || "Staff")}</b>\n` +
+          `⏰ <b>Scadenza:</b> <b>${escapeHtml(payload.deadline || "Imminente")}</b>` +
+          (payload.time_remaining ? ` (<i>${escapeHtml(payload.time_remaining)}</i>)` : "") +
+          `\n⚡ <b>Priorità:</b> <b>${escapeHtml(payload.priority || "Normale")}</b>\n` +
+          `📊 <b>Stato:</b> <b>${escapeHtml(payload.status || "In corso")}</b>\n` +
+          (payload.content ? `\n📝 <i>${escapeHtml(payload.content)}</i>\n` : "") +
+          (payload.checklist_status ? `\n☑️ <i>${escapeHtml(payload.checklist_status)}</i>\n` : "") +
+          `\n🚨 <i>Ti ricordiamo di completarla e aggiornare il pannello gestionale.</i>`,
+      };
+
+    case "board_daily_morning_briefing":
+      return {
+        title: "Report Giornaliero Task (Ore 07:00)",
+        defaultSilent: false,
+        html:
+          `🌅 <b>REPORT GIORNALIERO TASK CASINÒ REVENGE (ORE 07:00)</b>\n\n` +
+          `📅 <b>Data:</b> <b>${escapeHtml(payload.today_date || "Oggi")}</b>\n` +
+          `🚨 <b>Task che Scadono Oggi:</b> <b>${escapeHtml(String(payload.today_count || 0))}</b>\n` +
+          `⚠️ <b>Task Scadute / In Ritardo:</b> <b>${escapeHtml(String(payload.overdue_count || 0))}</b>\n` +
+          `📋 <b>Totale Task Attive:</b> <b>${escapeHtml(String(payload.total_open || 0))}</b>\n\n` +
+          `${payload.summary_body ? `${payload.summary_body}\n\n` : ""}` +
+          `⏱️ <i>Report automatico emesso alle 07:00 dalla Board Aziendale</i>`,
       };
 
     case "board_meeting_scheduled":
@@ -4145,7 +4266,7 @@ export function formatTelegramNotificationPayload(
         html:
           `📅 <b>CONVOCAZIONE RIUNIONE DI STAFF</b>\n\n` +
           `📢 <b>Oggetto:</b> <b>${escapeHtml(payload.meeting_title || "Riunione Staff")}</b>\n` +
-          `📁 <b>Sezione:</b> ${escapeHtml(payload.category_name || "Board")} / ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
+          `📁 <b>Cartella:</b> ${escapeHtml(payload.category_name || "Board")} / <b>Sottocategoria:</b> ${escapeHtml(payload.subcategory_name || "Generale")}\n` +
           `🗓️ <b>Data e Ora:</b> <b>${escapeHtml(payload.meeting_date || "Da definire")}</b>\n` +
           `📍 <b>Luogo / Canale:</b> ${escapeHtml(payload.meeting_location || "Canale Vocale Staff / Discord")}\n` +
           `👥 <b>Partecipanti Invitati:</b> ${escapeHtml(payload.attendees_names || "Tutti i membri autorizzati")}\n` +
