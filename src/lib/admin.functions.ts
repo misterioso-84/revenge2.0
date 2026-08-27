@@ -26,7 +26,7 @@ export const listPanelUsers = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("profiles")
         .select(
-          "id, username, display_name, has_employee_access, telegram_handle, show_in_staff_list, staff_weight, staff_color",
+          "id, username, display_name, has_employee_access, telegram_handle, telegram_connected, telegram_user_id, show_in_staff_list, staff_weight, staff_color",
         )
         .in("id", ids),
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
@@ -43,6 +43,8 @@ export const listPanelUsers = createServerFn({ method: "GET" })
         display_name: p?.display_name ?? null,
         has_employee_access: p?.has_employee_access ?? false,
         telegram_handle: p?.telegram_handle ?? null,
+        telegram_connected: p?.telegram_connected ?? false,
+        telegram_user_id: p?.telegram_user_id ?? null,
         show_in_staff_list: p?.show_in_staff_list ?? true,
         staff_weight: p?.staff_weight ?? 50,
         staff_color: p?.staff_color ?? "#3b82f6",
@@ -89,17 +91,33 @@ export const createPanelUser = createServerFn({ method: "POST" })
       if (data.isAdmin) {
         await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: "admin" });
       }
+
+      const profilePayload: any = {
+        username: data.username,
+        display_name: data.displayName ?? data.username,
+        has_employee_access: data.hasEmployeeAccess ?? true,
+        telegram_handle: handle || null,
+        telegram_connected: !!handle,
+        show_in_staff_list: data.showInStaffList ?? true,
+        staff_weight: data.staffWeight ?? 50,
+        staff_color: data.staffColor ?? "#3b82f6",
+      };
+
+      if (handle) {
+        const cleanH = handle.toLowerCase().replace("@", "").trim();
+        const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
+        const matched = (startLogs || []).find(
+          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH
+        );
+        if (matched) {
+          profilePayload.telegram_user_id = matched.telegram_user_id;
+          profilePayload.telegram_chat_id = matched.chat_id || matched.telegram_user_id;
+        }
+      }
+
       await supabaseAdmin
         .from("profiles")
-        .update({
-          username: data.username,
-          display_name: data.displayName ?? data.username,
-          has_employee_access: data.hasEmployeeAccess ?? true,
-          telegram_handle: handle,
-          show_in_staff_list: data.showInStaffList ?? true,
-          staff_weight: data.staffWeight ?? 50,
-          staff_color: data.staffColor ?? "#3b82f6",
-        })
+        .update(profilePayload)
         .eq("id", created.user.id);
 
       try {
@@ -145,7 +163,19 @@ export const updatePanelUser = createServerFn({ method: "POST" })
       let handle = (data.telegramHandle || "").trim();
       if (handle && !handle.startsWith("@")) handle = `@${handle}`;
       updateFields.telegram_handle = handle || null;
-      updateFields.telegram_connected = !!handle;
+      updateFields.telegram_connected = !!handle; // Setting manual handle bypasses mandatory /associa verification!
+
+      if (handle) {
+        const cleanH = handle.toLowerCase().replace("@", "").trim();
+        const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
+        const matched = (startLogs || []).find(
+          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH
+        );
+        if (matched) {
+          updateFields.telegram_user_id = matched.telegram_user_id;
+          updateFields.telegram_chat_id = matched.chat_id || matched.telegram_user_id;
+        }
+      }
     }
     if (data.hasEmployeeAccess !== undefined)
       updateFields.has_employee_access = !!data.hasEmployeeAccess;
@@ -161,6 +191,104 @@ export const updatePanelUser = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const forceVerifyTelegramStart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: any) => {
+    const payload = d?.data !== undefined ? d.data : d;
+    z.string().min(1).parse(payload.userId);
+    return payload;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", data.userId)
+      .maybeSingle();
+
+    if (!profile) throw new Error("Utente non trovato.");
+
+    const rawHandle = profile.telegram_handle ? profile.telegram_handle.trim() : "";
+    const cleanHandle = rawHandle ? rawHandle.toLowerCase().replace("@", "").trim() : "";
+    const tgUserId = profile.telegram_user_id ? String(profile.telegram_user_id) : null;
+
+    if (!cleanHandle && !tgUserId) {
+      throw new Error(
+        "L'utente non ha un username Telegram (@) o Telegram ID impostato. Inserisci prima l'username Telegram."
+      );
+    }
+
+    // 1. Check in telegram_start_logs
+    const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
+    let matchedLog = (startLogs || []).find((l: any) => {
+      if (tgUserId && String(l.telegram_user_id) === tgUserId) return true;
+      if (cleanHandle && l.username && String(l.username).toLowerCase().replace("@", "") === cleanHandle)
+        return true;
+      return false;
+    });
+
+    // 2. Fallback check in telegram_group_members or telegram_chat_messages
+    if (!matchedLog) {
+      const [{ data: groupMembers }, { data: chatMessages }] = await Promise.all([
+        supabaseAdmin.from("telegram_group_members").select("*"),
+        supabaseAdmin.from("telegram_chat_messages").select("*"),
+      ]);
+
+      const matchedMember = (groupMembers || []).find((m: any) => {
+        if (tgUserId && String(m.telegram_user_id) === tgUserId) return true;
+        if (cleanHandle && m.telegram_handle && String(m.telegram_handle).toLowerCase().replace("@", "") === cleanHandle)
+          return true;
+        return false;
+      });
+
+      const matchedMessage = (chatMessages || []).find((msg: any) => {
+        if (tgUserId && String(msg.sender_id) === tgUserId) return true;
+        if (cleanHandle && msg.sender_username && String(msg.sender_username).toLowerCase().replace("@", "") === cleanHandle)
+          return true;
+        return false;
+      });
+
+      if (matchedMember) {
+        matchedLog = {
+          telegram_user_id: matchedMember.telegram_user_id,
+          chat_id: matchedMember.chat_id,
+          username: cleanHandle,
+        };
+      } else if (matchedMessage) {
+        matchedLog = {
+          telegram_user_id: matchedMessage.sender_id,
+          chat_id: matchedMessage.chat_id,
+          username: cleanHandle,
+        };
+      }
+    }
+
+    if (matchedLog) {
+      // User HAS executed /start or interacted with bot in past!
+      const updatePayload: any = {
+        telegram_connected: true,
+        telegram_user_id: matchedLog.telegram_user_id || profile.telegram_user_id,
+        telegram_chat_id: matchedLog.chat_id || matchedLog.telegram_user_id || profile.telegram_chat_id,
+      };
+
+      await supabaseAdmin.from("profiles").update(updatePayload).eq("id", data.userId);
+
+      return {
+        hasStarted: true,
+        telegramUserId: updatePayload.telegram_user_id,
+        message: `✅ VERIFICATO! L'utente ${rawHandle || profile.username} ha già inviato /start al Bot in passato (ID Telegram: ${updatePayload.telegram_user_id}).`,
+      };
+    } else {
+      // User has NOT executed /start yet
+      return {
+        hasStarted: false,
+        message: `⚠️ ATTENZIONE: Nessun comando /start o interazione con il Bot rilevata per ${rawHandle || profile.username}. L'utente deve inviare /start al Bot @CasinoRevengeBot.`,
+      };
+    }
   });
 
 export const resetPanelUserPassword = createServerFn({ method: "POST" })

@@ -71,6 +71,7 @@ import {
   applySanction,
   updateSanction,
   deleteSanctionCompletely,
+  forceVerifyTelegramStart,
 } from "@/lib/admin.functions";
 import {
   getConnectedDevices,
@@ -105,6 +106,7 @@ function UsersPage() {
   const adminFn = useServerFn(setUserAdmin);
   const assignFn = useServerFn(assignCustomRole);
   const updateSanctionFn = useServerFn(updateSanction);
+  const forceVerifyFn = useServerFn(forceVerifyTelegramStart);
   const getDevicesFn = useServerFn(getConnectedDevices);
   const disconnectFn = useServerFn(disconnectDevice);
   const disconnectAllFn = useServerFn(disconnectAllUserDevices);
@@ -414,7 +416,43 @@ function UsersPage() {
                         </TableCell>
                         <TableCell className="py-2 px-3 font-mono text-xs">
                           {u.telegram_handle ? (
-                            <span className="text-sky-400 font-semibold">{u.telegram_handle}</span>
+                            <div className="flex flex-col gap-1 items-start">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-sky-400 font-bold">{u.telegram_handle}</span>
+                                {u.telegram_user_id ? (
+                                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] py-0 px-1.5">
+                                    /start OK
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px] py-0 px-1.5">
+                                    /start ?
+                                  </Badge>
+                                )}
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[10px] bg-slate-800/90 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/30 transition-all shrink-0 mt-0.5"
+                                title="Verifica forzata se l'utente ha inviato /start al bot Telegram"
+                                onClick={async () => {
+                                  try {
+                                    toast.loading("Verifica /start in corso...", { id: `verify-${u.id}` });
+                                    const res = await forceVerifyFn({ data: { userId: u.id } });
+                                    qc.invalidateQueries({ queryKey: ["panel-users"] });
+                                    if (res.hasStarted) {
+                                      toast.success(res.message, { id: `verify-${u.id}` });
+                                    } else {
+                                      toast.warning(res.message, { id: `verify-${u.id}`, duration: 7000 });
+                                    }
+                                  } catch (err: any) {
+                                    toast.error(err.message || "Errore durante la verifica Telegram.", { id: `verify-${u.id}` });
+                                  }
+                                }}
+                              >
+                                <Shield className="h-3 w-3 mr-1 text-sky-400 shrink-0" /> Verifica /start
+                              </Button>
+                            </div>
                           ) : (
                             <span className="text-red-400 text-[11px] italic">Non impostato</span>
                           )}
@@ -1074,6 +1112,9 @@ function CreateUserDialog({ onClose, onSubmit }: any) {
           <div>
             <Label>Username Telegram (@)</Label>
             <Input name="telegramHandle" placeholder="@username_telegram" />
+            <p className="text-[11px] text-sky-400 mt-1 font-medium">
+              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà verificato se l'utente ha inviato /start al Bot.
+            </p>
           </div>
           <div>
             <Label>Password iniziale *</Label>
@@ -1438,6 +1479,9 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
               value={telegramHandle}
               onChange={(e) => setTelegramHandle(e.target.value)}
             />
+            <p className="text-[11px] text-sky-400 mt-1 font-medium">
+              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà verificato se l'utente ha inviato /start al Bot.
+            </p>
           </div>
 
           <div className="pt-2 border-t border-border space-y-3">

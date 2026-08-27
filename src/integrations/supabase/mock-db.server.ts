@@ -580,6 +580,7 @@ function getInitialDb() {
     telegram_pending_codes: [],
     telegram_chat_messages: [],
     telegram_notification_rules: [],
+    telegram_start_logs: [],
     membership_plans: [
       {
         id: "plan-standard",
@@ -1861,6 +1862,144 @@ function matchFilters(item: any, table: string, filters: any[]): boolean {
   return true;
 }
 
+function syncCitizensAndProfiles(
+  db: any,
+  table: string,
+  operation: string,
+  affectedRows: any[],
+) {
+  if (table !== "citizens" && table !== "profiles") return;
+  if (!Array.isArray(affectedRows) || affectedRows.length === 0) return;
+
+  db.citizens = db.citizens || [];
+  db.profiles = db.profiles || [];
+
+  const now = new Date().toISOString();
+
+  if (table === "citizens") {
+    if (operation === "insert" || operation === "upsert" || operation === "update") {
+      for (const cit of affectedRows) {
+        if (!cit) continue;
+        const name = (cit.full_name || cit.nickname || "").trim();
+        const nick = (cit.nickname || cit.full_name || "").trim();
+        const tg = cit.telegram_handle ? cit.telegram_handle.trim() : null;
+
+        let prof = db.profiles.find((p: any) => {
+          if (cit.id && p.id === cit.id) return true;
+          const pUser = (p.username || "").trim().toLowerCase();
+          const pDisp = (p.display_name || "").trim().toLowerCase();
+          if (nick && pUser === nick.toLowerCase()) return true;
+          if (name && pDisp === name.toLowerCase()) return true;
+          return false;
+        });
+
+        if (prof) {
+          if (nick) prof.username = nick;
+          if (name) prof.display_name = name;
+          if (cit.telegram_handle !== undefined) {
+            prof.telegram_handle = tg;
+            prof.telegram_connected = !!tg;
+          }
+          prof.updated_at = now;
+        } else if (operation === "insert" || operation === "upsert") {
+          db.profiles.push({
+            id: cit.id || "user-" + Math.random().toString(36).substring(2, 15),
+            username: nick || name,
+            display_name: name || nick,
+            has_employee_access: false,
+            telegram_handle: tg,
+            telegram_connected: !!tg,
+            show_in_staff_list: true,
+            staff_weight: 50,
+            staff_color: "#3b82f6",
+            created_at: cit.created_at || now,
+            updated_at: now,
+          });
+        }
+      }
+    } else if (operation === "delete") {
+      for (const cit of affectedRows) {
+        if (!cit) continue;
+        const citId = cit.id;
+        const nick = (cit.nickname || "").trim().toLowerCase();
+        const name = (cit.full_name || "").trim().toLowerCase();
+
+        const profsToDelete = db.profiles.filter((p: any) => {
+          if (citId && p.id === citId) return true;
+          const pUser = (p.username || "").trim().toLowerCase();
+          const pDisp = (p.display_name || "").trim().toLowerCase();
+          if (nick && pUser === nick) return true;
+          if (name && pDisp === name) return true;
+          return false;
+        });
+
+        for (const p of profsToDelete) {
+          db.profiles = db.profiles.filter((x: any) => x.id !== p.id);
+          db.user_roles = (db.user_roles || []).filter((r: any) => r.user_id !== p.id);
+          db.user_custom_roles = (db.user_custom_roles || []).filter((ucr: any) => ucr.user_id !== p.id);
+          db.sanctions = (db.sanctions || []).filter((s: any) => s.user_id !== p.id);
+        }
+      }
+    }
+  } else if (table === "profiles") {
+    if (operation === "insert" || operation === "upsert" || operation === "update") {
+      for (const prof of affectedRows) {
+        if (!prof) continue;
+        const name = (prof.display_name || prof.username || "").trim();
+        const nick = (prof.username || prof.display_name || "").trim();
+        const tg = prof.telegram_handle ? prof.telegram_handle.trim() : null;
+
+        let cit = db.citizens.find((c: any) => {
+          if (prof.id && c.id === prof.id) return true;
+          const cNick = (c.nickname || "").trim().toLowerCase();
+          const cName = (c.full_name || "").trim().toLowerCase();
+          if (nick && cNick === nick.toLowerCase()) return true;
+          if (name && cName === name.toLowerCase()) return true;
+          return false;
+        });
+
+        if (cit) {
+          if (name) cit.full_name = name;
+          if (nick) cit.nickname = nick;
+          if (prof.telegram_handle !== undefined) {
+            cit.telegram_handle = tg;
+          }
+          cit.updated_at = now;
+        } else if (operation === "insert" || operation === "upsert") {
+          db.citizens.push({
+            id: prof.id || "cit-" + Math.random().toString(36).substring(2, 15),
+            full_name: name || nick,
+            nickname: nick || name,
+            membership: "standard",
+            membership_since: now,
+            membership_expires_at: null,
+            telegram_handle: tg,
+            notes: null,
+            created_at: prof.created_at || now,
+            updated_at: now,
+          });
+        }
+      }
+    } else if (operation === "delete") {
+      for (const prof of affectedRows) {
+        if (!prof) continue;
+        const profId = prof.id;
+        const nick = (prof.username || "").trim().toLowerCase();
+        const name = (prof.display_name || "").trim().toLowerCase();
+
+        db.citizens = db.citizens.filter((c: any) => {
+          if (profId && c.id === profId) return false;
+          const cNick = (c.nickname || "").trim().toLowerCase();
+          const cName = (c.full_name || "").trim().toLowerCase();
+          if (nick && cNick === nick) return false;
+          if (name && cName === name) return false;
+          return true;
+        });
+      }
+    }
+  }
+}
+
 export async function queryMockDb(query: any): Promise<{ data: any; error: any }> {
   const db = await loadDb();
 
@@ -2428,6 +2567,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "sanctions" || table === "leave_requests") {
       insertedRows.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
+    syncCitizensAndProfiles(db, table, operation, insertedRows);
     logOperation(db, operation, table, query, { data: insertedRows });
     await saveDb(db);
 
@@ -2499,6 +2639,12 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
           (item: any) =>
             item.id === row.id || (row.event_type && item.event_type === row.event_type),
         );
+      } else if (table === "telegram_start_logs") {
+        existingIndex = db[table].findIndex(
+          (item: any) =>
+            (row.telegram_user_id && String(item.telegram_user_id) === String(row.telegram_user_id)) ||
+            (row.username && item.username && String(item.username).toLowerCase().replace("@", "") === String(row.username).toLowerCase().replace("@", ""))
+        );
       }
 
       if (existingIndex !== -1) {
@@ -2540,6 +2686,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "sanctions" || table === "leave_requests") {
       results.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
+    syncCitizensAndProfiles(db, table, operation, results);
     logOperation(db, operation, table, query, { data: results });
     await saveDb(db);
 
@@ -2615,6 +2762,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "sanctions" || table === "leave_requests") {
       updatedRows.forEach((row) => checkAndTerminateActiveSessionsForUser(db, row.user_id));
     }
+    syncCitizensAndProfiles(db, table, operation, updatedRows);
     logOperation(db, operation, table, query, { data: updatedRows });
     await saveDb(db);
 
@@ -2664,6 +2812,7 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
     if (table === "night_items") {
       recalculateNightsTotals(db);
     }
+    syncCitizensAndProfiles(db, table, operation, deletedRows);
     logOperation(db, operation, table, query, { data: deletedRows });
     await saveDb(db);
     return { data: deletedRows, error: null };
@@ -2711,6 +2860,7 @@ export async function handleMockAuth(query: any): Promise<any> {
     };
 
     db.profiles.push(newProfile);
+    syncCitizensAndProfiles(db, "profiles", "insert", [newProfile]);
 
     // Auto-role assignment: first is admin, others are staff
     const role = db.profiles.length === 1 ? "admin" : "staff";

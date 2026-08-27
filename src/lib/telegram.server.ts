@@ -2229,6 +2229,53 @@ export async function fetchTelegramUpdates() {
         const from = msg.from;
         if (!from) continue;
 
+        // Auto-record /start log and bot subscriber activity for this Telegram user
+        if (!from.is_bot) {
+          try {
+            const cleanFromUser = from.username ? from.username.toLowerCase().replace("@", "").trim() : "";
+            await supabaseAdmin.from("telegram_start_logs").upsert({
+              id: `tglog-${from.id}`,
+              telegram_user_id: String(from.id),
+              username: cleanFromUser || null,
+              first_name: from.first_name || "",
+              last_name: from.last_name || "",
+              chat_id: String(msg.chat.id),
+              has_started: true,
+              last_started_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+            // Automatically attach Telegram user ID and chat ID to matching website profile
+            const { data: allProfs } = await supabaseAdmin.from("profiles").select("*");
+            if (allProfs && allProfs.length > 0) {
+              for (const p of allProfs) {
+                let isMatch = false;
+                if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
+                  isMatch = true;
+                } else if (cleanFromUser && p.telegram_handle) {
+                  const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
+                  if (cleanP === cleanFromUser) {
+                    isMatch = true;
+                  }
+                }
+                if (isMatch) {
+                  const updatesToMake: any = {
+                    telegram_user_id: from.id,
+                    telegram_chat_id: msg.chat.id,
+                    telegram_connected: true,
+                  };
+                  if (!p.telegram_handle && cleanFromUser) {
+                    updatesToMake.telegram_handle = `@${from.username}`;
+                  }
+                  await supabaseAdmin.from("profiles").update(updatesToMake).eq("id", p.id);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Error updating telegram_start_logs:", err);
+          }
+        }
+
         // Auto-store incoming message in chat message history
         let replyInfo: any = undefined;
         if (msg.reply_to_message && msg.reply_to_message.text) {
