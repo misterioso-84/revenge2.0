@@ -1235,9 +1235,7 @@ function HistoryPanel() {
                         </TableCell>
                         <TableCell
                           className={`text-right font-mono font-bold ${
-                            r.direction === "cash_to_dobloni"
-                              ? "text-emerald-400"
-                              : "text-rose-400"
+                            r.direction === "cash_to_dobloni" ? "text-emerald-400" : "text-rose-400"
                           }`}
                         >
                           {r.direction === "cash_to_dobloni" ? "+" : "-"}

@@ -2420,7 +2420,9 @@ function CitizenHistoryDialog({
                                         isCashToDobloni ? "bg-emerald-400" : "bg-rose-400"
                                       }`}
                                     />
-                                    {isCashToDobloni ? "Soldi → Dobloni (+€)" : "Dobloni → Soldi (-€)"}
+                                    {isCashToDobloni
+                                      ? "Soldi → Dobloni (+€)"
+                                      : "Dobloni → Soldi (-€)"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell

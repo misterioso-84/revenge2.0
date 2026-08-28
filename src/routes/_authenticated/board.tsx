@@ -360,7 +360,8 @@ export function BoardPage() {
       setSelectedSubcategoryId(res.subcategory.id);
       toast.success("Sottocategoria aggiunta alla cartella!");
     },
-    onError: (err: any) => toast.error(err.message || "Errore nella creazione della sottocategoria"),
+    onError: (err: any) =>
+      toast.error(err.message || "Errore nella creazione della sottocategoria"),
   });
 
   const updateSubcategoryMutation = useMutation({
@@ -1137,7 +1138,8 @@ export function BoardPage() {
                         {/* Contents Summary Pills */}
                         <div className="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-300 font-medium">
                           <span className="bg-slate-800/80 px-2 py-1 rounded-md border border-slate-700/60 flex items-center gap-1">
-                            <Layers className="w-3 h-3 text-slate-400" /> {catSubs.length} sottocategorie
+                            <Layers className="w-3 h-3 text-slate-400" /> {catSubs.length}{" "}
+                            sottocategorie
                           </span>
                           <span className="bg-slate-800/80 px-2 py-1 rounded-md border border-slate-700/60 flex items-center gap-1">
                             <FileText className="w-3 h-3 text-amber-400" /> {noteCount} note
@@ -1279,11 +1281,20 @@ export function BoardPage() {
                       className="px-3 py-1.5 flex items-center gap-1.5"
                     >
                       {sub.permission_mode === "restricted" ? (
-                        <Lock className="w-3 h-3 text-purple-400" title="Sottocategoria Riservata" />
+                        <Lock
+                          className="w-3 h-3 text-purple-400"
+                          title="Sottocategoria Riservata"
+                        />
                       ) : sub.permission_mode === "inherit" ? (
-                        <GitBranch className="w-3 h-3 text-slate-400" title="Eredita permessi cartella" />
+                        <GitBranch
+                          className="w-3 h-3 text-slate-400"
+                          title="Eredita permessi cartella"
+                        />
                       ) : (
-                        <Unlock className="w-3 h-3 text-emerald-400" title="Sottocategoria Libera" />
+                        <Unlock
+                          className="w-3 h-3 text-emerald-400"
+                          title="Sottocategoria Libera"
+                        />
                       )}
                       <span>{sub.name}</span>
                       <span className="bg-slate-900/80 px-1.5 py-0.2 rounded-full text-[10px] text-slate-400">
@@ -1328,7 +1339,8 @@ export function BoardPage() {
 
               {activeSubcategories.length === 0 && (
                 <div className="text-xs text-slate-500 italic py-1">
-                  Nessuna sottocategoria creata. Puoi crearne una per organizzare i file e impostare permessi dedicati.
+                  Nessuna sottocategoria creata. Puoi crearne una per organizzare i file e impostare
+                  permessi dedicati.
                 </div>
               )}
             </div>
@@ -2342,7 +2354,8 @@ export function BoardPage() {
               <span className="text-amber-400">"{permSubcategory?.name}"</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-400">
-              Imposta regole di visibilità e permessi di pubblicazione specifici per questa sottocategoria.
+              Imposta regole di visibilità e permessi di pubblicazione specifici per questa
+              sottocategoria.
             </DialogDescription>
           </DialogHeader>
 
@@ -2582,7 +2595,8 @@ export function BoardPage() {
                       <Users className="w-4 h-4 text-emerald-400" /> Chiunque può vedere
                     </div>
                     <p className="text-[11px] text-slate-400 leading-tight">
-                      Tutti coloro che hanno accesso a questa sottocategoria possono aggiungere file.
+                      Tutti coloro che hanno accesso a questa sottocategoria possono aggiungere
+                      file.
                     </p>
                   </div>
 
@@ -2610,7 +2624,8 @@ export function BoardPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="font-semibold text-slate-300 flex items-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5 text-amber-400" /> Ruoli Autorizzati a Pubblicare
+                        <Shield className="w-3.5 h-3.5 text-amber-400" /> Ruoli Autorizzati a
+                        Pubblicare
                       </label>
                       <div className="flex items-center gap-2 text-[11px]">
                         <button
@@ -2634,7 +2649,8 @@ export function BoardPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {customRoles.map((r) => {
                         const isChecked =
-                          subPermPublishRoles.includes(r.id) || subPermPublishRoles.includes(r.name);
+                          subPermPublishRoles.includes(r.id) ||
+                          subPermPublishRoles.includes(r.name);
                         return (
                           <div
                             key={r.id}
@@ -2671,7 +2687,8 @@ export function BoardPage() {
                   <div className="space-y-2 pt-2 border-t border-slate-800">
                     <div className="flex items-center justify-between">
                       <label className="font-semibold text-slate-300 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-emerald-400" /> Dipendenti con Permesso di Pubblicazione
+                        <Users className="w-3.5 h-3.5 text-emerald-400" /> Dipendenti con Permesso
+                        di Pubblicazione
                       </label>
                       <span className="text-[11px] text-slate-400">
                         {subPermPublishUserIds.length} selezionati

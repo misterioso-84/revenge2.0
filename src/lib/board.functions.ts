@@ -1591,7 +1591,9 @@ export const triggerDailyTaskMorningBriefingFn = createServerFn({ method: "POST"
 
       // Sort otherTasks by priority
       const priorityOrder: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
-      otherTasks.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+      otherTasks.sort(
+        (a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0),
+      );
 
       const formatTaskLine = (t: any) => {
         const cat = catMap.get(t.category_id) || "Board";

@@ -866,7 +866,9 @@ function SchedaCittadinoPage() {
                                         isCashToDobloni ? "bg-emerald-400" : "bg-rose-400"
                                       }`}
                                     />
-                                    {isCashToDobloni ? "Acquisto Dobloni (+€)" : "Riconversione Contanti (-€)"}
+                                    {isCashToDobloni
+                                      ? "Acquisto Dobloni (+€)"
+                                      : "Riconversione Contanti (-€)"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell

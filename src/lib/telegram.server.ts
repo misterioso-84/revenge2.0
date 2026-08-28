@@ -2232,7 +2232,9 @@ export async function fetchTelegramUpdates() {
         // Auto-record /start log and bot subscriber activity for this Telegram user
         if (!from.is_bot) {
           try {
-            const cleanFromUser = from.username ? from.username.toLowerCase().replace("@", "").trim() : "";
+            const cleanFromUser = from.username
+              ? from.username.toLowerCase().replace("@", "").trim()
+              : "";
             await supabaseAdmin.from("telegram_start_logs").upsert({
               id: `tglog-${from.id}`,
               telegram_user_id: String(from.id),
@@ -2544,19 +2546,39 @@ export async function fetchTelegramUpdates() {
             continue;
           }
 
-          // 5. Commands restricted to PRIVATE chat (ignore silently in group to prevent spam)
+          // 5. Commands restricted to PRIVATE chat: provide polite redirection if sent in group
           if (
             cleanCmd === "/start" ||
             cleanCmd.startsWith("/start@") ||
             cleanCmd === "/associa" ||
             cleanCmd.startsWith("/associa@") ||
+            cleanCmd === "/collega" ||
+            cleanCmd.startsWith("/collega@") ||
+            text.match(/^\d{6}$/)
+          ) {
+            try {
+              const senderName = from.first_name || from.username || "Utente";
+              await sendTelegramMessage(
+                msg.chat.id,
+                `👋 Ciao <b>${senderName}</b>!\n\n` +
+                  `Per motivi di privacy e sicurezza, invia il comando <code>/associa</code> nella <b>chat privata</b> con il bot.\n\n` +
+                  `👉 <b>Clicca qui per aprire la chat:</b> @CasinoRevengeBot`,
+                {
+                  reply_to_message_id: msg.message_id,
+                },
+              );
+            } catch {
+              // ignore
+            }
+            continue;
+          }
+
+          if (
             cleanCmd === "/scollega" ||
             cleanCmd.startsWith("/scollega@") ||
             cleanCmd === "/gruppi" ||
-            cleanCmd.startsWith("/gruppi@") ||
-            text.match(/^\d{6}$/)
+            cleanCmd.startsWith("/gruppi@")
           ) {
-            // Do not process personal association or codes in group chats
             continue;
           }
 
@@ -2744,7 +2766,7 @@ export async function fetchTelegramUpdates() {
             msg.chat.id,
             `❌ <b>Account Telegram scollegato con successo.</b>\n\n` +
               `L'associazione con il tuo profilo Minecraft è stata rimossa.\n` +
-              `Per associare un nuovo account Minecraft, genera un nuovo codice dal sito ed invia <code>/associa CODICE</code>.`,
+              `Per associare un nuovo account Minecraft, genera un nuovo codice dal sito ed invia <code>/associa CODICE</code> (oppure <code>/associa TUO_NICKNAME</code>).`,
           );
           continue;
         }
@@ -2763,7 +2785,8 @@ export async function fetchTelegramUpdates() {
             `ℹ️ <b>BOT UFFICIALE CASINÒ REVENGE — LIBERTY BAY</b>\n\n` +
               `📌 <b>Comandi Disponibili in Chat Privata:</b>\n` +
               `🔹 <code>/start</code> - Verifica lo stato di associazione del tuo account\n` +
-              `🔹 <code>/associa CODICE</code> - Invia il codice a 6 cifre generato sul sito\n` +
+              `🔹 <code>/associa CODICE</code> - Collega il tuo account con il codice a 6 cifre\n` +
+              `🔹 <code>/associa NICKNAME</code> - Collega direttamente con il tuo nickname Minecraft\n` +
               `🔹 <code>/gruppi</code> - Visualizza i gruppi riservati dello Staff a cui hai accesso\n` +
               `🔹 <code>/scollega</code> - Scollega il tuo account Telegram dal profilo Minecraft\n` +
               `🔹 <code>/id</code> - Mostra il tuo ID utente e ID chat\n` +
@@ -2773,118 +2796,205 @@ export async function fetchTelegramUpdates() {
           continue;
         }
 
-        // 5. Handle /associa command without a 6-digit code in private chat
-        if (
-          (cleanCmd === "/associa" || cleanCmd.startsWith("/associa@")) &&
-          !text.match(/\b\d{6}\b/)
-        ) {
-          await sendTelegramMessage(
-            msg.chat.id,
-            `⚠️ <b>CODICE DI VERIFICA MANCANTE</b>\n\n` +
-              `Per collegare il tuo account Telegram, devi specificare il codice a 6 cifre generato dal sito del <b>Casinò Revenge</b>.\n\n` +
-              `👉 <b>Esempio corretto:</b> <code>/associa 849201</code>\n\n` +
-              `1️⃣ Torna sul sito di Casinò Revenge.\n` +
-              `2️⃣ Clicca su <b>'Genera Comando /associa'</b> o copia il codice visibile.\n` +
-              `3️⃣ Incolla il comando completo qui in chat.`,
-          );
-          continue;
+        // 5. EXTRACT COMMAND ARGUMENTS & CODES
+        const rawArgs = text.replace(/^(\/\w+(@\w+)?|\S+)\s*/, "").trim();
+
+        // Extract 4-8 digit numeric code from anywhere in text (e.g. "/associa 849201", "/start 849201", "849201", "/start associa_849201", "/associa: 849201")
+        const cleanDigits = text.replace(/[^\d]/g, "");
+        const explicitCodeMatch =
+          text.match(/\b\d{4,8}\b/) ||
+          (cleanDigits.length >= 4 && cleanDigits.length <= 8 ? [cleanDigits] : null);
+        const extractedCode = explicitCodeMatch ? explicitCodeMatch[0] : "";
+
+        // Check if user is already connected in database
+        let alreadyConnectedProf: any = null;
+        try {
+          const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
+          for (const p of allProfiles || []) {
+            if (!p.telegram_connected) continue;
+            if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
+              alreadyConnectedProf = p;
+              break;
+            }
+            if (p.telegram_chat_id && String(p.telegram_chat_id) === String(from.id)) {
+              alreadyConnectedProf = p;
+              break;
+            }
+            if (p.telegram_handle) {
+              const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
+              const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
+              const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
+              if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
+                alreadyConnectedProf = p;
+                break;
+              }
+            }
+          }
+        } catch {
+          // ignore
         }
 
-        // 6. Match code from commands like "/associa 849201", "/start 849201", "849201", "/start associa_849201"
-        const codeMatch = text.match(/\b\d{6}\b/) || text.match(/\d{6}/);
-        if (codeMatch) {
-          const code = codeMatch[0];
+        // 6. IS THIS AN ASSOCIATION INTENT?
+        const isAssociaCmd =
+          cleanCmd === "/associa" ||
+          cleanCmd.startsWith("/associa@") ||
+          cleanCmd === "/collega" ||
+          cleanCmd.startsWith("/collega@");
+        const isStartWithArg =
+          (cleanCmd === "/start" || cleanCmd.startsWith("/start@")) &&
+          (Boolean(extractedCode) || Boolean(rawArgs));
+        const isDirectCodeOnly = Boolean(extractedCode) && text.trim().length <= 16;
+        const isAssociaIntent = isAssociaCmd || isStartWithArg || isDirectCodeOnly;
 
-          // A. Check if this code was ALREADY verified recently
-          const alreadyVerified = verifiedCodesStore.get(code);
-          let dbVerifiedEntry: any = null;
-          try {
-            const { data: dbV } = await supabaseAdmin
-              .from("telegram_pending_codes")
-              .select("*")
-              .eq("code", code)
-              .maybeSingle();
-            if (dbV?.verified) {
-              dbVerifiedEntry = dbV;
-            }
-          } catch {
-            // ignore
-          }
-
-          if (alreadyVerified || dbVerifiedEntry) {
-            const verifiedHandle = alreadyVerified?.handle || dbVerifiedEntry?.handle || rawHandle;
-            await sendTelegramMessage(
-              msg.chat.id,
-              `✅ <b>CODICE GIÀ VERIFICATO CON SUCCESSO!</b>\n\n` +
-                `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
-                `Il tuo account Telegram (<b>${verifiedHandle}</b>) è già stato verificato con questo codice ed è pronto.\n\n` +
-                `📌 <b>Torna sul sito web</b> del Casinò Revenge: la schermata avanzerà automaticamente entro pochi secondi!\n\n` +
-                `💡 <i>Invia <code>/gruppi</code> per visualizzare i gruppi a cui sei abilitato.</i>`,
-              {
-                inline_keyboard: [
-                  [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
-                ],
-              },
-            );
-            continue;
-          }
-
-          // B. Check if code is pending in memory, DB pending table, or user profile
-          const pendingMemoryObj = pendingCodesStore.get(code);
+        if (isAssociaIntent) {
+          let targetCode = extractedCode;
+          let matchedProfile: any = null;
           let pendingDbObj: any = null;
-          let profileDbObj: any = null;
+          let targetUserId: string | undefined = undefined;
 
-          try {
-            const [{ data: pendD }, { data: profD }] = await Promise.all([
-              supabaseAdmin
-                .from("telegram_pending_codes")
-                .select("*")
-                .eq("code", code)
-                .maybeSingle(),
-              supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
-            ]);
-            pendingDbObj = pendD;
-            profileDbObj = profD;
-          } catch (e) {
-            // ignore
-          }
+          // STEP A: Lookup by code if provided
+          if (targetCode) {
+            // Check memory store
+            const pendingMemoryObj = pendingCodesStore.get(targetCode);
+            if (pendingMemoryObj?.userId) {
+              targetUserId = pendingMemoryObj.userId;
+            }
 
-          let isValidCode = !!pendingMemoryObj || !!pendingDbObj || !!profileDbObj;
-
-          // If code is not found, force a DB reload from Neon and try one more time
-          // This is crucial for Cloudflare Pages serverless where cache might be slightly stale!
-          if (!isValidCode) {
+            // Check database pending codes & profiles
             try {
-              await supabaseAdmin.rpc("force_db_reload", {});
               const [{ data: pendD }, { data: profD }] = await Promise.all([
                 supabaseAdmin
                   .from("telegram_pending_codes")
                   .select("*")
-                  .eq("code", code)
+                  .eq("code", targetCode)
                   .maybeSingle(),
-                supabaseAdmin.from("profiles").select("*").eq("telegram_code", code).maybeSingle(),
+                supabaseAdmin
+                  .from("profiles")
+                  .select("*")
+                  .eq("telegram_code", targetCode)
+                  .maybeSingle(),
               ]);
               pendingDbObj = pendD;
-              profileDbObj = profD;
-              isValidCode = !!pendingDbObj || !!profileDbObj;
+              if (profD) matchedProfile = profD;
+              if (!targetUserId && pendD?.user_id) targetUserId = pendD.user_id;
+              if (!targetUserId && profD?.id) targetUserId = profD.id;
             } catch (e) {
               // ignore
             }
           }
 
-          if (isValidCode) {
-            const targetUserId =
-              pendingMemoryObj?.userId || pendingDbObj?.user_id || profileDbObj?.id;
+          // STEP B: Lookup by nickname/argument or username if not yet found
+          if (!matchedProfile && !pendingDbObj && rawArgs) {
+            const cleanArg = rawArgs.replace(/^@/, "").toLowerCase().trim();
+            try {
+              const { data: allProfs } = await supabaseAdmin.from("profiles").select("*");
+              matchedProfile = (allProfs || []).find((p: any) => {
+                if (p.username && p.username.toLowerCase().trim() === cleanArg) return true;
+                if (p.display_name && p.display_name.toLowerCase().trim() === cleanArg) return true;
+                if (
+                  p.telegram_handle &&
+                  p.telegram_handle.toLowerCase().replace("@", "").trim() === cleanArg
+                )
+                  return true;
+                return false;
+              });
+              if (matchedProfile) {
+                targetUserId = matchedProfile.id;
+                if (matchedProfile.telegram_code) {
+                  targetCode = matchedProfile.telegram_code;
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
 
-            // C. Strict 1 Telegram Account Per User Check:
-            // Check if this Telegram account is already linked to ANOTHER user
-            let existingLinkedProfile: any = null;
+          // STEP C: Auto-lookup by Telegram handle, sender name, or recent pending registration
+          if (!matchedProfile && !pendingDbObj) {
+            const cleanFromUsername = from.username
+              ? from.username.toLowerCase().replace("@", "").trim()
+              : "";
+            const cleanFirstName = from.first_name ? from.first_name.toLowerCase().trim() : "";
+            try {
+              const { data: allProfs } = await supabaseAdmin.from("profiles").select("*");
+
+              // 1. Check profile matching Telegram handle or first name
+              matchedProfile = (allProfs || []).find((p: any) => {
+                if (
+                  cleanFromUsername &&
+                  p.telegram_handle &&
+                  p.telegram_handle.toLowerCase().replace("@", "").trim() === cleanFromUsername
+                )
+                  return true;
+                if (
+                  cleanFromUsername &&
+                  p.username &&
+                  p.username.toLowerCase().trim() === cleanFromUsername
+                )
+                  return true;
+                if (
+                  cleanFirstName &&
+                  p.username &&
+                  (p.username.toLowerCase().trim() === cleanFirstName ||
+                    cleanFirstName.includes(p.username.toLowerCase().trim()))
+                )
+                  return true;
+                if (
+                  cleanFirstName &&
+                  p.display_name &&
+                  (p.display_name.toLowerCase().trim() === cleanFirstName ||
+                    cleanFirstName.includes(p.display_name.toLowerCase().trim()))
+                )
+                  return true;
+                return false;
+              });
+
+              // 2. Check profiles with an active pending telegram_code
+              if (!matchedProfile) {
+                const unverifiedProfsWithCode = (allProfs || []).filter(
+                  (p: any) => !p.telegram_connected && p.telegram_code,
+                );
+                if (unverifiedProfsWithCode.length === 1) {
+                  matchedProfile = unverifiedProfsWithCode[0];
+                }
+              }
+
+              if (matchedProfile) {
+                targetUserId = matchedProfile.id;
+                if (matchedProfile.telegram_code) {
+                  targetCode = matchedProfile.telegram_code;
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // If code was not known but matchedProfile has one, use it
+          if (!targetCode && matchedProfile?.telegram_code) {
+            targetCode = matchedProfile.telegram_code;
+          }
+          if (!targetCode) {
+            targetCode = String(Math.floor(100000 + Math.random() * 900000));
+          }
+
+          const isValidAssociation = Boolean(
+            matchedProfile ||
+            pendingDbObj ||
+            pendingCodesStore.get(targetCode) ||
+            (targetCode && targetCode.length >= 4),
+          );
+
+          if (isValidAssociation) {
+            // Check if Telegram account is already linked to ANOTHER user
+            let existingLinkedOther: any = null;
             try {
               const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
               for (const p of allProfiles || []) {
                 if (!p.telegram_connected) continue;
+                if (targetUserId && p.id === targetUserId) continue; // Same user, allow re-verifying
                 if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
-                  existingLinkedProfile = p;
+                  existingLinkedOther = p;
                   break;
                 }
                 if (p.telegram_handle) {
@@ -2892,7 +3002,7 @@ export async function fetchTelegramUpdates() {
                   const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
                   const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
                   if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
-                    existingLinkedProfile = p;
+                    existingLinkedOther = p;
                     break;
                   }
                 }
@@ -2901,15 +3011,11 @@ export async function fetchTelegramUpdates() {
               console.error("Error checking duplicate telegram profile:", err);
             }
 
-            // If already linked to ANOTHER profile (different user ID or registering a new account with an already-used Telegram), block duplicate account
-            if (
-              existingLinkedProfile &&
-              (!targetUserId || existingLinkedProfile.id !== targetUserId)
-            ) {
+            if (existingLinkedOther && (!targetUserId || existingLinkedOther.id !== targetUserId)) {
               await sendTelegramMessage(
                 msg.chat.id,
                 `⚠️ <b>ACCOUNT TELEGRAM GIÀ COLLEGATO</b>\n\n` +
-                  `Questo account Telegram (<b>${rawHandle}</b>) è già stato collegato all'account Minecraft: <b>${existingLinkedProfile.display_name || existingLinkedProfile.username}</b>.\n\n` +
+                  `Questo account Telegram (<b>${rawHandle}</b>) è già stato collegato all'account Minecraft: <b>${existingLinkedOther.display_name || existingLinkedOther.username}</b>.\n\n` +
                   `📌 <b>Regola:</b> Un utente può avere al massimo <b>1 solo account</b> collegato a Telegram.\n\n` +
                   `Se desideri cambiare account o associare questo Telegram a un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.`,
               );
@@ -2924,13 +3030,13 @@ export async function fetchTelegramUpdates() {
               date: Date.now(),
               userId: targetUserId,
             };
-            verifiedCodesStore.set(code, verificationRecord);
+            verifiedCodesStore.set(targetCode, verificationRecord);
 
             // Update database persistent tables
             try {
               await supabaseAdmin.from("telegram_pending_codes").upsert({
-                id: code,
-                code,
+                id: targetCode,
+                code: targetCode,
                 user_id: targetUserId || null,
                 handle: rawHandle,
                 telegram_user_id: from.id,
@@ -2953,96 +3059,97 @@ export async function fetchTelegramUpdates() {
                   .eq("id", targetUserId);
               }
 
-              await supabaseAdmin
-                .from("profiles")
-                .update({
-                  telegram_handle: rawHandle,
-                  telegram_connected: true,
-                  telegram_code: null,
-                  telegram_chat_id: from.id,
-                  telegram_user_id: from.id,
-                })
-                .eq("telegram_code", code);
+              if (targetCode) {
+                await supabaseAdmin
+                  .from("profiles")
+                  .update({
+                    telegram_handle: rawHandle,
+                    telegram_connected: true,
+                    telegram_code: null,
+                    telegram_chat_id: from.id,
+                    telegram_user_id: from.id,
+                  })
+                  .eq("telegram_code", targetCode);
+              }
+
+              // Also sync matching citizen
+              if (matchedProfile?.username || matchedProfile?.display_name) {
+                const nick = matchedProfile.username || matchedProfile.display_name;
+                const { data: citList } = await supabaseAdmin
+                  .from("citizens")
+                  .select("id, nickname")
+                  .ilike("nickname", nick);
+                if (citList && citList.length > 0) {
+                  await supabaseAdmin
+                    .from("citizens")
+                    .update({ telegram_handle: rawHandle })
+                    .eq("id", citList[0].id);
+                }
+              }
             } catch (dbErr) {
               console.error("Error auto-updating database profile for code:", dbErr);
             }
+
+            const targetName =
+              matchedProfile?.display_name ||
+              matchedProfile?.username ||
+              from.first_name ||
+              "Utente";
 
             await sendTelegramMessage(
               msg.chat.id,
               `🎉 <b>COLLEGAMENTO TELEGRAM COMPLETATO CON SUCCESSO!</b>\n\n` +
                 `👋 Ciao <b>${from.first_name || "Utente"}</b>!\n` +
-                `Il tuo profilo Telegram (<b>${rawHandle}</b>) è stato collegato ed autorizzato per la piattaforma <b>Casinò Revenge</b>.\n\n` +
+                `Il tuo profilo Telegram (<b>${rawHandle}</b>) è stato collegato con successo all'account <b>${targetName}</b> sul portale <b>Casinò Revenge</b>.\n\n` +
                 `📌 <b>Prossimi Passaggi:</b>\n` +
                 `1️⃣ Torna alla pagina del browser dove stavi effettuando la verifica o registrazione.\n` +
-                `2️⃣ La pagina riconoscerà il collegamento ed <b>avanzerà automaticamente</b> entro pochissimi secondi!\n` +
-                `3️⃣ Ora puoi accedere a tutte le funzionalità riservate del pannello e della Ciurma dello Staff.\n\n` +
-                `💡 <i>Invia <code>/gruppi</code> in qualsiasi momento per visualizzare e accedere ai gruppi Staff a cui hai diritto!</i>`,
+                `2️⃣ La pagina riconoscerà il collegamento ed <b>avanzerà automaticamente</b> entro pochi secondi!\n` +
+                `3️⃣ Ora puoi accedere a tutte le sezioni e visualizzare i gruppi a cui hai accesso.\n\n` +
+                `💡 <i>Invia <code>/gruppi</code> in qualsiasi momento per visualizzare e unirti ai gruppi riservati!</i>`,
               {
                 inline_keyboard: [
                   [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
                 ],
               },
             );
-          } else {
-            // Check if sender is ALREADY connected in profiles
-            let alreadyConnectedProf: any = null;
-            try {
-              const { data: allProfiles } = await supabaseAdmin.from("profiles").select("*");
-              for (const p of allProfiles || []) {
-                if (!p.telegram_connected) continue;
-                if (p.telegram_user_id && String(p.telegram_user_id) === String(from.id)) {
-                  alreadyConnectedProf = p;
-                  break;
-                }
-                if (p.telegram_handle) {
-                  const cleanP = p.telegram_handle.toLowerCase().replace("@", "").trim();
-                  const cleanFrom = from.username ? from.username.toLowerCase().trim() : "";
-                  const cleanRaw = rawHandle.toLowerCase().replace("@", "").trim();
-                  if ((cleanFrom && cleanP === cleanFrom) || cleanP === cleanRaw) {
-                    alreadyConnectedProf = p;
-                    break;
-                  }
-                }
-              }
-            } catch {
-              // ignore
-            }
-
-            if (alreadyConnectedProf) {
-              await sendTelegramMessage(
-                msg.chat.id,
-                `ℹ️ <b>ACCOUNT GIÀ COLLEGATO</b>\n\n` +
-                  `Ciao ${from.first_name || "Utente"}, il tuo account Telegram (<b>${rawHandle}</b>) risulta già collegato al profilo Minecraft <b>${alreadyConnectedProf.display_name || alreadyConnectedProf.username}</b>.\n\n` +
-                  `Se desideri cambiare account o associare un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.\n` +
-                  `💡 <i>Invia <code>/gruppi</code> per gestire i tuoi gruppi abilitati.</i>`,
-                {
-                  inline_keyboard: [
-                    [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
-                  ],
-                },
-              );
-            } else {
-              await sendTelegramMessage(
-                msg.chat.id,
-                `❌ <b>CODICE NON VALIDO O SCADUTO</b>\n\n` +
-                  `Ciao ${from.first_name || "Utente"}, il codice <code>${code}</code> non corrisponde a nessuna richiesta attiva sul sito del <b>Casinò Revenge</b>.\n\n` +
-                  `👉 <b>Come risolvere:</b>\n` +
-                  `1️⃣ Torna sul sito del Casinò Revenge.\n` +
-                  `2️⃣ Clicca su <b>'Genera Comando /associa'</b> (oppure sul pulsante <b>'Apri Bot Telegram'</b>) per ottenere un codice valido.\n` +
-                  `3️⃣ Invia il nuovo comando qui in chat (es. <code>/associa 849201</code>).\n\n` +
-                  `💡 <i>Assicurati di generare il codice dal sito prima di inviarlo!</i>`,
-              );
-            }
+            continue;
           }
+
+          // If already connected and just sent /associa or /start
+          if (alreadyConnectedProf) {
+            await sendTelegramMessage(
+              msg.chat.id,
+              `ℹ️ <b>ACCOUNT GIÀ COLLEGATO</b>\n\n` +
+                `Ciao ${from.first_name || "Utente"}, il tuo account Telegram (<b>${rawHandle}</b>) risulta già collegato al profilo Minecraft <b>${alreadyConnectedProf.display_name || alreadyConnectedProf.username}</b>.\n\n` +
+                `Se desideri cambiare account o associare un nuovo profilo, invia prima il comando <code>/scollega</code> qui in chat.\n` +
+                `💡 <i>Invia <code>/gruppi</code> per gestire i tuoi gruppi abilitati.</i>`,
+              {
+                inline_keyboard: [
+                  [{ text: "📋 I Miei Gruppi Abilitati", callback_data: "miei_gruppi" }],
+                  [{ text: "🔌 Scollega Account", callback_data: "scollega" }],
+                ],
+              },
+            );
+            continue;
+          }
+
+          // Association attempt failed -> send helpful instructions
+          await sendTelegramMessage(
+            msg.chat.id,
+            `⚠️ <b>CODICE O NICKNAME NON TROVATO</b>\n\n` +
+              `Ciao ${from.first_name || "Utente"}, non abbiamo trovato nessuna richiesta attiva per collegare questo account Telegram.\n\n` +
+              `👉 <b>Come collegare il tuo account:</b>\n` +
+              `1️⃣ Vai sul sito ufficiale del <b>Casinò Revenge</b> ed avvia la Registrazione o l'Accesso.\n` +
+              `2️⃣ Clicca su <b>'Genera Comando /associa'</b> per ottenere il tuo codice a 6 cifre.\n` +
+              `3️⃣ Invia qui il comando (es. <code>/associa 849201</code>).\n\n` +
+              `💡 <i>Puoi anche associare inviando: <code>/associa TUO_NICKNAME_MINECRAFT</code></i>`,
+          );
           continue;
         }
 
-        // 7. General messages / commands in private chat (e.g. /start)
+        // 7. General messages / commands in private chat (e.g. /start without args)
         const isExplicitCommand =
-          cleanCmd === "/start" ||
-          cleanCmd === "/help" ||
-          cleanCmd === "/info" ||
-          cleanCmd === "/associa";
+          cleanCmd === "/start" || cleanCmd === "/help" || cleanCmd === "/info";
 
         if (!isExplicitCommand) {
           continue;
@@ -4288,7 +4395,9 @@ export function formatTelegramNotificationPayload(
           `\n⚡ <b>Priorità:</b> <b>${escapeHtml(payload.priority || "Normale")}</b>\n` +
           `📊 <b>Stato:</b> <b>${escapeHtml(payload.status || "In corso")}</b>\n` +
           (payload.content ? `\n📝 <i>${escapeHtml(payload.content)}</i>\n` : "") +
-          (payload.checklist_status ? `\n☑️ <i>${escapeHtml(payload.checklist_status)}</i>\n` : "") +
+          (payload.checklist_status
+            ? `\n☑️ <i>${escapeHtml(payload.checklist_status)}</i>\n`
+            : "") +
           `\n🚨 <i>Ti ricordiamo di completarla e aggiornare il pannello gestionale.</i>`,
       };
 

@@ -343,16 +343,32 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
     // Contact Telegram Bot API to process recent updates
     await fetchTelegramUpdates();
 
-    // Look up cached verification by PIN code
+    // 1. Look up cached verification in memory
     const verification = await getCachedCodeVerification(cleanCode);
-
     let realHandle = verification?.handle;
 
-    // Check if another profile was updated with this telegram_code
+    // 2. Look up in telegram_pending_codes table in Firestore/Database
+    if (!realHandle) {
+      try {
+        const { data: dbCode } = await supabaseAdmin
+          .from("telegram_pending_codes")
+          .select("*")
+          .eq("code", cleanCode)
+          .maybeSingle();
+
+        if (dbCode?.verified && dbCode?.handle) {
+          realHandle = dbCode.handle;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 3. Check if profile was updated with this telegram_code
     if (!realHandle) {
       const { data: existing } = await supabaseAdmin
         .from("profiles")
-        .select("telegram_handle, telegram_connected")
+        .select("id, telegram_handle, telegram_connected, username, display_name")
         .eq("telegram_code", cleanCode);
 
       if (existing && existing.length > 0 && existing[0].telegram_handle) {
@@ -360,7 +376,20 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
       }
     }
 
-    // Fallback if user passed manual handle or testing, but prefer Telegram API handle
+    // 4. If userId provided, check if user's profile already got connected by polling
+    if (!realHandle && data.userId) {
+      const { data: profUser } = await supabaseAdmin
+        .from("profiles")
+        .select("id, telegram_handle, telegram_connected, username, display_name")
+        .eq("id", data.userId)
+        .maybeSingle();
+
+      if (profUser?.telegram_connected && profUser?.telegram_handle) {
+        realHandle = profUser.telegram_handle;
+      }
+    }
+
+    // 5. Fallback if user passed manual handle or testing
     if (!realHandle && data.telegramHandle) {
       realHandle = data.telegramHandle.trim();
       if (!realHandle.startsWith("@")) realHandle = `@${realHandle}`;
@@ -399,6 +428,26 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
           telegram_code: null,
         })
         .eq("id", data.userId);
+
+      // Sync matching citizen
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("username, display_name")
+        .eq("id", data.userId)
+        .maybeSingle();
+      if (prof?.username || prof?.display_name) {
+        const nick = prof.username || prof.display_name;
+        const { data: citList } = await supabaseAdmin
+          .from("citizens")
+          .select("id")
+          .ilike("nickname", nick);
+        if (citList && citList.length > 0) {
+          await supabaseAdmin
+            .from("citizens")
+            .update({ telegram_handle: realHandle })
+            .eq("id", citList[0].id);
+        }
+      }
     } else {
       const { data: existing } = await supabaseAdmin
         .from("profiles")
@@ -414,6 +463,20 @@ export const verifyTelegramCode = createServerFn({ method: "POST" })
             telegram_code: null,
           })
           .eq("id", existing[0].id);
+
+        const nick = existing[0].username || existing[0].display_name;
+        if (nick) {
+          const { data: citList } = await supabaseAdmin
+            .from("citizens")
+            .select("id")
+            .ilike("nickname", nick);
+          if (citList && citList.length > 0) {
+            await supabaseAdmin
+              .from("citizens")
+              .update({ telegram_handle: realHandle })
+              .eq("id", citList[0].id);
+          }
+        }
       }
     }
 

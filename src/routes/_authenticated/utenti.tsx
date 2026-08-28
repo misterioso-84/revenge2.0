@@ -424,7 +424,10 @@ function UsersPage() {
                                     /start OK
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px] py-0 px-1.5">
+                                  <Badge
+                                    variant="outline"
+                                    className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px] py-0 px-1.5"
+                                  >
                                     /start ?
                                   </Badge>
                                 )}
@@ -437,20 +440,29 @@ function UsersPage() {
                                 title="Verifica forzata se l'utente ha inviato /start al bot Telegram"
                                 onClick={async () => {
                                   try {
-                                    toast.loading("Verifica /start in corso...", { id: `verify-${u.id}` });
+                                    toast.loading("Verifica /start in corso...", {
+                                      id: `verify-${u.id}`,
+                                    });
                                     const res = await forceVerifyFn({ data: { userId: u.id } });
                                     qc.invalidateQueries({ queryKey: ["panel-users"] });
                                     if (res.hasStarted) {
                                       toast.success(res.message, { id: `verify-${u.id}` });
                                     } else {
-                                      toast.warning(res.message, { id: `verify-${u.id}`, duration: 7000 });
+                                      toast.warning(res.message, {
+                                        id: `verify-${u.id}`,
+                                        duration: 7000,
+                                      });
                                     }
                                   } catch (err: any) {
-                                    toast.error(err.message || "Errore durante la verifica Telegram.", { id: `verify-${u.id}` });
+                                    toast.error(
+                                      err.message || "Errore durante la verifica Telegram.",
+                                      { id: `verify-${u.id}` },
+                                    );
                                   }
                                 }}
                               >
-                                <Shield className="h-3 w-3 mr-1 text-sky-400 shrink-0" /> Verifica /start
+                                <Shield className="h-3 w-3 mr-1 text-sky-400 shrink-0" /> Verifica
+                                /start
                               </Button>
                             </div>
                           ) : (
@@ -1113,7 +1125,8 @@ function CreateUserDialog({ onClose, onSubmit }: any) {
             <Label>Username Telegram (@)</Label>
             <Input name="telegramHandle" placeholder="@username_telegram" />
             <p className="text-[11px] text-sky-400 mt-1 font-medium">
-              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà verificato se l'utente ha inviato /start al Bot.
+              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà
+              verificato se l'utente ha inviato /start al Bot.
             </p>
           </div>
           <div>
@@ -1480,7 +1493,8 @@ function EditUserDialog({ user, onClose, onSubmit }: any) {
               onChange={(e) => setTelegramHandle(e.target.value)}
             />
             <p className="text-[11px] text-sky-400 mt-1 font-medium">
-              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà verificato se l'utente ha inviato /start al Bot.
+              ⚡ L'impostazione manuale della @ salta la verifica con codice /associa. Verrà
+              verificato se l'utente ha inviato /start al Bot.
             </p>
           </div>
 

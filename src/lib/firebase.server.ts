@@ -24,8 +24,7 @@ function isFirestoreWriteDisabled(): boolean {
 }
 
 function markFirestoreQuotaExceeded() {
-  // Only back off for 5 minutes instead of 24h
-  writeQuotaExceededUntil = Date.now() + 5 * 60 * 1000;
+  writeQuotaExceededUntil = Date.now() + 60 * 1000; // Only 1 minute cooldown
 }
 
 // Safely initialize Firebase App
@@ -47,26 +46,43 @@ export async function loadDbFromFirestore(): Promise<Record<string, any[]> | nul
     return null;
   }
 
-  try {
-    const data = await loadDbFromFirestoreInternal(false);
-    if (data) return data;
-  } catch (err: any) {
-    if (isQuotaError(err)) {
-      readQuotaExceededUntil = Date.now() + 5 * 60 * 1000;
-      console.warn("[Firestore Database] Read quota limit reached.");
-      return null;
+  // Attempt reading with up to 2 retries
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const data = await loadDbFromFirestoreInternal(false);
+      if (data && typeof data === "object" && Object.keys(data).length > 0) {
+        return data;
+      }
+    } catch (err: any) {
+      if (isQuotaError(err)) {
+        readQuotaExceededUntil = Date.now() + 60 * 1000;
+        console.warn("[Firestore Database] Read quota reached.");
+        return null;
+      }
+      console.warn(
+        `[Firestore Database] Attempt ${attempt} error loading from custom db:`,
+        err?.message || err,
+      );
+      if (attempt === 2) {
+        try {
+          const fallbackData = await loadDbFromFirestoreInternal(true);
+          if (
+            fallbackData &&
+            typeof fallbackData === "object" &&
+            Object.keys(fallbackData).length > 0
+          ) {
+            return fallbackData;
+          }
+        } catch (fbErr: any) {
+          if (isQuotaError(fbErr)) {
+            readQuotaExceededUntil = Date.now() + 60 * 1000;
+          }
+        }
+      }
     }
-    console.warn("[Firestore Database] Error loading from Firestore:", err?.message || err);
   }
 
-  try {
-    return await loadDbFromFirestoreInternal(true);
-  } catch (err: any) {
-    if (isQuotaError(err)) {
-      readQuotaExceededUntil = Date.now() + 5 * 60 * 1000;
-    }
-    return null;
-  }
+  return null;
 }
 
 async function loadDbFromFirestoreInternal(
@@ -95,18 +111,27 @@ export async function saveDbToFirestore(data: Record<string, any[]>) {
 
   try {
     await saveDbToFirestoreInternal(data, false);
+    return;
   } catch (err: any) {
     if (isQuotaError(err)) {
       markFirestoreQuotaExceeded();
       console.warn("[Firestore Database] Write quota limit exceeded.");
       return;
     }
-    console.warn("[Firestore Database] Error saving to custom db, attempting default db:", err?.message || err);
+    console.warn(
+      "[Firestore Database] Error saving to custom db, attempting default db:",
+      err?.message || err,
+    );
     try {
       await saveDbToFirestoreInternal(data, true);
     } catch (defaultErr: any) {
       if (isQuotaError(defaultErr)) {
         markFirestoreQuotaExceeded();
+      } else {
+        console.error(
+          "[Firestore Database] Final failure saving to Firestore:",
+          defaultErr?.message || defaultErr,
+        );
       }
     }
   }
@@ -136,4 +161,3 @@ async function saveDbToFirestoreInternal(data: Record<string, any[]>, useDefault
     { merge: true },
   );
 }
-

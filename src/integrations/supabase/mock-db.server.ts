@@ -1213,7 +1213,11 @@ async function loadDb(): Promise<Record<string, any[]>> {
       try {
         console.log("[Firestore Sync] Attempting to load database from Firestore...");
         const firestoreData = await firestoreMod.loadDbFromFirestore();
-        if (firestoreData && typeof firestoreData === "object" && Object.keys(firestoreData).length > 0) {
+        if (
+          firestoreData &&
+          typeof firestoreData === "object" &&
+          Object.keys(firestoreData).length > 0
+        ) {
           console.log(
             "[Firestore Sync] Successfully loaded database from Firestore. Updating local cache...",
           );
@@ -1320,7 +1324,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       console.error("Error loading mock db from file:", e);
     }
 
-    // 4. Default in-memory generator fallback (Perfect for zero-setup static or serverless deploys!)
+    // 4. Default in-memory generator fallback (Used ONLY if no cloud or local database exists at all)
     if (!localDb) {
       console.log("[Sync Fallback] Falling back to generating initial DB...");
       localDb = getInitialDb();
@@ -1329,34 +1333,6 @@ async function loadDb(): Promise<Record<string, any[]>> {
     ensureDbTables(localDb);
     cachedDb = localDb;
     lastLoadedTime = Date.now();
-
-    // Seed backends with initial/local state if we had to fall back to files/static and we are absolutely sure the load didn't just fail!
-    console.log("[Sync Fallback] Seeding backends with database state...");
-    if (!d1Failed && d1Mod && d1Mod.saveDbToD1) {
-      try {
-        await d1Mod.saveDbToD1(localDb);
-        console.log("[Cloudflare D1 Sync] Database state successfully seeded to D1 ('revenge').");
-      } catch (err) {
-        console.error("[Cloudflare D1 Sync] Failed to seed D1:", err);
-      }
-    }
-    if (!neonFailed && neonMod && neonMod.saveDbToNeon) {
-      try {
-        await neonMod.saveDbToNeon(localDb);
-        console.log("[Neon Sync] Database state successfully seeded to Neon Postgres.");
-      } catch (err) {
-        console.error("[Neon Sync] Failed to seed Neon Postgres:", err);
-      }
-    }
-
-    if (!firestoreFailed && firestoreMod && firestoreMod.saveDbToFirestore) {
-      try {
-        await firestoreMod.saveDbToFirestore(localDb);
-        console.log("[Firestore Sync] Database state successfully seeded to Firestore.");
-      } catch (err) {
-        console.error("[Firestore Sync] Failed to seed Firestore:", err);
-      }
-    }
 
     return cachedDb;
   })();
@@ -1396,14 +1372,14 @@ async function syncToCloud(db: Record<string, any[]>) {
     // silently catch
   }
 
-  // 3. Save to Firestore
+  // 3. Save to Firestore (Primary Persistent Database)
   try {
     const firestoreMod = await getFirestore();
     if (firestoreMod && firestoreMod.saveDbToFirestore) {
       await firestoreMod.saveDbToFirestore(db);
     }
   } catch (err) {
-    // silently catch
+    console.error("[syncToCloud] Error saving to Firestore:", err);
   }
 }
 
@@ -1863,12 +1839,7 @@ function matchFilters(item: any, table: string, filters: any[]): boolean {
   return true;
 }
 
-function syncCitizensAndProfiles(
-  db: any,
-  table: string,
-  operation: string,
-  affectedRows: any[],
-) {
+function syncCitizensAndProfiles(db: any, table: string, operation: string, affectedRows: any[]) {
   if (table !== "citizens" && table !== "profiles") return;
   if (!Array.isArray(affectedRows) || affectedRows.length === 0) return;
 
@@ -1885,7 +1856,7 @@ function syncCitizensAndProfiles(
         const nick = (cit.nickname || cit.full_name || "").trim();
         const tg = cit.telegram_handle ? cit.telegram_handle.trim() : null;
 
-        let prof = db.profiles.find((p: any) => {
+        const prof = db.profiles.find((p: any) => {
           if (cit.id && p.id === cit.id) return true;
           const pUser = (p.username || "").trim().toLowerCase();
           const pDisp = (p.display_name || "").trim().toLowerCase();
@@ -1922,22 +1893,18 @@ function syncCitizensAndProfiles(
       for (const cit of affectedRows) {
         if (!cit) continue;
         const citId = cit.id;
-        const nick = (cit.nickname || "").trim().toLowerCase();
-        const name = (cit.full_name || "").trim().toLowerCase();
-
+        // Only clean up non-employee profiles that match exactly by ID
         const profsToDelete = db.profiles.filter((p: any) => {
-          if (citId && p.id === citId) return true;
-          const pUser = (p.username || "").trim().toLowerCase();
-          const pDisp = (p.display_name || "").trim().toLowerCase();
-          if (nick && pUser === nick) return true;
-          if (name && pDisp === name) return true;
+          if (citId && p.id === citId && !p.has_employee_access) return true;
           return false;
         });
 
         for (const p of profsToDelete) {
           db.profiles = db.profiles.filter((x: any) => x.id !== p.id);
           db.user_roles = (db.user_roles || []).filter((r: any) => r.user_id !== p.id);
-          db.user_custom_roles = (db.user_custom_roles || []).filter((ucr: any) => ucr.user_id !== p.id);
+          db.user_custom_roles = (db.user_custom_roles || []).filter(
+            (ucr: any) => ucr.user_id !== p.id,
+          );
           db.sanctions = (db.sanctions || []).filter((s: any) => s.user_id !== p.id);
         }
       }
@@ -1950,7 +1917,7 @@ function syncCitizensAndProfiles(
         const nick = (prof.username || prof.display_name || "").trim();
         const tg = prof.telegram_handle ? prof.telegram_handle.trim() : null;
 
-        let cit = db.citizens.find((c: any) => {
+        const cit = db.citizens.find((c: any) => {
           if (prof.id && c.id === prof.id) return true;
           const cNick = (c.nickname || "").trim().toLowerCase();
           const cName = (c.full_name || "").trim().toLowerCase();
@@ -1960,44 +1927,16 @@ function syncCitizensAndProfiles(
         });
 
         if (cit) {
-          if (name) cit.full_name = name;
-          if (nick) cit.nickname = nick;
+          if (name && !cit.full_name) cit.full_name = name;
+          if (nick && !cit.nickname) cit.nickname = nick;
           if (prof.telegram_handle !== undefined) {
             cit.telegram_handle = tg;
           }
           cit.updated_at = now;
-        } else if (operation === "insert" || operation === "upsert") {
-          db.citizens.push({
-            id: prof.id || "cit-" + Math.random().toString(36).substring(2, 15),
-            full_name: name || nick,
-            nickname: nick || name,
-            membership: "standard",
-            membership_since: now,
-            membership_expires_at: null,
-            telegram_handle: tg,
-            notes: null,
-            created_at: prof.created_at || now,
-            updated_at: now,
-          });
         }
       }
-    } else if (operation === "delete") {
-      for (const prof of affectedRows) {
-        if (!prof) continue;
-        const profId = prof.id;
-        const nick = (prof.username || "").trim().toLowerCase();
-        const name = (prof.display_name || "").trim().toLowerCase();
-
-        db.citizens = db.citizens.filter((c: any) => {
-          if (profId && c.id === profId) return false;
-          const cNick = (c.nickname || "").trim().toLowerCase();
-          const cName = (c.full_name || "").trim().toLowerCase();
-          if (nick && cNick === nick) return false;
-          if (name && cName === name) return false;
-          return true;
-        });
-      }
     }
+    // Profile deletion should NEVER delete citizens from the registry
   }
 }
 
@@ -2643,8 +2582,12 @@ export async function queryMockDb(query: any): Promise<{ data: any; error: any }
       } else if (table === "telegram_start_logs") {
         existingIndex = db[table].findIndex(
           (item: any) =>
-            (row.telegram_user_id && String(item.telegram_user_id) === String(row.telegram_user_id)) ||
-            (row.username && item.username && String(item.username).toLowerCase().replace("@", "") === String(row.username).toLowerCase().replace("@", ""))
+            (row.telegram_user_id &&
+              String(item.telegram_user_id) === String(row.telegram_user_id)) ||
+            (row.username &&
+              item.username &&
+              String(item.username).toLowerCase().replace("@", "") ===
+                String(row.username).toLowerCase().replace("@", "")),
         );
       }
 

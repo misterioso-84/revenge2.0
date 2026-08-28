@@ -107,7 +107,7 @@ export const createPanelUser = createServerFn({ method: "POST" })
         const cleanH = handle.toLowerCase().replace("@", "").trim();
         const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
         const matched = (startLogs || []).find(
-          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH
+          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH,
         );
         if (matched) {
           profilePayload.telegram_user_id = matched.telegram_user_id;
@@ -115,10 +115,7 @@ export const createPanelUser = createServerFn({ method: "POST" })
         }
       }
 
-      await supabaseAdmin
-        .from("profiles")
-        .update(profilePayload)
-        .eq("id", created.user.id);
+      await supabaseAdmin.from("profiles").update(profilePayload).eq("id", created.user.id);
 
       try {
         const { triggerRoleChangeExplanationReset } = await import("@/lib/master.functions");
@@ -169,7 +166,7 @@ export const updatePanelUser = createServerFn({ method: "POST" })
         const cleanH = handle.toLowerCase().replace("@", "").trim();
         const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
         const matched = (startLogs || []).find(
-          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH
+          (l: any) => l.username && l.username.toLowerCase().replace("@", "") === cleanH,
         );
         if (matched) {
           updateFields.telegram_user_id = matched.telegram_user_id;
@@ -218,7 +215,7 @@ export const forceVerifyTelegramStart = createServerFn({ method: "POST" })
 
     if (!cleanHandle && !tgUserId) {
       throw new Error(
-        "L'utente non ha un username Telegram (@) o Telegram ID impostato. Inserisci prima l'username Telegram."
+        "L'utente non ha un username Telegram (@) o Telegram ID impostato. Inserisci prima l'username Telegram.",
       );
     }
 
@@ -226,7 +223,11 @@ export const forceVerifyTelegramStart = createServerFn({ method: "POST" })
     const { data: startLogs } = await supabaseAdmin.from("telegram_start_logs").select("*");
     let matchedLog = (startLogs || []).find((l: any) => {
       if (tgUserId && String(l.telegram_user_id) === tgUserId) return true;
-      if (cleanHandle && l.username && String(l.username).toLowerCase().replace("@", "") === cleanHandle)
+      if (
+        cleanHandle &&
+        l.username &&
+        String(l.username).toLowerCase().replace("@", "") === cleanHandle
+      )
         return true;
       return false;
     });
@@ -240,14 +241,22 @@ export const forceVerifyTelegramStart = createServerFn({ method: "POST" })
 
       const matchedMember = (groupMembers || []).find((m: any) => {
         if (tgUserId && String(m.telegram_user_id) === tgUserId) return true;
-        if (cleanHandle && m.telegram_handle && String(m.telegram_handle).toLowerCase().replace("@", "") === cleanHandle)
+        if (
+          cleanHandle &&
+          m.telegram_handle &&
+          String(m.telegram_handle).toLowerCase().replace("@", "") === cleanHandle
+        )
           return true;
         return false;
       });
 
       const matchedMessage = (chatMessages || []).find((msg: any) => {
         if (tgUserId && String(msg.sender_id) === tgUserId) return true;
-        if (cleanHandle && msg.sender_username && String(msg.sender_username).toLowerCase().replace("@", "") === cleanHandle)
+        if (
+          cleanHandle &&
+          msg.sender_username &&
+          String(msg.sender_username).toLowerCase().replace("@", "") === cleanHandle
+        )
           return true;
         return false;
       });
@@ -272,7 +281,8 @@ export const forceVerifyTelegramStart = createServerFn({ method: "POST" })
       const updatePayload: any = {
         telegram_connected: true,
         telegram_user_id: matchedLog.telegram_user_id || profile.telegram_user_id,
-        telegram_chat_id: matchedLog.chat_id || matchedLog.telegram_user_id || profile.telegram_chat_id,
+        telegram_chat_id:
+          matchedLog.chat_id || matchedLog.telegram_user_id || profile.telegram_chat_id,
       };
 
       await supabaseAdmin.from("profiles").update(updatePayload).eq("id", data.userId);
