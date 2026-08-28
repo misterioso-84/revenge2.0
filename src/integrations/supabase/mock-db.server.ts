@@ -1207,7 +1207,40 @@ async function loadDb(): Promise<Record<string, any[]>> {
 
   isInitializing = true;
   initPromise = (async () => {
-    // 1. Attempt Cloudflare D1 ('revenge')
+    // 1. Attempt Firestore (Primary persistent cloud database)
+    const firestoreMod = await getFirestore();
+    if (firestoreMod && firestoreMod.loadDbFromFirestore) {
+      try {
+        console.log("[Firestore Sync] Attempting to load database from Firestore...");
+        const firestoreData = await firestoreMod.loadDbFromFirestore();
+        if (firestoreData && typeof firestoreData === "object" && Object.keys(firestoreData).length > 0) {
+          console.log(
+            "[Firestore Sync] Successfully loaded database from Firestore. Updating local cache...",
+          );
+          const initialDb = getInitialDb();
+          const mergedDb = { ...initialDb, ...firestoreData };
+          mergedDb.audit_logs = mergedDb.audit_logs || [];
+          ensureDbTables(mergedDb);
+          cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
+          try {
+            const { fs, path } = await getFsAndPath();
+            if (fs && path) {
+              const dbFile = path.join(process.cwd(), "mock-db.json");
+              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
+            }
+          } catch (e) {
+            console.error("Error saving local DB cache:", e);
+          }
+          return cachedDb;
+        }
+      } catch (err) {
+        console.error("[Firestore Sync] Failed to load from Firestore:", err);
+        firestoreFailed = true;
+      }
+    }
+
+    // 2. Attempt Cloudflare D1 ('revenge')
     const d1Mod = await getD1();
     if (d1Mod && d1Mod.loadDbFromD1) {
       try {
@@ -1239,7 +1272,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       }
     }
 
-    // 2. Attempt Neon Postgres
+    // 3. Attempt Neon Postgres
     const neonMod = await getNeon();
     if (neonMod && neonMod.loadDbFromNeon) {
       try {
@@ -1268,38 +1301,6 @@ async function loadDb(): Promise<Record<string, any[]>> {
       } catch (err) {
         console.error("[Neon Sync] Failed to load from Neon Postgres:", err);
         neonFailed = true;
-      }
-    }
-
-    // 2. Attempt Firestore (Ultra robust for Cloudflare Pages!)
-    const firestoreMod = await getFirestore();
-    if (firestoreMod && firestoreMod.loadDbFromFirestore) {
-      try {
-        console.log("[Firestore Sync] Attempting to load database from Firestore...");
-        const firestoreData = await firestoreMod.loadDbFromFirestore();
-        if (firestoreData) {
-          console.log(
-            "[Firestore Sync] Successfully loaded database from Firestore. Merging with initial DB and updating local cache...",
-          );
-          const initialDb = getInitialDb();
-          const mergedDb = { ...initialDb, ...firestoreData };
-          mergedDb.audit_logs = mergedDb.audit_logs || [];
-          cachedDb = mergedDb;
-          lastLoadedTime = Date.now();
-          try {
-            const { fs, path } = await getFsAndPath();
-            if (fs && path) {
-              const dbFile = path.join(process.cwd(), "mock-db.json");
-              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
-            }
-          } catch (e) {
-            console.error("Error saving local DB cache:", e);
-          }
-          return cachedDb;
-        }
-      } catch (err) {
-        console.error("[Firestore Sync] Failed to load from Firestore:", err);
-        firestoreFailed = true;
       }
     }
 
