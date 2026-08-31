@@ -9,13 +9,10 @@
       "display_name": "Giuse84pro",
       "staff_weight": 50,
       "telegram_code": null,
-      "telegram_handle": "@Blatnoms",
       "badge_start_time": null,
       "show_in_staff_list": false,
-      "telegram_connected": true,
-      "has_employee_access": true,
-      "telegram_user_id": 8565037802,
-      "telegram_chat_id": -1003625594442
+      "telegram_connected": false,
+      "has_employee_access": true
     },
     {
       "id": "user-b9p6dwg58ru",
@@ -4675,7 +4672,7 @@
       "is_revoked": false,
       "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36",
       "device_type": "desktop",
-      "last_active": "2026-08-28T08:01:20.059Z",
+      "last_active": "2026-08-28T14:51:51.712Z",
       "country_code": "IT",
       "country_flag": "🇮🇹",
       "country_name": "Italia",

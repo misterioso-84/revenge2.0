@@ -4,6 +4,8 @@
  * using Cloudflare D1 SQLite database binding or REST API.
  */
 
+const DEFAULT_DATABASE_ID = "9558a0df-2a03-4d8f-b582-1b4e2a7155c9";
+
 let d1ReadCooldownUntil = 0;
 let d1WriteCooldownUntil = 0;
 
@@ -27,6 +29,10 @@ export function getD1Binding(): any {
     if (g.DB && typeof g.DB.prepare === "function") return g.DB;
     if (g.revenge && typeof g.revenge.prepare === "function") return g.revenge;
     if (g.REVENGE_DB && typeof g.REVENGE_DB.prepare === "function") return g.REVENGE_DB;
+    if (g.__env__?.DB && typeof g.__env__.DB.prepare === "function") return g.__env__.DB;
+    if (g.__env__?.revenge && typeof g.__env__.revenge.prepare === "function")
+      return g.__env__.revenge;
+    if (g.__D1_BINDING__ && typeof g.__D1_BINDING__.prepare === "function") return g.__D1_BINDING__;
   }
 
   if (typeof process !== "undefined" && process.env) {
@@ -47,7 +53,8 @@ async function queryD1RestApi(sql: string, params: any[] = []): Promise<any> {
   const databaseId =
     process.env.CLOUDFLARE_DATABASE_ID ||
     process.env.CF_DATABASE_ID ||
-    process.env.CLOUDFLARE_D1_DATABASE_ID;
+    process.env.CLOUDFLARE_D1_DATABASE_ID ||
+    DEFAULT_DATABASE_ID;
   const apiToken =
     process.env.CLOUDFLARE_API_TOKEN ||
     process.env.CF_API_TOKEN ||
@@ -102,16 +109,18 @@ export async function loadDbFromD1(): Promise<Record<string, any[]> | null> {
             `CREATE TABLE IF NOT EXISTS d1_app_state (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT);`,
           )
           .run();
-      } catch (e) {
+      } catch {
         // Table creation error ignored
       }
 
-      const stmt = db.prepare(`SELECT value FROM d1_app_state WHERE key = 'global' LIMIT 1;`);
+      const stmt = db.prepare(
+        `SELECT value, updated_at FROM d1_app_state WHERE key = 'global' LIMIT 1;`,
+      );
       const row = await stmt.first();
 
       if (row && row.value) {
-        const parsed = JSON.parse(row.value as string);
-        if (parsed && typeof parsed === "object") {
+        const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+        if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
           console.log(
             "[Cloudflare D1 Sync] Successfully loaded database state from Cloudflare D1 ('revenge').",
           );
@@ -123,11 +132,14 @@ export async function loadDbFromD1(): Promise<Record<string, any[]> | null> {
 
     // Try REST API if binding not present
     const restResults = await queryD1RestApi(
-      `SELECT value FROM d1_app_state WHERE key = 'global' LIMIT 1;`,
+      `SELECT value, updated_at FROM d1_app_state WHERE key = 'global' LIMIT 1;`,
     );
     if (restResults && restResults.length > 0 && restResults[0].value) {
-      const parsed = JSON.parse(restResults[0].value);
-      if (parsed && typeof parsed === "object") {
+      const parsed =
+        typeof restResults[0].value === "string"
+          ? JSON.parse(restResults[0].value)
+          : restResults[0].value;
+      if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
         console.log(
           "[Cloudflare D1 REST Sync] Successfully loaded database state from D1 REST API.",
         );
@@ -136,7 +148,7 @@ export async function loadDbFromD1(): Promise<Record<string, any[]> | null> {
     }
   } catch (err: any) {
     if (isQuotaOrNetworkError(err)) {
-      d1ReadCooldownUntil = Date.now() + 5 * 60 * 1000;
+      d1ReadCooldownUntil = Date.now() + 2 * 60 * 1000;
       console.warn("[Cloudflare D1 Sync] Rate limit / quota reached on D1 reads.");
     } else {
       console.warn("[Cloudflare D1 Sync] D1 query attempt:", err?.message || err);
@@ -160,7 +172,7 @@ export async function saveDbToD1(data: Record<string, any[]>): Promise<boolean> 
 
   try {
     if (db) {
-      // Ensure state table exists
+      // 1. Ensure state table exists and update global state
       await db
         .prepare(
           `CREATE TABLE IF NOT EXISTS d1_app_state (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT);`,
@@ -173,6 +185,34 @@ export async function saveDbToD1(data: Record<string, any[]>): Promise<boolean> 
         )
         .bind(serialized, now)
         .run();
+
+      // 2. Synchronize individual tables in D1 SQLite for full relational compatibility
+      for (const [table, rows] of Object.entries(data)) {
+        if (!Array.isArray(rows) || rows.length === 0) continue;
+        const safeTable = table.replace(/[^a-zA-Z0-9_]/g, "_");
+        try {
+          await db
+            .prepare(
+              `CREATE TABLE IF NOT EXISTS ${safeTable} (id TEXT PRIMARY KEY, data TEXT, updated_at TEXT);`,
+            )
+            .run();
+
+          // Batch insert up to first 20 records per table to avoid hitting D1 statement limits in one tick
+          for (const row of rows.slice(0, 50)) {
+            if (!row) continue;
+            const rowId = String(row.id || Math.random().toString(36).substring(2));
+            const rowData = JSON.stringify(row);
+            await db
+              .prepare(
+                `INSERT OR REPLACE INTO ${safeTable} (id, data, updated_at) VALUES (?, ?, ?);`,
+              )
+              .bind(rowId, rowData, now)
+              .run();
+          }
+        } catch {
+          // Ignore individual table creation errors
+        }
+      }
 
       console.log("[Cloudflare D1 Sync] Saved database state to Cloudflare D1 ('revenge').");
       return true;
@@ -190,7 +230,7 @@ export async function saveDbToD1(data: Record<string, any[]>): Promise<boolean> 
     return true;
   } catch (err: any) {
     if (isQuotaOrNetworkError(err)) {
-      d1WriteCooldownUntil = Date.now() + 10 * 60 * 1000;
+      d1WriteCooldownUntil = Date.now() + 5 * 60 * 1000;
       console.warn("[Cloudflare D1 Sync] Write limit reached on D1.");
     } else {
       console.warn("[Cloudflare D1 Sync] Failed to save to D1:", err?.message || err);

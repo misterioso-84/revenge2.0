@@ -68,6 +68,11 @@ class MockPostgrestServerBuilder {
     return this;
   }
 
+  like(column: string, value: string) {
+    this.filters.push({ column, value, op: "ilike" as any });
+    return this;
+  }
+
   in(column: string, values: any[]) {
     this.filters.push({ column, value: values, op: "in" });
     return this;
@@ -75,6 +80,36 @@ class MockPostgrestServerBuilder {
 
   is(column: string, value: any) {
     this.filters.push({ column, value, op: "is" as any });
+    return this;
+  }
+
+  gte(column: string, value: any) {
+    this.filters.push({ column, value, op: "gte" as any });
+    return this;
+  }
+
+  lte(column: string, value: any) {
+    this.filters.push({ column, value, op: "lte" as any });
+    return this;
+  }
+
+  gt(column: string, value: any) {
+    this.filters.push({ column, value, op: "gt" as any });
+    return this;
+  }
+
+  lt(column: string, value: any) {
+    this.filters.push({ column, value, op: "lt" as any });
+    return this;
+  }
+
+  or(filters: string) {
+    this.filters.push({ column: "", value: filters, op: "or" as any });
+    return this;
+  }
+
+  contains(column: string, value: any) {
+    this.filters.push({ column, value, op: "contains" as any });
     return this;
   }
 

@@ -23,6 +23,8 @@ import {
   Trash2,
   Coins,
   Crown,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,33 +56,51 @@ export const Route = createFileRoute("/_authenticated/stipendi")({
   component: StipendiPage,
 });
 
-// Salary Matrix Base Rates according to Art. 6.2
+// Salary Matrix Base Rates according to Art. 6.2 (Updated Statute)
 const BASE_SALARIES: Record<string, number> = {
   Capitano: 5000,
   "Vice Capitano Exclusive": 4500,
   "Vice Capitano": 4500,
-  Quartiermastro: 3800,
-  Nostromo: 3200,
-  "Caposala Exclusive": 2500,
-  "Caposala VIP": 2130,
-  "Caposala Sr.": 1750,
-  "Caposala Jr.": 1470,
-  Caposala: 1470, // Default generic Caposala
-  "Croupier Exclusive": 1910,
-  "Croupier VIP": 1620,
-  "Croupier Sr.": 1370,
-  "Croupier Jr.": 1130,
-  Croupier: 1130, // Default generic Croupier
-  "Barman Exclusive": 1810,
-  "Barman VIP": 1520,
-  "Barman Sr.": 1280,
-  "Barman Jr.": 1080,
-  Barman: 1080, // Default generic Barman
+  Quartiermastro: 3000,
+  Nostromo: 2500,
+  "Caposala Exclusive": 2000,
+  "Caposala VIP": 2000,
+  "Caposala Sr.": 2000,
+  "Caposala Jr.": 2000,
+  Caposala: 2000, // Default Caposala (2.000 €)
+  "Croupier Exclusive": 1700,
+  "Croupier VIP": 1700,
+  "Croupier Sr.": 1700,
+  "Croupier Jr.": 1500,
+  Croupier: 1500, // Default Croupier (Jr. 1.500 €)
+  "Barman Exclusive": 1600,
+  "Barman VIP": 1600,
+  "Barman Sr.": 1600,
+  "Barman Jr.": 1200,
+  Barman: 1200, // Default Barman (Jr. 1.200 €)
   "Dealer Sr.": 1200,
-  "Dealer Jr.": 1000,
-  Dealer: 1000, // Default generic Dealer
-  Soubrette: 880,
-  Mozzo: 750,
+  "Dealer Jr.": 1200,
+  Dealer: 1200, // Default Dealer (1.200 €)
+  Soubrette: 1000,
+  Mozzo: 800,
+};
+
+// Official Role Descriptions and Accessories according to Art. 6.2
+const ROLE_ACCESSORIES: Record<string, string> = {
+  Capitano: "— percentuale sui profitti",
+  "Vice Capitano": "— percentuale sui profitti",
+  Quartiermastro: "— addizionali sul merito",
+  Nostromo: "— addizionali sul merito",
+  Caposala: "2% sul fatturato personale + Zona Competenza",
+  "Croupier Sr.": "2% sul fatturato personale + Zona Competenza",
+  "Croupier Jr.": "2% sul fatturato personale",
+  Croupier: "2% sul fatturato personale",
+  "Barman Sr.": "2% sul fatturato personale + Zona Competenza",
+  "Barman Jr.": "2% sul fatturato personale",
+  Barman: "2% sul fatturato personale",
+  Dealer: "2% sul fatturato personale",
+  Soubrette: "2% sul fatturato personale",
+  Mozzo: "2% sul fatturato personale",
 };
 
 // PEX Bonuses (Art. 2.5)
@@ -473,8 +493,11 @@ export function StipendiPage() {
 
       // Grade lookup (taking manual override if set)
       const effectiveGrade = manualLevelOverrides[r.username] || r.gradoPrincipale;
-      const rawBaseSalary =
-        BASE_SALARIES[effectiveGrade] ?? BASE_SALARIES[r.gradoPrincipale] ?? 750;
+      // Retribuzione minima inderogabile: 750 €
+      const rawBaseSalary = Math.max(
+        750,
+        BASE_SALARIES[effectiveGrade] ?? BASE_SALARIES[r.gradoPrincipale] ?? 750,
+      );
       // If ineligible (< min hours), base salary is 0 €
       const baseSalary = isEligible ? rawBaseSalary : 0;
 
@@ -510,11 +533,11 @@ export function StipendiPage() {
         });
       }
 
-      // Joker Calculation
+      // Joker Calculation (Art. 6.4: 40% Ore, 35% Fatturato/Scontrini, 25% Impatto reale)
       const isJokerCandidate = !isDirezioneOrSottodirezione && isEligible;
       const oreScore = maxMinutesInList > 0 ? (totalMins / maxMinutesInList) * 40 : 0;
       const fattScore = maxFatturatoInList > 0 ? (r.fatturatoPassato / maxFatturatoInList) * 35 : 0;
-      const impattoScore = 20; // 8/10
+      const impattoScore = 20; // 8/10 valutazione Direzione
       const jokerScore = isJokerCandidate ? oreScore + fattScore + impattoScore : 0;
 
       const isJokerWinner = selectedJokerUser === r.username && isJokerCandidate;
@@ -524,10 +547,16 @@ export function StipendiPage() {
         ? baseSalary + provvigione + pexBonus + jokerBonusAmount
         : 0;
 
+      const accessoryDesc =
+        ROLE_ACCESSORIES[effectiveGrade] ||
+        ROLE_ACCESSORIES[r.gradoPrincipale] ||
+        "2% sul fatturato personale";
+
       return {
         ...r,
         id: `emp-${idx}-${r.username}`,
         subLevelOverride: manualLevelOverrides[r.username],
+        accessoryDesc,
         totalMinutesPassati: totalMins,
         hoursFormatted: formatMinutes(totalMins),
         minHoursRequired: minHoursReq,
@@ -543,7 +572,7 @@ export function StipendiPage() {
       };
     });
 
-    // Step 2: Calculate overall budget cap reductions (Art. 6.5)
+    // Step 2: Calculate overall budget cap reductions (Art. 6.5: Max 60% Margine Netto)
     const rawTotalPayroll = rawRows.reduce((acc, r) => acc + r.rawTotalSalary, 0);
     const maxAllowedPayroll = netMarginInput * 0.6;
     const isOverCap = rawTotalPayroll > maxAllowedPayroll && maxAllowedPayroll > 0;
@@ -553,12 +582,15 @@ export function StipendiPage() {
     let rawVariablePool = 0;
 
     if (isOverCap) {
-      // Paga base protetta al 100% per tutti i dipendenti idonei
-      totalGuaranteedBase = rawRows.reduce((acc, r) => acc + (r.isEligible ? r.baseSalary : 0), 0);
+      // Paga base protetta e garantita al 100% per tutti i lavoratori idonei (minimo 750 € non comprimibile in alcun caso)
+      totalGuaranteedBase = rawRows.reduce(
+        (acc, r) => acc + (r.isEligible ? Math.max(750, r.baseSalary) : 0),
+        0,
+      );
       rawVariablePool = Math.max(0, rawTotalPayroll - totalGuaranteedBase);
 
       if (rawVariablePool > 0) {
-        // Riduzione applicata ESCLUSIVAMENTE alle componenti variabili sopra la paga base
+        // Riduzione applicata ESCLUSIVAMENTE alle componenti variabili eccedenti la paga base
         const availableForVariable = Math.max(0, maxAllowedPayroll - totalGuaranteedBase);
         variableScale = Math.min(1, availableForVariable / rawVariablePool);
       } else {
@@ -583,11 +615,14 @@ export function StipendiPage() {
         };
       }
 
-      // La paga base rimane intatta al 100%
-      const guaranteedBase = r.baseSalary;
+      // La retribuzione base è inderogabile e protetta (minimo 750 € non comprimibile)
+      const guaranteedBase = Math.max(750, r.baseSalary);
       const variablePart = Math.max(0, r.rawTotalSalary - guaranteedBase);
       const adjustedVariable = variablePart * variableScale;
-      const totalSalary = Math.round((guaranteedBase + adjustedVariable) * 100) / 100;
+      const totalSalary = Math.max(
+        750,
+        Math.round((guaranteedBase + adjustedVariable) * 100) / 100,
+      );
 
       const reductionApplied = Math.max(
         0,
@@ -799,6 +834,54 @@ export function StipendiPage() {
               onChange={handleFileUpload}
             />
           </label>
+        </div>
+      </div>
+
+      {/* Statutory Regulations & Minimum Wage Guarantee Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/60 to-cyan-500/10 border border-amber-500/30 p-4 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider font-mono">
+            <ShieldCheck className="h-4 w-4 text-amber-400" />
+            <span>Statuto Aziendale — Sezione Retribuzioni & Tutela del Lavoro</span>
+          </div>
+          <Badge
+            variant="outline"
+            className="bg-amber-500/10 text-amber-300 border-amber-500/40 text-[10px] font-mono py-0.5 px-2 w-fit"
+          >
+            ⚠ Minimo Inderogabile: 750 € / sett.
+          </Badge>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300 pt-1">
+          <div className="space-y-1">
+            <span className="font-semibold text-amber-300 flex items-center gap-1">
+              ⚖️ Art. 6.1 — Retribuzione Minima & Parità
+            </span>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              La retribuzione minima settimanale inderogabile è di <strong>750 €</strong> al netto.
+              Nessun ruolo può essere retribuito al di sotto di tale soglia. Vietata qualsiasi
+              discriminazione retributiva.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <span className="font-semibold text-cyan-300 flex items-center gap-1">
+              📅 Art. 6.5 — Finestra di Pagamento
+            </span>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Corresponsione settimanale tra <strong>Lunedì ore 00:00 e Martedì ore 23:59</strong> a
+              mezzo bonifico con causale «Stipendio». Penale di mora 10%/giorno fino a max 50%.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <span className="font-semibold text-emerald-300 flex items-center gap-1">
+              ⚓ Art. 6.2 / 6.3 / 6.4 — Compensi & Incentivi
+            </span>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Fisso di ruolo garantito + <strong>2% provvigione</strong> sul fatturato personale
+              (cap 800€/sett.) + <strong>Joker 700€</strong> per il lavoratore della settimana.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -1200,38 +1283,30 @@ export function StipendiPage() {
                                     <SelectContent>
                                       {r.gradoPrincipale.includes("Barman") && (
                                         <>
-                                          <SelectItem value="Barman Jr.">Jr. (1080€)</SelectItem>
-                                          <SelectItem value="Barman Sr.">Sr. (1280€)</SelectItem>
-                                          <SelectItem value="Barman VIP">VIP (1520€)</SelectItem>
-                                          <SelectItem value="Barman Exclusive">
-                                            Exclusive (1810€)
-                                          </SelectItem>
+                                          <SelectItem value="Barman Jr.">Jr. (1.200 €)</SelectItem>
+                                          <SelectItem value="Barman Sr.">Sr. (1.600 €)</SelectItem>
                                         </>
                                       )}
                                       {r.gradoPrincipale.includes("Caposala") && (
                                         <>
-                                          <SelectItem value="Caposala Jr.">Jr. (1470€)</SelectItem>
-                                          <SelectItem value="Caposala Sr.">Sr. (1750€)</SelectItem>
-                                          <SelectItem value="Caposala VIP">VIP (2130€)</SelectItem>
-                                          <SelectItem value="Caposala Exclusive">
-                                            Exclusive (2500€)
+                                          <SelectItem value="Caposala">
+                                            Caposala (2.000 €)
                                           </SelectItem>
                                         </>
                                       )}
                                       {r.gradoPrincipale.includes("Croupier") && (
                                         <>
-                                          <SelectItem value="Croupier Jr.">Jr. (1130€)</SelectItem>
-                                          <SelectItem value="Croupier Sr.">Sr. (1370€)</SelectItem>
-                                          <SelectItem value="Croupier VIP">VIP (1620€)</SelectItem>
-                                          <SelectItem value="Croupier Exclusive">
-                                            Exclusive (1910€)
+                                          <SelectItem value="Croupier Jr.">
+                                            Jr. (1.500 €)
+                                          </SelectItem>
+                                          <SelectItem value="Croupier Sr.">
+                                            Sr. (1.700 €)
                                           </SelectItem>
                                         </>
                                       )}
                                       {r.gradoPrincipale.includes("Dealer") && (
                                         <>
-                                          <SelectItem value="Dealer Jr.">Jr. (1000€)</SelectItem>
-                                          <SelectItem value="Dealer Sr.">Sr. (1200€)</SelectItem>
+                                          <SelectItem value="Dealer">Dealer (1.200 €)</SelectItem>
                                         </>
                                       )}
                                     </SelectContent>
@@ -1505,135 +1580,245 @@ export function StipendiPage() {
           </DialogHeader>
 
           <div className="space-y-4 text-xs pt-2">
-            {/* 1. Presenza Minima */}
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-1">
+            {/* 6.1 — Retribuzione minima e parità di trattamento */}
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-1.5">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-amber-400">
-                <CheckCircle2 className="h-4 w-4" />
-                1. Impegno di Presenza Settimanale (Art. 5.1)
+                <ShieldCheck className="h-4 w-4" />
+                Art. 6.1 — Retribuzione Minima e Parità di Trattamento
               </h4>
-              <p className="text-muted-foreground leading-relaxed">
-                Il compenso fisso base premia la continuità di presenza e la disponibilità della
-                squadra durante le aperture di sala:
+              <p className="text-slate-200 font-semibold leading-relaxed">
+                ⚠ La retribuzione minima settimanale inderogabile è di <strong>750 €</strong>, al
+                netto delle ritenute di legge. Nessun ruolo del Casinò può essere retribuito al di
+                sotto di tale soglia.
               </p>
-              <ul className="list-disc list-inside space-y-1 font-mono text-[11px] pt-1 text-slate-200">
-                <li>
-                  <strong>Staff Operativo e Sotto-direzione:</strong> impegno di presenza pari a{" "}
-                  <strong>6 ore</strong> settimanali.
-                </li>
-                <li>
-                  <strong>Capitaneria e Direzione:</strong> impegno di presenza pari a{" "}
-                  <strong>4 ore</strong> settimanali.
-                </li>
-              </ul>
-              <p className="text-[11px] text-amber-300/90 pt-1">
-                💡 <em>Nota di trasparenza:</em> Qualora nella settimana la presenza risulti
-                parziale rispetto all'impegno concordato, la quota fissa base rimane temporaneamente
-                in pausa per quella specifica settimana, fermi restando gli incentivi maturati.
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                A parità di mansioni e anzianità corrisponde parità di retribuzione. È vietata
+                qualsiasi discriminazione retributiva fondata su genere, età, origine, orientamento
+                sessuale, disabilità o appartenenza sindacale.
               </p>
             </div>
 
-            {/* 2. Retribuzione Base */}
+            {/* 6.2 — Tabella degli stipendi */}
             <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-cyan-400">
                 <Banknote className="h-4 w-4" />
-                2. Compenso Fisso di Grado e Ruolo (Art. 6.2)
+                Art. 6.2 — Tabella degli Stipendi Settimanali
               </h4>
               <p className="text-muted-foreground leading-relaxed">
-                Al completamento delle ore concordate, ciascun collaboratore riconosce la propria
-                quota fissa garantita, stabilita dal livello di esperienza e di ruolo:
+                Importi settimanali in euro, subordinati al raggiungimento del monte ore minimo
+                (Art. 5.1: 4h Direzione/Capitaneria, 6h Staff Operativo):
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px] bg-slate-950 p-2.5 rounded-lg border border-border/60 text-slate-300">
-                <div>• Mozzo: 750 €</div>
-                <div>• Soubrette: 880 €</div>
-                <div>• Dealer: 1.000 € (Jr) - 1.200 € (Sr)</div>
-                <div>• Barman: 1.080 € - 1.810 €</div>
-                <div>• Croupier: 1.130 € - 1.910 €</div>
-                <div>• Caposala: 1.470 € - 2.500 €</div>
-                <div>• Nostromo: 3.200 €</div>
-                <div>• Quartiermastro: 3.800 €</div>
-                <div>• Vice Capitano: 4.500 €</div>
-                <div>• Capitano: 5.000 €</div>
+              <div className="overflow-x-auto rounded-lg border border-border/60">
+                <table className="w-full text-left font-mono text-[11px]">
+                  <thead className="bg-slate-950 text-muted-foreground uppercase text-[10px]">
+                    <tr className="border-b border-border/60">
+                      <th className="py-2 px-3">Ruolo</th>
+                      <th className="py-2 px-3 text-right">Retribuzione Settimanale</th>
+                      <th className="py-2 px-3">Elementi Accessori</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40 text-slate-300">
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Capitano</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">5.000 €</td>
+                      <td className="py-1.5 px-3 text-muted-foreground">
+                        — percentuale sui profitti
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Vice Capitano</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">4.500 €</td>
+                      <td className="py-1.5 px-3 text-muted-foreground">
+                        — percentuale sui profitti
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Quartiermastro</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">3.000 €</td>
+                      <td className="py-1.5 px-3 text-muted-foreground">
+                        — addizionali sul merito
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Nostromo</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">2.500 €</td>
+                      <td className="py-1.5 px-3 text-muted-foreground">
+                        — addizionali sul merito
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Caposala</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">2.000 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">
+                        2% sul fatturato personale + Zona Competenza
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Croupier Sr.</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.700 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">
+                        2% sul fatturato personale + Zona Competenza
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Croupier Jr.</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.500 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">2% sul fatturato personale</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Barman Sr.</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.600 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">
+                        2% sul fatturato personale + Zona Competenza
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Barman Jr.</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.200 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">2% sul fatturato personale</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Dealer</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.200 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">2% sul fatturato personale</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Soubrette</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">1.000 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">2% sul fatturato personale</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-semibold text-white">Mozzo</td>
+                      <td className="py-1.5 px-3 text-right text-amber-400 font-bold">800 €</td>
+                      <td className="py-1.5 px-3 text-emerald-400">2% sul fatturato personale</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* 3. Provvigioni */}
+            {/* 6.3 — Provvigione sul fatturato */}
             <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-emerald-400">
                 <TrendingUp className="h-4 w-4" />
-                3. Incentivo di Produttività e Cura del Cliente (Art. 6.3)
+                Art. 6.3 — Provvigione sul Fatturato
               </h4>
               <p className="text-muted-foreground leading-relaxed">
-                Il personale di sala e di accoglienza (Croupier, Barman, Caposala, Soubrette, Mozzi,
-                Dealer) riceve un <strong>bonus valore del 2%</strong> sulla somma dei servizi e
-                degli scontrini curati direttamente con la clientela.
+                Ai ruoli operativi spetta una provvigione pari al{" "}
+                <strong>2% del fatturato personale</strong> risultante dagli scontrini emessi.
               </p>
-              <div className="bg-slate-950 p-2.5 rounded-lg border border-border/60 text-[11px] font-mono text-emerald-300">
-                • Bonus massimo erogabile: <strong>800 €</strong> settimanali per collaboratore.
-                <br />• La Capitaneria e la Sotto-direzione si dedicano esclusivamente alla
-                supervisione generale e non beneficiano degli incentivi singoli di sala (ex Art.
-                6.3).
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-border/60 text-[11px] font-mono text-emerald-300 space-y-1">
+                <div>
+                  • La provvigione è liquidata settimanalmente unitamente alla retribuzione base.
+                </div>
+                <div>
+                  • Il tetto massimo per la provvigione settimanale è fissato in{" "}
+                  <strong>800 €</strong> per Lavoratore.
+                </div>
+                <div className="text-muted-foreground pt-1">
+                  • <em>Esclusione Direzione & Sotto-direzione:</em> Capitano, Vice Capitano,
+                  Quartiermastro e Nostromo non percepiscono provvigioni sui singoli scontrini
+                  (salvo profitti extra deliberati), in quanto il compenso è commisurato alla
+                  responsabilità complessiva.
+                </div>
               </div>
             </div>
 
-            {/* 4. Indennità PEX */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
-              <h4 className="font-semibold text-sm flex items-center gap-2 text-amber-400">
-                <Sparkles className="h-4 w-4" />
-                4. Riconoscimento per Mansioni Speciali e Incarichi PEX (Art. 2.5)
-              </h4>
-              <p className="text-muted-foreground leading-relaxed">
-                Incarichi di cura, formazione e coordinamento aggiuntivi assegnati dalla Capitaneria
-                che arricchiscono il compenso con bonus dedicati:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px] bg-slate-950 p-2.5 rounded-lg border border-border/60 text-slate-300">
-                <div>• Master (Formazione): +500 €</div>
-                <div>• Gestore Eventi (GE): +450 €</div>
-                <div>• Gorilla (Sicurezza): +350 €</div>
-                <div>• Sirena (Accoglienza): +300 €</div>
-                <div>• Resp. Antincendio (RA): +250 €</div>
-              </div>
-            </div>
-
-            {/* 5. Joker */}
+            {/* 6.4 — Joker: il Lavoratore della settimana */}
             <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-yellow-400">
                 <Trophy className="h-4 w-4" />
-                5. Riconoscimento d'Eccellenza Settimanale (+700 €) (Art. 6.4)
+                Art. 6.4 — Joker: il Lavoratore della Settimana (+700 €)
               </h4>
               <p className="text-muted-foreground leading-relaxed">
-                Un premio speciale attribuito al collaboratore che si è maggiormente distinto per
-                presenza, cortesia e spirito di squadra:
+                Il titolo di «Joker» è attribuito ogni settimana a un Lavoratore (con esclusione di
+                Direzione e Sotto-direzione). Al vincitore è corrisposto un premio settimanale di{" "}
+                <strong>700 €</strong>.
               </p>
-              <div className="bg-slate-950 p-2.5 rounded-lg border border-border/60 font-mono text-[11px] space-y-1 text-slate-300">
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-border/60 font-mono text-[11px] space-y-1.5 text-slate-300">
                 <div>
-                  • <strong>40% Costanza di presenza:</strong> disponibilità oraria in sala durante
-                  la settimana.
+                  • <strong>40% Ore online:</strong> ore effettive della settimana rapportate al
+                  massimo registrato.
                 </div>
                 <div>
-                  • <strong>35% Cura dell'ospite:</strong> volume e qualità delle attività ed
-                  incassi gestiti.
+                  • <strong>35% Fatturato:</strong> volume scontrini generati rapportato al massimo
+                  registrato.
                 </div>
                 <div>
-                  • <strong>25% Armonia di squadra:</strong> valutazione positiva del contributo al
-                  clima aziendale.
+                  • <strong>25% Impatto reale:</strong> valutazione della Direzione da 0 a 10 con
+                  motivazione sintetica.
+                </div>
+                <div className="text-amber-300 text-[10px] pt-1">
+                  * Le due componenti automatiche e il punteggio complessivo sono visibili nel
+                  prospetto. Il titolo non può essere assegnato alla stessa persona per più di 2
+                  settimane consecutive.
                 </div>
               </div>
             </div>
 
-            {/* 6. Tetto 60% */}
+            {/* 6.5 — Modalità e tempi di pagamento */}
             <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
               <h4 className="font-semibold text-sm flex items-center gap-2 text-cyan-400">
                 <DollarSign className="h-4 w-4" />
-                6. Sostenibilità ed Equità Aziendale - Meccanismo di Rientro Budget (Art. 6.5)
+                Art. 6.5 — Modalità e Tempi di Pagamento & Tetto di Bilancio
               </h4>
-              <p className="text-muted-foreground leading-relaxed">
-                A garanzia della stabilità finanziaria, il monte salari totale non può superare il{" "}
-                <strong>60% del margine netto</strong> della settimana precedente. Qualora il totale
-                lordo calcolato ecceda tale tetto, il sistema applica automaticamente una{" "}
-                <strong>Riduzione Armonizzata Pro-Quota</strong> sugli incentivi e compensi
-                accessori per far rientrare il totale esattamente nei limiti stabiliti,
-                salvaguardando la soglia di garanzia base di ciascun collaboratore.
-              </p>
+              <ul className="space-y-1 text-[11px] text-muted-foreground leading-relaxed list-disc list-inside">
+                <li>
+                  <strong>Finestra di corresponsione:</strong> la retribuzione è corrisposta
+                  settimanalmente tra <strong>Lunedì ore 00:00 e Martedì ore 23:59</strong> della
+                  settimana successiva.
+                </li>
+                <li>
+                  <strong>Mezzo di pagamento:</strong> bonifico con causale obbligatoria{" "}
+                  <code>«Stipendio»</code> presso la Banca o AGAT.
+                </li>
+                <li>
+                  <strong>Penale di mora per ritardo:</strong> penale del <strong>10%</strong> della
+                  retribuzione dovuta per ogni giorno di ritardo, fino a un massimo del 50%.
+                </li>
+                <li>
+                  <strong>Inadempimento grave (&gt;3 giorni):</strong> costituisce grave
+                  inadempimento della Direzione, legittima la sospensione della prestazione
+                  mantenendo la retribuzione e può essere segnalato all'Ispettorato del Lavoro.
+                </li>
+                <li>
+                  <strong>Conto pieno/bloccato:</strong> notifica immediata al lavoratore, somme
+                  rese disponibili entro 48 ore dalla risoluzione.
+                </li>
+                <li>
+                  <strong>Tetto 60% Margine Netto:</strong> il monte salari complessivo non può
+                  eccedere il 60% del margine netto della settimana precedente. Qualora ecceda, si
+                  applica riduzione pro-quota sulle quote variabili,{" "}
+                  <strong>fermo restando il rispetto del minimo inderogabile di 750 €</strong> per
+                  ciascun lavoratore.
+                </li>
+              </ul>
+            </div>
+
+            {/* 6.6 — Retribuzione alla cessazione del rapporto */}
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-border/80 space-y-2">
+              <h4 className="font-semibold text-sm flex items-center gap-2 text-rose-400">
+                <AlertCircle className="h-4 w-4" />
+                Art. 6.6 — Retribuzione alla Cessazione del Rapporto
+              </h4>
+              <ul className="space-y-1 text-[11px] text-muted-foreground leading-relaxed list-disc list-inside">
+                <li>
+                  <strong>Cessazione in corso di settimana:</strong> retribuzione riproporzionata
+                  alle ore effettivamente lavorate rispetto al monte ore settimanale.
+                </li>
+                <li>
+                  <strong>Dimissioni volontarie:</strong> pagamento di tutte le somme dovute entro{" "}
+                  <strong>7 giorni</strong> dalla data di efficacia.
+                </li>
+                <li>
+                  <strong>Licenziamento:</strong> somme corrisposte{" "}
+                  <strong>prima o contestualmente</strong> alla comunicazione di cessazione.
+                </li>
+                <li>
+                  <strong>Mancato pagamento nei termini:</strong> penale di mora del{" "}
+                  <strong>20%</strong> per ogni settimana di ritardo fino all'integrale saldo.
+                </li>
+              </ul>
             </div>
           </div>
         </DialogContent>

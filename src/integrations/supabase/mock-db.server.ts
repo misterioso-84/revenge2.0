@@ -1201,26 +1201,90 @@ async function loadDb(): Promise<Record<string, any[]>> {
     return initPromise;
   }
 
-  let d1Failed = false;
-  let neonFailed = false;
-  let firestoreFailed = false;
-
   isInitializing = true;
   initPromise = (async () => {
-    // 1. Attempt Firestore (Primary persistent cloud database)
+    // 1. Primary: Attempt Cloudflare D1 ('revenge')
+    const d1Mod = await getD1();
+    if (d1Mod && d1Mod.loadDbFromD1) {
+      try {
+        console.log("[Cloudflare D1 Sync] Attempting to load database from D1 ('revenge')...");
+        const d1Data = await d1Mod.loadDbFromD1();
+        if (d1Data && typeof d1Data === "object" && Object.keys(d1Data).length > 0) {
+          console.log(
+            "[Cloudflare D1 Sync] Successfully loaded database from D1 ('revenge'). Updating local cache...",
+          );
+          const initialDb = getInitialDb();
+          const mergedDb = { ...initialDb, ...d1Data };
+          mergedDb.audit_logs = mergedDb.audit_logs || [];
+          ensureDbTables(mergedDb);
+          cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
+          try {
+            const { fs, path } = await getFsAndPath();
+            if (fs && path) {
+              const dbFile = path.join(process.cwd(), "mock-db.json");
+              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
+            }
+          } catch (e) {
+            console.error("Error saving local DB cache from D1:", e);
+          }
+          return cachedDb;
+        }
+      } catch (err) {
+        console.warn("[Cloudflare D1 Sync] Failed to load from D1:", err);
+      }
+    }
+
+    // 2. Secondary: Attempt Local File (mock-db.json - persistent on local container / server disk)
+    console.log("[Sync Check] Loading from local mock-db.json...");
+    let localDb: Record<string, any[]> | null = null;
+    try {
+      const { fs, path } = await getFsAndPath();
+      if (fs && path) {
+        const dbFile = path.join(process.cwd(), "mock-db.json");
+        if (fs.existsSync(dbFile)) {
+          const raw = fs.readFileSync(dbFile, "utf-8");
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+            localDb = parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading mock db from file:", e);
+    }
+
+    if (localDb) {
+      const initialDb = getInitialDb();
+      const mergedDb = { ...initialDb, ...localDb };
+      ensureDbTables(mergedDb);
+      cachedDb = mergedDb;
+      lastLoadedTime = Date.now();
+
+      // Opportunistically push local state to Cloudflare D1
+      try {
+        if (d1Mod && d1Mod.saveDbToD1) {
+          await d1Mod.saveDbToD1(cachedDb);
+        }
+      } catch {
+        // Ignore background sync error
+      }
+
+      return cachedDb;
+    }
+
+    // 3. Fallback: Attempt Firestore (Only if D1 and local disk have no data)
     const firestoreMod = await getFirestore();
     if (firestoreMod && firestoreMod.loadDbFromFirestore) {
       try {
-        console.log("[Firestore Sync] Attempting to load database from Firestore...");
+        console.log("[Firestore Sync] Attempting fallback load from Firestore...");
         const firestoreData = await firestoreMod.loadDbFromFirestore();
         if (
           firestoreData &&
           typeof firestoreData === "object" &&
           Object.keys(firestoreData).length > 0
         ) {
-          console.log(
-            "[Firestore Sync] Successfully loaded database from Firestore. Updating local cache...",
-          );
+          console.log("[Firestore Sync] Successfully loaded fallback database from Firestore.");
           const initialDb = getInitialDb();
           const mergedDb = { ...initialDb, ...firestoreData };
           mergedDb.audit_logs = mergedDb.audit_logs || [];
@@ -1239,100 +1303,26 @@ async function loadDb(): Promise<Record<string, any[]>> {
           return cachedDb;
         }
       } catch (err) {
-        console.error("[Firestore Sync] Failed to load from Firestore:", err);
-        firestoreFailed = true;
+        console.warn("[Firestore Sync] Fallback failed to load from Firestore:", err);
       }
     }
 
-    // 2. Attempt Cloudflare D1 ('revenge')
-    const d1Mod = await getD1();
-    if (d1Mod && d1Mod.loadDbFromD1) {
-      try {
-        console.log("[Cloudflare D1 Sync] Attempting to load database from D1 ('revenge')...");
-        const d1Data = await d1Mod.loadDbFromD1();
-        if (d1Data) {
-          console.log(
-            "[Cloudflare D1 Sync] Successfully loaded database from D1 ('revenge'). Merging with initial DB and updating local cache...",
-          );
-          const initialDb = getInitialDb();
-          const mergedDb = { ...initialDb, ...d1Data };
-          mergedDb.audit_logs = mergedDb.audit_logs || [];
-          cachedDb = mergedDb;
-          lastLoadedTime = Date.now();
-          try {
-            const { fs, path } = await getFsAndPath();
-            if (fs && path) {
-              const dbFile = path.join(process.cwd(), "mock-db.json");
-              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
-            }
-          } catch (e) {
-            console.error("Error saving local DB cache:", e);
-          }
-          return cachedDb;
-        }
-      } catch (err) {
-        console.error("[Cloudflare D1 Sync] Failed to load from D1:", err);
-        d1Failed = true;
-      }
-    }
+    // 4. Default in-memory generator fallback (Used ONLY if no cloud or local database exists at all)
+    console.log("[Sync Fallback] Generating initial DB...");
+    const initialDb = getInitialDb();
+    ensureDbTables(initialDb);
+    cachedDb = initialDb;
+    lastLoadedTime = Date.now();
 
-    // 3. Attempt Neon Postgres
-    const neonMod = await getNeon();
-    if (neonMod && neonMod.loadDbFromNeon) {
-      try {
-        console.log("[Neon Sync] Attempting to load database from Neon Postgres...");
-        const pgData = await neonMod.loadDbFromNeon();
-        if (pgData) {
-          console.log(
-            "[Neon Sync] Successfully loaded database from Neon. Merging with initial DB and updating local cache...",
-          );
-          const initialDb = getInitialDb();
-          const mergedDb = { ...initialDb, ...pgData };
-          mergedDb.audit_logs = mergedDb.audit_logs || [];
-          cachedDb = mergedDb;
-          lastLoadedTime = Date.now();
-          try {
-            const { fs, path } = await getFsAndPath();
-            if (fs && path) {
-              const dbFile = path.join(process.cwd(), "mock-db.json");
-              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
-            }
-          } catch (e) {
-            console.error("Error saving local DB cache:", e);
-          }
-          return cachedDb;
-        }
-      } catch (err) {
-        console.error("[Neon Sync] Failed to load from Neon Postgres:", err);
-        neonFailed = true;
-      }
-    }
-
-    // 3. Attempt Local File (fs fallback, mainly for local dev without cloud connection)
-    console.log("[Sync Fallback] Falling back to local mock-db.json...");
-    let localDb: Record<string, any[]> | null = null;
     try {
       const { fs, path } = await getFsAndPath();
       if (fs && path) {
         const dbFile = path.join(process.cwd(), "mock-db.json");
-        if (fs.existsSync(dbFile)) {
-          const raw = fs.readFileSync(dbFile, "utf-8");
-          localDb = JSON.parse(raw);
-        }
+        fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
       }
-    } catch (e) {
-      console.error("Error loading mock db from file:", e);
+    } catch {
+      // Ignore
     }
-
-    // 4. Default in-memory generator fallback (Used ONLY if no cloud or local database exists at all)
-    if (!localDb) {
-      console.log("[Sync Fallback] Falling back to generating initial DB...");
-      localDb = getInitialDb();
-    }
-
-    ensureDbTables(localDb);
-    cachedDb = localDb;
-    lastLoadedTime = Date.now();
 
     return cachedDb;
   })();
@@ -1352,39 +1342,30 @@ export async function saveSupabaseDb(data: Record<string, any[]>): Promise<void>
 }
 
 async function syncToCloud(db: Record<string, any[]>) {
-  // 1. Save to Cloudflare D1 ('revenge')
+  // 1. Primary: Save to Cloudflare D1 ('revenge')
   try {
     const d1Mod = await getD1();
     if (d1Mod && d1Mod.saveDbToD1) {
       await d1Mod.saveDbToD1(db);
     }
   } catch (err) {
-    console.error("[syncToCloud] Error saving to D1:", err);
+    console.warn("[syncToCloud] Error saving to D1:", err);
   }
 
-  // 2. Save to Neon Postgres
-  try {
-    const neonMod = await getNeon();
-    if (neonMod && neonMod.saveDbToNeon) {
-      await neonMod.saveDbToNeon(db);
-    }
-  } catch (err) {
-    // silently catch
-  }
-
-  // 3. Save to Firestore (Primary Persistent Database)
+  // 2. Secondary: Save to Firestore
   try {
     const firestoreMod = await getFirestore();
     if (firestoreMod && firestoreMod.saveDbToFirestore) {
       await firestoreMod.saveDbToFirestore(db);
     }
   } catch (err) {
-    console.error("[syncToCloud] Error saving to Firestore:", err);
+    console.warn("[syncToCloud] Error saving to Firestore:", err);
   }
 }
 
 async function saveDb(db: Record<string, any[]>) {
   db.audit_logs = db.audit_logs || [];
+  db._last_updated_at = new Date().toISOString();
   cachedDb = db;
   lastLoadedTime = Date.now();
 
@@ -1834,6 +1815,70 @@ function matchFilters(item: any, table: string, filters: any[]): boolean {
         const regex = new RegExp(`^${cleanValue}$`, "i");
         if (!regex.test(itemVal)) return false;
       }
+    } else if (op === "gte") {
+      if (itemVal === undefined || itemVal === null || itemVal < value) return false;
+    } else if (op === "lte") {
+      if (itemVal === undefined || itemVal === null || itemVal > value) return false;
+    } else if (op === "gt") {
+      if (itemVal === undefined || itemVal === null || itemVal <= value) return false;
+    } else if (op === "lt") {
+      if (itemVal === undefined || itemVal === null || itemVal >= value) return false;
+    } else if (op === "contains") {
+      if (Array.isArray(itemVal)) {
+        if (Array.isArray(value)) {
+          if (!value.every((v) => itemVal.includes(v))) return false;
+        } else if (!itemVal.includes(value)) {
+          return false;
+        }
+      } else if (typeof itemVal === "string" && typeof value === "string") {
+        if (!itemVal.toLowerCase().includes(value.toLowerCase())) return false;
+      }
+    } else if (op === "or") {
+      if (typeof value !== "string" || !value.trim()) continue;
+      const subConditions = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (subConditions.length === 0) continue;
+
+      const anyMatch = subConditions.some((cond) => {
+        const firstDot = cond.indexOf(".");
+        if (firstDot === -1) return false;
+        const subCol = cond.substring(0, firstDot);
+        const rest = cond.substring(firstDot + 1);
+        const secondDot = rest.indexOf(".");
+        if (secondDot === -1) return false;
+        const subOp = rest.substring(0, secondDot).toLowerCase();
+        const subTarget = rest.substring(secondDot + 1);
+
+        const itemSubVal = item[subCol];
+        if (itemSubVal === undefined || itemSubVal === null) {
+          if (subOp === "is" && subTarget === "null") return true;
+          return false;
+        }
+
+        if (subOp === "eq") {
+          return String(itemSubVal).trim().toLowerCase() === String(subTarget).trim().toLowerCase();
+        } else if (subOp === "neq") {
+          return String(itemSubVal).trim().toLowerCase() !== String(subTarget).trim().toLowerCase();
+        } else if (subOp === "ilike" || subOp === "like") {
+          const cleanPattern = subTarget.replace(/%/g, ".*");
+          const regex = new RegExp(`^${cleanPattern}$`, "i");
+          return regex.test(String(itemSubVal));
+        } else if (subOp === "is") {
+          if (subTarget === "null") return itemSubVal === null;
+          return String(itemSubVal) === String(subTarget);
+        } else if (subOp === "in") {
+          const inVals = subTarget
+            .replace(/^\(|\)$/g, "")
+            .split(",")
+            .map((v) => v.trim().toLowerCase());
+          return inVals.includes(String(itemSubVal).trim().toLowerCase());
+        }
+        return false;
+      });
+
+      if (!anyMatch) return false;
     }
   }
   return true;
