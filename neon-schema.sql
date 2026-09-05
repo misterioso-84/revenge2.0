@@ -20,9 +20,17 @@ CREATE TABLE IF NOT EXISTS public.app_state (
 -- Individual structural tables (reference schema for direct SQL querying and analysis)
 
 -- Enums
-CREATE TYPE public.app_role AS ENUM ('admin', 'staff');
-CREATE TYPE public.membership_tier AS ENUM ('standard', 'exclusive', 'elite');
-CREATE TYPE public.service_billing AS ENUM ('per_night', 'one_time', 'recurring');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+    CREATE TYPE public.app_role AS ENUM ('admin', 'staff');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'membership_tier') THEN
+    CREATE TYPE public.membership_tier AS ENUM ('standard', 'exclusive', 'elite');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'service_billing') THEN
+    CREATE TYPE public.service_billing AS ENUM ('per_night', 'one_time', 'recurring');
+  END IF;
+END $$;
 
 -- Profiles
 CREATE TABLE IF NOT EXISTS public.profiles (

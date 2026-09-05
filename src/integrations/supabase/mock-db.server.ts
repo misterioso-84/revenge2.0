@@ -1203,7 +1203,39 @@ async function loadDb(): Promise<Record<string, any[]>> {
 
   isInitializing = true;
   initPromise = (async () => {
-    // 1. Primary: Attempt Cloudflare D1 ('revenge')
+    // 1. Primary: Attempt Neon PostgreSQL
+    const neonMod = await getNeon();
+    if (neonMod && neonMod.loadDbFromNeon) {
+      try {
+        console.log("[Neon PostgreSQL Sync] Attempting to load database from Neon...");
+        const neonData = await neonMod.loadDbFromNeon();
+        if (neonData && typeof neonData === "object" && Object.keys(neonData).length > 0) {
+          console.log(
+            "[Neon PostgreSQL Sync] Successfully loaded database from Neon. Updating local cache...",
+          );
+          const initialDb = getInitialDb();
+          const mergedDb = { ...initialDb, ...neonData };
+          mergedDb.audit_logs = mergedDb.audit_logs || [];
+          ensureDbTables(mergedDb);
+          cachedDb = mergedDb;
+          lastLoadedTime = Date.now();
+          try {
+            const { fs, path } = await getFsAndPath();
+            if (fs && path) {
+              const dbFile = path.join(process.cwd(), "mock-db.json");
+              fs.writeFileSync(dbFile, JSON.stringify(cachedDb, null, 2), "utf-8");
+            }
+          } catch (e) {
+            console.error("Error saving local DB cache from Neon:", e);
+          }
+          return cachedDb;
+        }
+      } catch (err) {
+        console.warn("[Neon PostgreSQL Sync] Failed to load from Neon:", err);
+      }
+    }
+
+    // 2. Secondary: Attempt Cloudflare D1 ('revenge')
     const d1Mod = await getD1();
     if (d1Mod && d1Mod.loadDbFromD1) {
       try {
@@ -1235,7 +1267,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       }
     }
 
-    // 2. Secondary: Attempt Local File (mock-db.json - persistent on local container / server disk)
+    // 3. Tertiary: Attempt Local File (mock-db.json - persistent on local container / server disk)
     console.log("[Sync Check] Loading from local mock-db.json...");
     let localDb: Record<string, any[]> | null = null;
     try {
@@ -1261,10 +1293,10 @@ async function loadDb(): Promise<Record<string, any[]>> {
       cachedDb = mergedDb;
       lastLoadedTime = Date.now();
 
-      // Opportunistically push local state to Cloudflare D1
+      // Opportunistically push local state to Neon PostgreSQL & D1
       try {
-        if (d1Mod && d1Mod.saveDbToD1) {
-          await d1Mod.saveDbToD1(cachedDb);
+        if (neonMod && neonMod.saveDbToNeon) {
+          await neonMod.saveDbToNeon(cachedDb);
         }
       } catch {
         // Ignore background sync error
@@ -1273,7 +1305,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       return cachedDb;
     }
 
-    // 3. Fallback: Attempt Firestore (Only if D1 and local disk have no data)
+    // 4. Fallback: Attempt Firestore (Only if Neon, D1 and local disk have no data)
     const firestoreMod = await getFirestore();
     if (firestoreMod && firestoreMod.loadDbFromFirestore) {
       try {
@@ -1307,7 +1339,7 @@ async function loadDb(): Promise<Record<string, any[]>> {
       }
     }
 
-    // 4. Default in-memory generator fallback (Used ONLY if no cloud or local database exists at all)
+    // 5. Default in-memory generator fallback (Used ONLY if no cloud or local database exists at all)
     console.log("[Sync Fallback] Generating initial DB...");
     const initialDb = getInitialDb();
     ensureDbTables(initialDb);
@@ -1342,7 +1374,17 @@ export async function saveSupabaseDb(data: Record<string, any[]>): Promise<void>
 }
 
 async function syncToCloud(db: Record<string, any[]>) {
-  // 1. Primary: Save to Cloudflare D1 ('revenge')
+  // 1. Primary: Save to Neon PostgreSQL
+  try {
+    const neonMod = await getNeon();
+    if (neonMod && neonMod.saveDbToNeon) {
+      await neonMod.saveDbToNeon(db);
+    }
+  } catch (err) {
+    console.warn("[syncToCloud] Error saving to Neon:", err);
+  }
+
+  // 2. Secondary: Save to Cloudflare D1 ('revenge')
   try {
     const d1Mod = await getD1();
     if (d1Mod && d1Mod.saveDbToD1) {
@@ -1352,7 +1394,7 @@ async function syncToCloud(db: Record<string, any[]>) {
     console.warn("[syncToCloud] Error saving to D1:", err);
   }
 
-  // 2. Secondary: Save to Firestore
+  // 3. Tertiary: Save to Firestore
   try {
     const firestoreMod = await getFirestore();
     if (firestoreMod && firestoreMod.saveDbToFirestore) {

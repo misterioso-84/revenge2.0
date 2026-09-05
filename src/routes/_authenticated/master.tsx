@@ -58,6 +58,7 @@ import {
   calculateTimeElapsed,
 } from "@/lib/master.functions";
 import { CloudflareD1ControlCard } from "@/components/CloudflareD1ControlCard";
+import { NeonControlCard } from "@/components/NeonControlCard";
 
 export const Route = createFileRoute("/_authenticated/master")({
   beforeLoad: async () => {
@@ -263,8 +264,13 @@ function MasterPage() {
         </p>
       </div>
 
-      {/* Cloudflare D1 Migration & Control */}
-      {canManage && <CloudflareD1ControlCard />}
+      {/* Database Controls: Neon Primary & Cloudflare D1 Replica */}
+      {canManage && (
+        <div className="space-y-4">
+          <NeonControlCard />
+          <CloudflareD1ControlCard />
+        </div>
+      )}
 
       {/* Top Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
